@@ -4,7 +4,7 @@ import os
 import re
 
 import aiohttp
-from .. import config # pylint: disable=relative-beyond-top-level
+from . import config # pylint: disable=relative-beyond-top-level
 import discord
 from discord.ext import commands
 
