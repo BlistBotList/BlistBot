@@ -27,7 +27,7 @@ class Blist(commands.Bot):
             max_messages=500,
             reconnect=True,
             help_command=help_command.MinimalEmbedPaginatorHelp(),
-            intents=discord.Intents(members=True, emojis=True, messages=True, reactions=True)
+            intents=discord.Intents(members=True, emojis=True, messages=True, reactions=True, guilds=True)
         )
 
     async def on_ready(self):
