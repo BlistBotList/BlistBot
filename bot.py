@@ -52,6 +52,7 @@ class Blist(commands.Bot):
                 print(f"\n{error}")
 
         extensions.remove("cogs.checks")
+        extensions.remove("cogs.config")
         for extension in extensions:
             self.load_extension(extension)
 
