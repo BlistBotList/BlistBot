@@ -1,6 +1,8 @@
 import argparse
+import asyncio
 import datetime
 import os
+import random
 
 import asyncpg
 import discord
@@ -22,7 +24,7 @@ args = parser.parse_args()
 class Blist(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix="b!",
+            command_prefix="b?" if args.development else "b!",
             case_insensitive=True,
             max_messages=500,
             reconnect=True,
@@ -31,17 +33,21 @@ class Blist(commands.Bot):
         )
 
     async def on_ready(self):
-        bots = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = True")
+        approved_bots = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
+        queued_bots = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
         users = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_user")
         print("---------------------")
         print(f"{self.user} is ready")
         print("---------------------")
-        print(f"Watching {bots} bots")
+        print(f"{approved_bots} bots")
         print("---------------------")
         print(f"Watching {users} users")
         print("---------------------")
         self.uptime = datetime.datetime.utcnow().strftime("%c")
-        await self.change_presence(activity=discord.Game(name=f"Watching {bots} bots"))
+        options = (f"Watching {queued_bots} in the queue", f"Watching {approved_bots} approved bots", f"Watching {users} total users")
+        while True:
+            await self.change_presence(activity=discord.Game(name=random.choice(options)))
+            await asyncio.sleep(60)
 
     async def on_connect(self):
         if not hasattr(self, "pool"):

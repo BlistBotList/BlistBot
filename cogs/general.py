@@ -10,15 +10,20 @@ class General(commands.Cog):
     @commands.command()
     async def stats(self, ctx):
         """Shows info on Blist"""
-        bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = True")
+        approved_bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
+        queued_bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
+        denied_bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = True")
         users = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_user")
         votes = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_vote")
 
         embed = discord.Embed(title="Blist Stats", description=f"""
->>> **Total Bots:** {bots}
-Total User: ``{users}``
-Total Votes: ``{votes}``
-Bot Ping: ``{self.bot.latency * 1000:.2f}ms``
+>>> ``Total Bots:`` {approved_bots + queued_bots}
+``Total Approved Bots:`` {approved_bots}
+``Total Denied Bots:`` {denied_bots}
+``Total Queued Bots:`` {queued_bots}
+``Total Users:`` {users}
+``Total Votes:`` {votes}
+``Bot Ping:`` {self.bot.latency * 1000:.2f}ms
 """)
         embed.set_thumbnail(url=str(ctx.guild.icon_url))
         await ctx.send(embed=embed)
@@ -95,12 +100,12 @@ Blist Link: [Click Here](https://blist.xyz/bot/{bot.id}/)
 
     @commands.command()
     async def bots(self, ctx, *, member: discord.Member = None):
-        """Shows a users lissted bots"""
+        """Shows a users listed bots"""
         if member is None:
             member = ctx.author
 
         if member.bot:
-            await ctx.send("This user is a bot")
+            await ctx.send("This user is a bot!")
             return
 
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
@@ -114,6 +119,18 @@ Blist Link: [Click Here](https://blist.xyz/bot/{bot.id}/)
 
         embed = discord.Embed(title=f"{member.name}'s bots", description=">>>" + '\n '.join([str(x) for x in list]) if list else 'This user has not bots listed on out site' + "")
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def position(self, ctx):
+        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = False AND denied = False", ctx.author.id)
+        if bots == []:
+            await ctx.send("This user has not bots in the queue!")
+            return
+
+        queue = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = False AND denied = False")
+
+        for b in bots:
+            await ctx.send(f"{b['name']} is #{queue.index(b) + 1} in the queue")
 
     @commands.command(aliases=["user", "member", "memberinfo", "ui"])
     async def userinfo(self, ctx, *, member: discord.Member = None):
