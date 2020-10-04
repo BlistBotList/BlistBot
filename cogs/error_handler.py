@@ -11,7 +11,7 @@ class ErrorHandler(commands.Cog):
         if isinstance(error, commands.CommandNotFound):
             return
         if isinstance(error, commands.CheckFailure):
-            return
+            await ctx.send("This command cannot be used in this guild!")
 
         errors = {
             commands.MissingPermissions: {"msg": "You do not have permissions to run this command."},
