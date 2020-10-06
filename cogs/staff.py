@@ -108,7 +108,7 @@ class Staff(commands.Cog):
         await self.bot.get_channel(716446098859884625).send(embed=em)
         await bot.kick(reason="Bot Denied")
 
-    @checks.verification_guild_only()
+    @checks.main_guild_only()
     @commands.has_permissions(kick_members=True)
     @commands.command()
     async def delete(self, ctx, id: int, *, reason):
