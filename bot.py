@@ -44,7 +44,7 @@ class Blist(commands.Bot):
         print(f"Watching {users} users")
         print("---------------------")
         self.uptime = datetime.datetime.utcnow().strftime("%c")
-        options = (f"Watching {queued_bots} in the queue", f"Watching {approved_bots} approved bots", f"Watching {users} total users")
+        options = (f"Watching {queued_bots} bots in the queue", f"Watching {approved_bots} approved bots", f"Watching {users} total users")
         while True:
             await self.change_presence(activity=discord.Game(name=random.choice(options)))
             await asyncio.sleep(60)
