@@ -1,7 +1,6 @@
 import re
 
 import discord
-from discord import channel
 from discord.ext import commands, tasks
 
 
