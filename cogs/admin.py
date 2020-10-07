@@ -165,19 +165,17 @@ class Admin(commands.Cog):
 ``Senior Administrators``
 <@679118121943957504> :flag_us:
 ---------------------
-``Internal Operations``
-<@712737377524777001> :flag_us: - Marketing
----------------------
 ``Administrators``
-None
+<@712737377524777001>
 ---------------------
 ``Senior Moderators``
 <@482536364714491926> :flag_in:
+<@670684162113667092> :flag_se:
 ---------------------
 ``Moderators``
 <@150665783268212746> :flag_nl:
 <@602656646979911738> :flag_eg:
-<@670684162113667092> :flag_se:
+<@296044953576931328> :flag_au:
 ---------------------
 """)
         channel = ctx.guild.get_channel(716823743644696586)
