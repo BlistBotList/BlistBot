@@ -59,9 +59,10 @@ class Staff(commands.Cog):
 
         await self.bot.pool.execute("UPDATE main_site_user SET developer = True WHERE userid = $1", bots)
         await self.bot.pool.execute("UPDATE main_site_bot SET approved = True WHERE id = $1", bot.id)
-
-        embed = discord.Embed(description=f"Approved {bot.name}. [Invite](https://discordapp.com/api/oauth2/authorize?client_id={bot.id}&guild_id=716445624517656727&scope=bot&disable_guild_select=true)")
-        await self.verification_guild.get_channel(763183376311517215).send(embed=embed)
+        
+        queued_bots = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
+        embed = discord.Embed(title=f"Approved {bot.name}", description=f"[Invite](https://discordapp.com/api/oauth2/authorize?client_id={bot.id}&guild_id=716445624517656727&scope=bot&disable_guild_select=true) \n\nThere are {queued_bots} bots in the queue still.")
+        await self.verification_guild.get_channel(763183376311517215).send(content=ctx.author.mention, embed=embed)
 
         em = discord.Embed(description=f"``{bot.name}`` by ``{self.main_guild.get_member(bots)}`` was approved by ``{ctx.author.name}``")
         await self.bot.get_channel(716446098859884625).send(embed=em)
