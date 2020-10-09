@@ -126,7 +126,7 @@ class Staff(commands.Cog):
 
         await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", id)
 
-        embed = discord.Embed(description=f"Deleted {bots['name']}", color=discord.Color.blurple())
+        embed = discord.Embed(description=f"Deleted {bots['name']}", color=discord.Color.red())
         await ctx.send(embed=embed)
 
         em = discord.Embed(description=f"``{bots['name']}`` by ``{ctx.guild.get_member(bots['main_owner']) or bots['main_owner']}`` was deleted by ``{ctx.author.name}`` for: \n```{reason}```", color=discord.Color.red())
