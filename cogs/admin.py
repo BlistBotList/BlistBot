@@ -56,6 +56,7 @@ class Admin(commands.Cog):
         owner = ctx.guild.get_member(bots)
         em = discord.Embed(description=f"``{bot.name}`` by ``{owner}`` was certified", color=discord.Color.blurple())
 
+        await self.bot.pool.execute("UPDATE main_site_user SET certified_developer = True WHERE userid = $1", owner.id)
         await self.bot.get_channel(716446098859884625).send(embed=em)
         certified_role = ctx.guild.get_role(716684142766456832)
         certified_dev_role = ctx.guild.get_role(716724317207003206)

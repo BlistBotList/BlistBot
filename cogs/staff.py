@@ -119,7 +119,7 @@ class Staff(commands.Cog):
                 await ctx.send("This user is not a bot")
                 return
 
-        bots = await self.bot.pool.fetchrow("SELECT main_owner, name FROM main_site_bot WHERE approved = True AND id = $1", id)
+        bots = await self.bot.pool.fetchrow("SELECT main_owner, name, certified FROM main_site_bot WHERE approved = True AND id = $1", id)
         if bots == None:
             await ctx.send("This bot is not on the list")
             return
@@ -132,9 +132,13 @@ class Staff(commands.Cog):
         em = discord.Embed(description=f"``{bots['name']}`` by ``{ctx.guild.get_member(bots['main_owner']) or bots['main_owner']}`` was deleted by ``{ctx.author.name}`` for: \n```{reason}```", color=discord.Color.red())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
+        member = ctx.guild.get_member(bots['main_owner'])
+        if bots['certified'] is True:
+            certified_dev_role = ctx.guild.get_role(716724317207003206)
+            await member.remove_roles(certified_dev_role)
+
         if_other_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", bots['main_owner'])
         if if_other_bots == []:
-            member = ctx.guild.get_member(bots['main_owner'])
             if member is not None:
                 dev_role = ctx.guild.get_role(716684805286133840)
                 await member.remove_roles(dev_role)
