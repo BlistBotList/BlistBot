@@ -28,9 +28,33 @@ class Events(commands.Cog):
                     member: discord.PermissionOverwrite(read_messages=True),
                 }
                 category = await member.guild.create_category(name=member.name, overwrites=overwrites)
-                await category.create_text_channel(name="Testing")
+                channel = await category.create_text_channel(name="Testing")
                 await category.create_text_channel(name="Testing-NSFW", nsfw=True)
                 await category.create_voice_channel(name="Voice Testing", bitrate=member.guild.bitrate_limit)
+                
+                bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
+                
+                website = bots[0]['website'] or 'None'
+                invite = bots[0]['invite_url'] or 'Default'
+                blist_link = f"https://blist.xyz/bot/{member.id}/"
+                prefix = bots[0]['prefix']
+                tags = ', '.join([str(x) for x in bots[0]['tags']])
+                added = bots[0]['joined'].strftime('%D')
+
+                embed = discord.Embed(title=f"{member.name}#{member.discriminator}", description=f"""
+                >>> Owner: ``{self.main_guild.get_member(bots[0]['main_owner'])}``
+                Prefix: ``{prefix}``
+                Tags: ``{tags}``
+                Added: ``{added}``""")
+                embed.add_field(name="**Links**", value=f"""
+                >>> Privacy Policy: {bots[0]['privacy_policy_url'] if bots[0]['privacy_policy_url'] != '' else 'None'}
+                Website: {website}
+                Invite: {invite}
+                Blist Link: {blist_link}""")
+                embed.add_field(name="Short Description",value=bots[0]['short_description'], inline=False)
+                embed.set_thumbnail(url=member.avatar_url)
+                message = await channel.send(embed=embed)
+                await message.pin()
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
