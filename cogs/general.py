@@ -24,7 +24,7 @@ class General(commands.Cog):
 ``Total Users:`` {users}
 ``Total Votes:`` {votes}
 ``Bot Ping:`` {self.bot.latency * 1000:.2f}ms
-""")
+""", color=discord.Color.blurple())
         embed.set_thumbnail(url=str(ctx.guild.icon_url))
         await ctx.send(embed=embed)
 
@@ -32,7 +32,7 @@ class General(commands.Cog):
     async def top(self, ctx):
         """Shows leaderboard information"""
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True ORDER BY total_votes DESC LIMIT 5")
-        embed = discord.Embed(title="Top 5 Voted Bots")
+        embed = discord.Embed(title="Top 5 Voted Bots", color=discord.Color.blurple())
         place = 0
         for x in bots:
             place += 1
@@ -83,7 +83,7 @@ All-Time Votes: ``{b['total_votes']}``
 Certified: ``{b['certified']}``
 Server Count: ``{b['server_count']}``
 Added: ``{b['joined'].strftime('%D')}``
-""")
+""", color=discord.Color.blurple())
         embed.add_field(name="**Links**", value=f"""
 >>> GitHub: {github}
 Privacy Policy: {b['privacy_policy_url'] if b['privacy_policy_url'] != '' else 'None'}
@@ -117,7 +117,7 @@ Blist Link: [Click Here](https://blist.xyz/bot/{bot.id}/)
         for x in bots:
             list.append(f"**{x['name']}** ({self.main_guild.get_member(x['id']).mention})")
 
-        embed = discord.Embed(title=f"{member.name}'s bots", description=">>>" + '\n '.join([str(x) for x in list]) if list else 'This user has not bots listed on out site' + "")
+        embed = discord.Embed(title=f"{member.name}'s bots", description=">>>" + '\n '.join([str(x) for x in list]) if list else 'This user has not bots listed on out site' + "", color=discord.Color.blurple())
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -138,7 +138,7 @@ Blist Link: [Click Here](https://blist.xyz/bot/{bot.id}/)
         if member is None:
             member = ctx.author
 
-        embed = discord.Embed(title=member.name)
+        embed = discord.Embed(title=member.name, color=discord.Color.blurple())
         embed.set_thumbnail(url=member.avatar_url)
         embed.add_field(name="Name:", value=member.name)
         embed.add_field(name="Discriminator:", value=f"#{member.discriminator}")

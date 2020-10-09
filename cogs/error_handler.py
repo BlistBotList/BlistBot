@@ -27,7 +27,7 @@ class ErrorHandler(commands.Cog):
                 ets["msg"] = "[ERROR]"
 
             em = discord.Embed(
-                description=ets["msg"].replace("[ERROR]", f"{error}"))
+                description=ets["msg"].replace("[ERROR]", f"{error}"), color=discord.Color.red())
 
             try:
                 await ctx.send(embed=em)
@@ -35,7 +35,7 @@ class ErrorHandler(commands.Cog):
                 pass
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            em = discord.Embed(
+            em = discord.Embed(color=discord.Color.red(),
                 description=f"`{str(error.param).partition(':')[0]}` is a required argument!")
             await ctx.send(embed=em)
 

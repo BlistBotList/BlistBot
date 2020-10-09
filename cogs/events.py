@@ -41,7 +41,7 @@ class Events(commands.Cog):
                 tags = ', '.join([str(x) for x in bots[0]['tags']])
                 added = bots[0]['joined'].strftime('%D')
 
-                embed = discord.Embed(title=f"{member.name}#{member.discriminator}", description=f"""
+                embed = discord.Embed(title=f"{member.name}#{member.discriminator}", color=discord.Color.blurple(), description=f"""
                 >>> Owner: ``{self.main_guild.get_member(bots[0]['main_owner'])}``
                 Prefix: ``{prefix}``
                 Tags: ``{tags}``

@@ -21,7 +21,7 @@ class Staff(commands.Cog):
         for x in bots:
             list.append(f"{x['name']} [Invite](https://discordapp.com/api/oauth2/authorize?client_id={x['id']}&guild_id=734527161289015337&scope=bot&disable_guild_select=true)")
         
-        embed = discord.Embed(title="Queue", description='\n '.join([str(x) for x in list]) if list else "All Clear")
+        embed = discord.Embed(title="Queue", description='\n '.join([str(x) for x in list]) if list else "All Clear", color=discord.Color.blurple())
         await ctx.send(embed=embed)
 
     @checks.main_guild_only()
@@ -36,7 +36,7 @@ class Staff(commands.Cog):
         for x in bots:
             list.append(f"{x['name']} | Added: {x['joined']}")
 
-        embed = discord.Embed(title="Certification Queue", description='\n '.join([str(x) for x in list]) if list else "All Clear")
+        embed = discord.Embed(title="Certification Queue", description='\n '.join([str(x) for x in list]) if list else "All Clear", color=discord.Color.blurple())
         await ctx.send(embed=embed)
 
     @checks.verification_guild_only()
@@ -61,10 +61,10 @@ class Staff(commands.Cog):
         await self.bot.pool.execute("UPDATE main_site_bot SET approved = True WHERE id = $1", bot.id)
         
         queued_bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
-        embed = discord.Embed(title=f"Approved {bot.name}", description=f"[Invite](https://discordapp.com/api/oauth2/authorize?client_id={bot.id}&guild_id=716445624517656727&scope=bot&disable_guild_select=true) \n\nThere are {queued_bots} bots in the queue still.")
+        embed = discord.Embed(title=f"Approved {bot.name}", description=f"[Invite](https://discordapp.com/api/oauth2/authorize?client_id={bot.id}&guild_id=716445624517656727&scope=bot&disable_guild_select=true) \n\nThere are {queued_bots} bots in the queue still.", color=discord.Color.blurple())
         await self.verification_guild.get_channel(763183376311517215).send(content=ctx.author.mention, embed=embed)
 
-        em = discord.Embed(description=f"``{bot.name}`` by ``{self.main_guild.get_member(bots)}`` was approved by ``{ctx.author.name}``")
+        em = discord.Embed(description=f"``{bot.name}`` by ``{self.main_guild.get_member(bots)}`` was approved by ``{ctx.author.name}``", color=discord.Color.blurple())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
         dev_role = self.main_guild.get_role(716684805286133840)
@@ -103,9 +103,9 @@ class Staff(commands.Cog):
             pass
 
         await self.bot.pool.execute("UPDATE main_site_bot SET denied = True WHERE id = $1", bot.id)
-        embed = discord.Embed(description=f"Denied {bot.name}")
+        embed = discord.Embed(description=f"Denied {bot.name}", color=discord.Color.red())
         await ctx.send(embed=embed)
-        em = discord.Embed(description=f"``{bot.name}`` by ``{self.main_guild.get_member(bots)}`` was denied by ``{ctx.author.name}`` for: \n```{reason}```")
+        em = discord.Embed(description=f"``{bot.name}`` by ``{self.main_guild.get_member(bots)}`` was denied by ``{ctx.author.name}`` for: \n```{reason}```", color=discord.Color.red())
         await self.bot.get_channel(716446098859884625).send(embed=em)
         await bot.kick(reason="Bot Denied")
 
@@ -126,10 +126,10 @@ class Staff(commands.Cog):
 
         await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", id)
 
-        embed = discord.Embed(description=f"Deleted {bots['name']}")
+        embed = discord.Embed(description=f"Deleted {bots['name']}", color=discord.Color.blurple())
         await ctx.send(embed=embed)
 
-        em = discord.Embed(description=f"``{bots['name']}`` by ``{ctx.guild.get_member(bots['main_owner']) or bots['main_owner']}`` was deleted by ``{ctx.author.name}`` for: \n```{reason}```")
+        em = discord.Embed(description=f"``{bots['name']}`` by ``{ctx.guild.get_member(bots['main_owner']) or bots['main_owner']}`` was deleted by ``{ctx.author.name}`` for: \n```{reason}```", color=discord.Color.red())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
         if_other_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", bots['main_owner'])

@@ -50,11 +50,11 @@ class Admin(commands.Cog):
 
         await self.bot.pool.execute("UPDATE main_site_bot SET certified = True, awaiting_certification = False WHERE id = $1", bot.id)
 
-        embed = discord.Embed(description=f"Certified {bot.name}")
+        embed = discord.Embed(description=f"Certified {bot.name}", color=discord.Color.blurple())
         await ctx.send(embed=embed)
 
         owner = ctx.guild.get_member(bots)
-        em = discord.Embed(description=f"``{bot.name}`` by ``{owner}`` was certified")
+        em = discord.Embed(description=f"``{bot.name}`` by ``{owner}`` was certified", color=discord.Color.blurple())
 
         await self.bot.get_channel(716446098859884625).send(embed=em)
         certified_role = ctx.guild.get_role(716684142766456832)
@@ -76,9 +76,9 @@ class Admin(commands.Cog):
             return
 
         await self.bot.pool.execute("UPDATE main_site_bot SET awaiting_certification = False WHERE id = $1", bot.id)
-        embed = discord.Embed(description=f"Denied certification for {bot.name}")
+        embed = discord.Embed(description=f"Denied certification for {bot.name}", color=discord.Color.blurple())
         await ctx.send(embed=embed)
-        em = discord.Embed(description=f"``{bot.name}`` by ``{ctx.guild.get_member(bots)}`` was denied for certification for: \n```{reason}```")
+        em = discord.Embed(description=f"``{bot.name}`` by ``{ctx.guild.get_member(bots)}`` was denied for certification for: \n```{reason}```", color=discord.Color.blurple())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
     @commands.is_owner()
@@ -128,7 +128,7 @@ class Admin(commands.Cog):
                     continue
                 except Exception as e:
                     embed = discord.Embed(title=f"There was an issue pulling from GitHub",
-                                          description=f"\n```{e}```\n", color=discord.Color.blurple())
+                                          description=f"\n```{e}```\n", color=discord.Color.red())
                     await ctx.send(embed=embed)
                     return
 
@@ -138,7 +138,7 @@ class Admin(commands.Cog):
                 await ctx.send(embed=embed)
             else:
                 embed = discord.Embed(
-                    title=f"Updated cogs: " + ", ".join([f"`{text}`" for text in updated]))
+                    title=f"Updated cogs: " + ", ".join([f"`{text}`" for text in updated]), color=discord.Color.blurple())
                 await ctx.send(embed=embed)
         else:
             embed = discord.Embed(
@@ -160,7 +160,7 @@ class Admin(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def staff(self, ctx):
-        embed = discord.Embed(title="Staff", description="""
+        embed = discord.Embed(title="Staff", color=discord.Color.blurple(), description="""
 ---------------------
 ``Senior Administrators``
 <@679118121943957504> :flag_us:
@@ -187,7 +187,7 @@ class Admin(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def rulesninfo(self, ctx):
-        embed = discord.Embed(title="Blist Bot Rules/Requirements", description="""
+        embed = discord.Embed(title="Blist Bot Rules/Requirements", color=discord.Color.blurple(), description="""
 1. NSFW Commands must be restricted to NSFW only channels
 2. Bots cannot be duplicates of other bots
 3. Cannot contain scripts that affects the page
@@ -202,7 +202,7 @@ class Admin(commands.Cog):
 12. Must have a clean description, not junk filled
 """)
 
-        em = discord.Embed(title="Blist Server Rules", description="""
+        em = discord.Embed(title="Blist Server Rules", color=discord.Color.blurple(), description="""
 1. Don't MINI MOD
 2. Don't tag mod roles for no reason
 3. Be respectful
@@ -215,14 +215,14 @@ class Admin(commands.Cog):
 10. Don't break Discord ToS
 """)
 
-        emb = discord.Embed(title="Links", description="""
+        emb = discord.Embed(title="Links" , color=discord.Color.blurple(), description="""
 [Site](https://blist.xyz)
 [API](https://blist.xyz/api/)
 [API Docs](https://docs.blist.xyz/)
 [Certification Info](https://blist.xyz/certification/)
 """)
 
-        embe = discord.Embed(title="FAQ's", description="""
+        embe = discord.Embed(title="FAQ's", color=discord.Color.blurple(), description="""
 **How did I get here?**
 When logging in on the website, your grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server.
 \n**How do I add a bot?**
