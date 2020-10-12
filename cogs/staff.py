@@ -118,9 +118,14 @@ class Staff(commands.Cog):
         if isinstance(bot_id, discord.Member):
             bot_id = bot_id.id
             bot_user = bot_id
-        else:
+        elif isinstance(bot_id, int):
             bot_id = bot_id
             bot_user = self.main_guild.get_member(bot_id)
+        else:
+            await ctx.send(
+                embed=discord.Embed(description = "that is not a valid bot ID, please try again.",color=discord.Colour.red())
+            )
+            return
 
         if bot_user is not None:
             if not bot_user.bot:
