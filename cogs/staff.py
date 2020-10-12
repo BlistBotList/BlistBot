@@ -1,3 +1,5 @@
+from typing import Union
+
 import discord
 import googletrans
 from discord.ext import commands
@@ -112,19 +114,25 @@ class Staff(commands.Cog):
     @checks.main_guild_only()
     @commands.has_permissions(kick_members=True)
     @commands.command()
-    async def delete(self, ctx, id: int, *, reason):
-        bot_user = self.main_guild.get_member(id)
+    async def delete(self, ctx, bot_id: Union[discord.Member, int], *, reason):
+        if isinstance(bot_id, discord.Member):
+            bot_id = bot_id.id
+            bot_user = bot_id
+        else:
+            bot_id = bot_id
+            bot_user = self.main_guild.get_member(bot_id)
+
         if bot_user is not None:
             if not bot_user.bot:
                 await ctx.send("This user is not a bot")
                 return
 
-        bots = await self.bot.pool.fetchrow("SELECT main_owner, name, certified FROM main_site_bot WHERE approved = True AND id = $1", id)
+        bots = await self.bot.pool.fetchrow("SELECT main_owner, name, certified FROM main_site_bot WHERE approved = True AND id = $1", bot_id)
         if bots == None:
             await ctx.send("This bot is not on the list")
             return
 
-        await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", id)
+        await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", bot_id)
 
         embed = discord.Embed(description=f"Deleted {bots['name']}", color=discord.Color.red())
         await ctx.send(embed=embed)
