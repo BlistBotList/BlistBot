@@ -123,7 +123,7 @@ class Staff(commands.Cog):
             bot_user = self.main_guild.get_member(bot_id)
         else:
             await ctx.send(
-                embed=discord.Embed(description = "that is not a valid bot ID, please try again.",color=discord.Colour.red())
+                embed=discord.Embed(description = "That is not a valid bot ID.", color=discord.Colour.red())
             )
             return
 
