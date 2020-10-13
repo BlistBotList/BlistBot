@@ -7,6 +7,7 @@ def main_guild_only():
             return False
         else:
             return True
+
     return commands.check(predicate)
 
 
@@ -16,4 +17,5 @@ def verification_guild_only():
             return False
         else:
             return True
+
     return commands.check(predicate)
