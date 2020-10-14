@@ -138,29 +138,24 @@ class Staff(commands.Cog):
     @checks.main_guild_only()
     @commands.has_permissions(kick_members = True)
     @commands.command()
-    async def delete(self, ctx, bot_id: Union[discord.Member, int], *, reason):
-        if isinstance(bot_id, discord.Member):
-            bot_id = bot_id.id
-            bot_user = bot_id
-        elif isinstance(bot_id, int):
-            bot_user = self.main_guild.get_member(bot_id)
-        else:
-            await ctx.send(
-                embed = discord.Embed(description = "That is not a valid bot.", color = discord.Colour.red())
-            )
-            return
+    async def delete(self, ctx, bot: Union[discord.Member, int], *, reason):
+        bot_user = None
+        if isinstance(bot, discord.Member):
+            bot_user = bot
+        if isinstance(bot, int):
+            bot_user = self.main_guild.get_member(bot)
 
         if bot_user and not bot_user.bot:
-            await ctx.send("That is not a bot")
+            await ctx.send("That is not a bot.")
             return
 
         bots = await self.bot.pool.fetchrow(
-            "SELECT main_owner, name, certified FROM main_site_bot WHERE approved = True AND id = $1", bot_id)
+            "SELECT main_owner, name, certified FROM main_site_bot WHERE approved = True AND id = $1", bot_user.id)
         if not bots:
             await ctx.send("This bot is not on the list")
             return
 
-        await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", bot_id)
+        await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", bot_user.id)
 
         embed = discord.Embed(description = f"Deleted {bots['name']}", color = discord.Color.red())
         await ctx.send(embed = embed)
@@ -176,7 +171,7 @@ class Staff(commands.Cog):
             await member.remove_roles(certified_dev_role)
 
         has_other_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1",
-                                                  bots['main_owner'])
+                                                   bots['main_owner'])
         if not has_other_bots and member:
             dev_role = ctx.guild.get_role(716684805286133840)
             await member.remove_roles(dev_role)

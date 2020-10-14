@@ -136,7 +136,8 @@ class General(commands.Cog):
 
         embed = discord.Embed(
             title = f"{member.name}'s bots",
-            description = ">>>" + '\n '.join(listed_bots) if listed_bots else 'This user has not bots listed on out site',
+            description = ">>>" + '\n '.join(
+                listed_bots) if listed_bots else 'This user has not bots listed on out site',
             color = discord.Color.blurple()
         )
         await ctx.send(embed = embed)

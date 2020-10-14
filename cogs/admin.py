@@ -52,7 +52,7 @@ class Admin(commands.Cog):
         await self.bot.pool.execute(
             "UPDATE main_site_bot SET certified = True, awaiting_certification = False WHERE id = $1", bot.id
         )
-        embed = discord.Embed(description=f"Certified {bot.name}", color=discord.Color.blurple())
+        embed = discord.Embed(description = f"Certified {bot.name}", color = discord.Color.blurple())
         await ctx.send(embed = embed)
 
         owner = ctx.guild.get_member(is_waiting)
@@ -170,7 +170,7 @@ class Admin(commands.Cog):
     @checks.main_guild_only()
     @commands.has_permissions(administrator = True)
     @commands.command()
-    async def staff(self, ctx, member: discord.Member = None, flag: str = None, level: str = None):
+    async def staff(self, ctx):
         all_staff = {
             "Senior Administrators": [
                 f"{ctx.guild.get_member(679118121943957504).mention} :flag_us:"
@@ -188,18 +188,12 @@ class Admin(commands.Cog):
                 f"{ctx.guild.get_member(296044953576931328).mention} :flag_au:"
             ]
         }
-        if member:
-            levels = ["senior_administrator", "administrator", "senior_moderators", "moderator"]
-            if level.lower() not in levels:
-                await ctx.send(f"That's not a valid staff option, valid options are {', '.join(levels)}")
-                return
-            all_staff[level.replace("_", "").title()].append(f"{member.mention} {flag}")
         embed = discord.Embed(color = discord.Color.blurple(), title = "Staff")
-        for people in list(all_staff.items()):
-            embed.add_field(name = f"> {people[0][0]}", value = "\n".join(people[0][1]))
-            embed.add_field(name = f"> {people[1][0]}", value = "\n".join(people[0][1]))
-            embed.add_field(name = f"> {people[2][0]}", value = "\n".join(people[0][1]))
-            embed.add_field(name = f"> {people[3][0]}", value = "\n".join(people[0][1]))
+        people = list(all_staff.items())
+        embed.add_field(name = f"> {people[0][0]}", value = "\n".join(people[0][1]), inline = False)
+        embed.add_field(name = f"> {people[1][0]}", value = "\n".join(people[1][1]), inline = False)
+        embed.add_field(name = f"> {people[2][0]}", value = "\n".join(people[2][1]), inline = False)
+        embed.add_field(name = f"> {people[3][0]}", value = "\n".join(people[3][1]), inline = False)
         channel = ctx.guild.get_channel(716823743644696586)
         message = await channel.fetch_message(723641541486182410)
         await message.edit(embed = embed)
@@ -217,7 +211,7 @@ class Admin(commands.Cog):
             "Use common sense.",
             "No Evading punishments.",
             "No NSFW.",
-            "Please use the channels accordingly."
+            "Please use the channels accordingly.",
             "Posting invites when it is relevant to the conversation(such as asking "
             "for a bot support server, minecraft server) is completely fine.However, "
             "advertising your server ( or any advertising in general) is not okay.",
@@ -241,11 +235,11 @@ class Admin(commands.Cog):
         server_rules_embed = discord.Embed(title = "Blist Server Rules", color = discord.Color.blurple(),
                                            description = "")
         for num, rule in enumerate(server_rules_list, start = 1):
-            server_rules_embed.description += f"{num}. {rule}"
+            server_rules_embed.description += f"\n**{num}.** {rule}"
         bot_rules_embed = discord.Embed(title = "Blist Bot Rules/Requirements", color = discord.Color.blurple(),
                                         description = "")
         for num, rule in enumerate(bot_rules_list, start = 1):
-            bot_rules_embed.description += f"{num}. {rule}"
+            bot_rules_embed.description += f"\n**{num}.** {rule}"
         links_embed = discord.Embed(
             title = "Links", color = discord.Color.blurple(),
             description =

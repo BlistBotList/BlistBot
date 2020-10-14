@@ -72,7 +72,6 @@ class Events(commands.Cog):
             await category.create_voice_channel(name = "Voice Testing", bitrate = member.guild.bitrate_limit)
 
             bot = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
-            # privacy_policy = bot[0]['privacy_policy_url'] if bot[0]['privacy_policy_url'] != '' else 'None'
 
             embed = discord.Embed(
                 title = str(member),
