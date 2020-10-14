@@ -62,25 +62,11 @@ class General(commands.Cog):
 
         tags = ', '.join([str(x) for x in bots[0]['tags']])
         b = bots[0]
-        if b['github'] == '':
-            github = None
-        else:
-            github = f"[Click Here]({b['github']})"
-
-        if b['website'] == '':
-            website = None
-        else:
-            website = f"[Click Here]({b['website']})"
-
-        if b['support_server'] == '':
-            support = None
-        else:
-            support = f"[Click Here](https://discord.gg/{b['support_server']})"
-
-        if b['invite_url'] == '':
-            invite = f"[Click Here]({discord.utils.oauth_url(bot.id)})"
-        else:
-            invite = f"[Click Here]({b['invite_url']})"
+        github = f"[Click Here]({b['github']})" if b['github'] else None
+        website = f"[Click Here]({b['website']})" if b['website'] else None
+        support = f"[Click Here](https://discord.gg/{b['support_server']})" if b['support_server'] else None
+        invite = f"[Click Here]({b['invite_url']})" if b['invite_url'] else f"[Click Here]({discord.utils.oauth_url(bot.id)})"
+        privacy_url = b['privacy_policy_url'] if b['privacy_policy_url'] else None
 
         embed = discord.Embed(
             title = f"{bot.name}#{bot.discriminator}",
@@ -103,7 +89,7 @@ class General(commands.Cog):
             value =
             f"""
             >>> GitHub: {github}
-            Privacy Policy: {b['privacy_policy_url'] or 'None'}
+            Privacy Policy: {privacy_url}
             Website: {website}
             Support: {support}
             Invite: {invite}
