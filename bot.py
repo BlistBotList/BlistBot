@@ -14,27 +14,28 @@ import config
 extensions = ["jishaku"]
 
 for f in os.listdir("cogs"):
-    if f.endswith(".py") and not f"cogs.{f[:-3]}" in extensions:
+    if f.endswith(".py") and f"cogs.{f[:-3]}" not in extensions:
         extensions.append("cogs." + f[:-3])
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--development", help="Run the bot in the development state", action="store_true")
+parser.add_argument("-d", "--development", help = "Run the bot in the development state", action = "store_true")
 args = parser.parse_args()
+
 
 class Blist(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix="b?" if args.development else "b!",
-            case_insensitive=True,
-            max_messages=500,
-            reconnect=True,
-            help_command=help_command.MinimalEmbedPaginatorHelp(),
-            intents=discord.Intents(members=True, emojis=True, messages=True, reactions=True, guilds=True)
+            command_prefix = ["b?", "B?"] if args.development else ["b!", "B!"],
+            case_insensitive = True,
+            max_messages = 500,
+            reconnect = True,
+            help_command = help_command.MinimalEmbedPaginatorHelp(),
+            intents = discord.Intents(members = True, emojis = True, messages = True, reactions = True, guilds = True)
         )
 
     async def on_ready(self):
-        approved_bots = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
-        queued_bots = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
+        approved_bots = await self.pool.fetchval(
+            "SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
         users = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_user")
         print("---------------------")
         print(f"{self.user} is ready")
@@ -44,10 +45,6 @@ class Blist(commands.Bot):
         print(f"Watching {users} users")
         print("---------------------")
         self.uptime = datetime.datetime.utcnow().strftime("%c")
-        options = (f"with {queued_bots} bots in the queue", f"with {approved_bots} approved bots", f"with {users} total users")
-        while True:
-            await self.change_presence(activity=discord.Game(name=random.choice(options)))
-            await asyncio.sleep(60)
 
     async def on_connect(self):
         if not hasattr(self, "pool"):
