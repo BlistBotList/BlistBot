@@ -21,7 +21,7 @@ class Admin(commands.Cog):
         levels = ["bug_hunter", "developer", "administrator", "staff"]
         if level.lower() not in levels:
             await ctx.send(f"That's not a valid option, valid options are {', '.join(levels)}")
-        await ctx.bot.pool.execute(f"UPDATE main_site_user SET {level} = True WHERE userid = $1", member.id)
+        await self.bot.pool.execute(f"UPDATE main_site_user SET {level} = True WHERE userid = $1", member.id)
         await ctx.send(f"Added {member} as {level}")
 
     @commands.has_permissions(administrator = True)
@@ -30,7 +30,7 @@ class Admin(commands.Cog):
         levels = ["bug_hunter", "developer", "administrator", "staff"]
         if level.lower() not in levels:
             await ctx.send(f"That's not a valid option, valid options are {', '.join(levels)}")
-        await ctx.bot.pool.execute(f"UPDATE main_site_user SET {level} = False WHERE userid = $1", member.id)
+        await self.bot.pool.execute(f"UPDATE main_site_user SET {level} = False WHERE userid = $1", member.id)
         await ctx.send(f"Removed {member} from {level}")
 
     @checks.main_guild_only()

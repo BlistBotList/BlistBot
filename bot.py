@@ -22,7 +22,7 @@ args = parser.parse_args()
 class Blist(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix = "b?" if args.development else "b!",
+            command_prefix = ["b?", "B?"] if args.development else ["b!", "B!"],
             case_insensitive = True,
             max_messages = 500,
             reconnect = True,
