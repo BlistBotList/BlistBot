@@ -1,10 +1,9 @@
-from typing import Union
-
 import discord
 import googletrans
 from discord.ext import commands
-
 from . import checks  # pylint: disable=relative-beyond-top-level
+from typing import Union
+
 
 
 class Staff(commands.Cog):

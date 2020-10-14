@@ -4,11 +4,11 @@ import os
 import re
 
 import aiohttp
+from . import config # pylint: disable=relative-beyond-top-level
 import discord
 from discord.ext import commands
 
 from . import checks  # pylint: disable=relative-beyond-top-level
-from . import config  # pylint: disable=relative-beyond-top-level
 
 
 class Admin(commands.Cog):
@@ -277,8 +277,8 @@ class Admin(commands.Cog):
 
     @checks.main_guild_only()
     @commands.has_permissions(administrator = True)
-    @commands.command(name = "votesreset")
-    async def votes_reset(self, ctx, *, message = None):
+    @commands.command()
+    async def votesreset(self, ctx, *, message = None):
         top_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot ORDER BY monthly_votes DESC LIMIT 5")
         embed = discord.Embed(title = f"{datetime.datetime.utcnow().strftime('%B')} top 5 voted bots!",
                               color = discord.Color.blurple())
