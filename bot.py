@@ -1,12 +1,15 @@
 import argparse
+import asyncio
 import datetime
 import os
+import random
 
 import asyncpg
-import config
 import discord
 from discord.ext import commands
 from jishaku import help_command
+
+import config
 
 extensions = ["jishaku"]
 
