@@ -150,8 +150,8 @@ class Events(commands.Cog):
     async def change_status(self):
         approved_bots = await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
-        users = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_user")
-        queued_bots = await self.pool.fetchval(
+        users = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_user")
+        queued_bots = await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
         options = [
             f"with {queued_bots} bots in the queue",
