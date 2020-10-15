@@ -46,7 +46,7 @@ class Admin(commands.Cog):
             bot.id
         )
         if not is_waiting:
-            await ctx.send("This bot is not awaiting certification"
+            await ctx.send("This bot is not awaiting certification")
             return
 
         await self.bot.pool.execute(
