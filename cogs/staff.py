@@ -13,7 +13,7 @@ class Staff(commands.Cog):
         self.main_guild = self.bot.get_guild(716445624517656727)
 
     @commands.has_permissions(kick_members = True)
-    @commands.group(invoke_without_command = True)
+    @commands.group(invoke_without_command = True, aliases=["q"])
     async def queue(self, ctx):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = False AND denied = False")
         if not bots:
