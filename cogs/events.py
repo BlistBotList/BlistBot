@@ -132,6 +132,8 @@ class Events(commands.Cog):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")
         channel = self.main_guild.get_channel(716727091818790952)
         for bot in bots:
+            if bot['id'] == 765175524594548737:
+                return
             b = self.main_guild.get_member(bot['id'])
             if not b:
                 embed = discord.Embed(
