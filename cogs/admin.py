@@ -184,7 +184,6 @@ class Admin(commands.Cog):
             ],
             "Moderators": [
                 f"{ctx.guild.get_member(150665783268212746).mention} :flag_nl:",
-                f"{ctx.guild.get_member(602656646979911738).mention} :flag_eg:",
                 f"{ctx.guild.get_member(296044953576931328).mention} :flag_au:"
             ]
         }
