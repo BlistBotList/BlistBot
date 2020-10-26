@@ -105,7 +105,6 @@ class Staff(commands.Cog):
         bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot")
         await self.bot.change_presence(activity = discord.Game(name = f"Watching {bots} bots"))
 
-    @checks.verification_guild_only()
     @commands.has_permissions(kick_members = True)
     @commands.command()
     async def deny(self, ctx, bot: discord.Member, *, reason):
