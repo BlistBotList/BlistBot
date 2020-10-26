@@ -107,7 +107,7 @@ class Staff(commands.Cog):
 
     @commands.has_permissions(kick_members = True)
     @commands.command()
-    async def deny(self, ctx, bot: discord.Member, *, reason):
+    async def deny(self, ctx, bot: Union[discord.Member, discord.User], *, reason):
         if not bot.bot:
             await ctx.send("This user is not a bot")
             return
