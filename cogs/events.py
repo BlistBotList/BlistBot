@@ -47,11 +47,10 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.channel.id == 743127622053003364 and message.attachments or re.findall(r"<(?P<animated>a?):(?P<name>[a-zA-Z0-9_]{2,32}):(?P<id>[0-9]{18,22})>", message.content):
-            await message.add_reaction("✔")
-            await message.add_reaction("❌")
-        else:
-            return
+        if message.channel.id == 743127622053003364:
+            if message.attachments or re.findall(r"<(?P<animated>a?):(?P<name>[a-zA-Z0-9_]{2,32}):(?P<id>[0-9]{18,22})>", message.content):
+                await message.add_reaction("✔")
+                await message.add_reaction("❌")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
