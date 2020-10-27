@@ -12,6 +12,7 @@ class Events(commands.Cog):
         self.verification_guild = self.bot.get_guild(734527161289015337)
         self.check_join.start()  # pylint: disable=no-member
         self.change_status.start()
+        self.update_statuses.start()
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -150,6 +151,16 @@ class Events(commands.Cog):
                         discord.utils.oauth_url(bot['id'], guild = self.main_guild)) + "&disable_guild_select=true"
                 )
                 await channel.send(embed = embed)
+
+    @tasks.loop(minutes = 60) # Minutes = 60 is better than Hours = 1!! This is for you @A Discord User @Soheab_
+    async def update_statuses(self):
+        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")
+        for bot in bots:
+            member_instance = self.main_guild.get_member(bot["id"])
+            if member_instance is None:
+                # Shouldn't be, but just in case
+                pass
+            await self.bot.pool.execute("UPDATE main_site_bot SET status = $1 WHERE id = $2", str(member_instance.status), bot["id"])
 
     @tasks.loop(minutes = 1)
     async def change_status(self):

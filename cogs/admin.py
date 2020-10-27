@@ -228,7 +228,8 @@ class Admin(commands.Cog):
             "Bots must not break server rules.",
             "May not randomly respond to messages or commands not invoked without the specified prefix.",
             "Bots cannot have NSFW avatars.",
-            "Must have a clean description, not junk filled."
+            "Must have a clean description, not junk filled.",
+            "Bot owner must be in/remain in server for the bot to be listed"
         ]
 
         server_rules_embed = discord.Embed(title = "Blist Server Rules", color = discord.Color.blurple(),
