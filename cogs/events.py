@@ -120,6 +120,9 @@ class Events(commands.Cog):
                 x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", member.id)
                 if x:
                     for user in x:
+                        if user["denied"]:
+                            await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", user["id"])
+                            return
                         bots = " \n".join([f"{user['name']} (<@{user['id']}>)"])
                         listed_bots = f"{len(x)} bot listed:" if len(x) == 1 else f"{len(x)} bots listed:"
                         embed = discord.Embed(
