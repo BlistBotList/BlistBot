@@ -93,8 +93,8 @@ class Admin(commands.Cog):
     async def purge_cache(self, ctx):
         json = {"purge_everything": True}
         headers = {
-            "X-Auth-Key": config.github_token,
-            "X-Auth-Email": config.github_email, "Content-Type": "application/json"}
+            "X-Auth-Key": config.cloudflare_token,
+            "X-Auth-Email": config.cloudflare_email, "Content-Type": "application/json"}
         async with aiohttp.ClientSession().post(
                 url = "https://api.cloudflare.com/client/v4/zones/47697d23bd0d042fd63573cc9030177d/purge_cache/",
                 headers = headers, json = json) as x:
