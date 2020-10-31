@@ -45,6 +45,8 @@ class Blist(commands.Bot):
         print(f"Watching {users} users")
         print("---------------------")
         self.uptime = datetime.datetime.utcnow().strftime("%c")
+        with open("schema.sql", "r") as schema:
+            await self.mod_pool.execute(schema.read())
 
     async def on_connect(self):
         if not hasattr(self, "pool"):
@@ -52,6 +54,12 @@ class Blist(commands.Bot):
                 self.pool = await asyncpg.create_pool(config.db_url)
             except Exception as error:
                 print("There was a problem connecting to the database")
+                print(f"\n{error}")
+        if not hasattr(self, "mod_pool"):
+            try:
+                self.mod_pool = await asyncpg.create_pool(config.mod_db_url)
+            except Exception as error:
+                print("There was a problem connecting to the mod database")
                 print(f"\n{error}")
 
         extensions.remove("cogs.checks")
