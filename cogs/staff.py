@@ -79,7 +79,7 @@ class Staff(commands.Cog):
         invite = str(discord.utils.oauth_url(bot.id, guild = self.main_guild)) + "&disable_guild_select=true"
         embed = discord.Embed(
             title = f"Approved {bot.name}",
-            description = f"[Invite!]({invite})\n\nThere are still {queued_bots} in the queue.",
+            description = f"[Invite!]({invite})\n\nThere are {queued_bots} bot(s) in the queue.",
             color = discord.Color.blurple()
         )
         await self.verification_guild.get_channel(763183376311517215).send(content = ctx.author.mention, embed = embed)

@@ -186,7 +186,7 @@ class Admin(commands.Cog):
                 f"{ctx.guild.get_member(150665783268212746).mention} :flag_nl:",
                 f"{ctx.guild.get_member(296044953576931328).mention} :flag_au:",
                 f"{ctx.guild.get_member(664242899105480715).mention} :flag_au:",
-                f"{ctx.guild.get_member(691994304885030972).mention} ::flag_gb:",
+                f"{ctx.guild.get_member(691994304885030972).mention} :flag_gb:",
                 
             ]
         }
