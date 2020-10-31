@@ -1,0 +1,5 @@
+bot_token = ""
+bot_token_dev = ""
+db_url = ""
+cloudflare_email = ""
+cloudflare_token = ""
