@@ -5,7 +5,6 @@ from discord.ext import commands
 class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.main_guild = self.bot.get_guild(716445624517656727)
 
     @commands.command()
     async def stats(self, ctx):
@@ -72,7 +71,7 @@ class General(commands.Cog):
             title = f"{bot.name}#{bot.discriminator}",
             description =
             f"""
-            >>> Owner: ``{self.main_guild.get_member(b['main_owner'])}``
+            >>> Owner: ``{self.bot.main_guild.get_member(b['main_owner'])}``
             Library: ``{b['library']}``
             Prefix: ``{b['prefix']}``
             Tags: ``{tags}``
@@ -118,7 +117,7 @@ class General(commands.Cog):
 
         listed_bots = []
         for x in bots:
-            listed_bots.append(f"**{x['name']}** ({self.main_guild.get_member(x['id']).mention})")
+            listed_bots.append(f"**{x['name']}** ({self.bot.main_guild.get_member(x['id']).mention})")
 
         embed = discord.Embed(
             title = f"{member.name}'s bots",

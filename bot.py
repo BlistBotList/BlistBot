@@ -49,6 +49,8 @@ class Blist(commands.Bot):
             await self.mod_pool.execute(schema.read())
 
     async def on_connect(self):
+        self.main_guild = self.get_guild(716445624517656727)
+        self.verification_guild = self.get_guild(734527161289015337)
         if not hasattr(self, "pool"):
             try:
                 self.pool = await asyncpg.create_pool(config.db_url)
