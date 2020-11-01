@@ -31,6 +31,7 @@ class Mod(commands.Cog):
             return await ctx.send("You cannot ban someone higher than you!")
 
         await self.do_case(ctx, member, reason, "Ban")
+        await member.ban(reason=reason)
 
     @commands.has_permissions(kick_members=True)
     @commands.command()
@@ -42,6 +43,7 @@ class Mod(commands.Cog):
             return await ctx.send(f"You cannot kick someone higher than you!")
 
         await self.do_case(ctx, member, reason, "Kick")
+        await member.kick(reason=reason)
 
     @commands.has_permissions(manage_messages=True)
     @commands.command()
