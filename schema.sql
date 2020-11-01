@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS action (
 );
 
 CREATE TABLE IF NOT EXISTS mutes (
+    modid BIGINT NOT NULL,
     userid BIGINT NOT NULL,
     time TIMESTAMP NOT NULL,
     expire TIMESTAMP NOT NULL,

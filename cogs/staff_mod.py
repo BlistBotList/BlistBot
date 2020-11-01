@@ -1,25 +1,55 @@
-from datetime import datetime
-from discord import message
+from datetime import time
 from discord.ext import commands
 import discord
+import datetime
+import asyncio
+import asyncpg
+from .time import FutureTime
 
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.mod_log = self.bot.main_guild.get_channel(716719009499971685)
+        self._task = bot.loop.create_task(self.dispatch_mutes())
 
-    async def do_case(self, ctx, member: discord.Member, reason, type):
+    async def dispatch_mutes(self):
+        try:
+            while not self.bot.is_closed():
+                seven_days = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+                mutes = await self.bot.mod_pool.fetch("SELECT * FROM mutes WHERE expire < $1 ORDER BY expire", seven_days)
+                for mute in mutes:
+                    if mute['expire'] <= datetime.datetime.utcnow():
+                        await self.call_mute(mute)
+        except asyncio.CancelledError:
+            raise
+        except (OSError, discord.ConnectionClosed, asyncpg.PostgresConnectionError):
+            self._task.cancel()
+            self._task = self.bot.loop.create_task(self.dispatch_mutes())
+
+    async def call_mute(self, mute):
+        member = self.bot.main_guild.get_member(mute["userid"])
+        mute_role = self.bot.main_guild.get_role(725899725152190525)
+        await member.remove_roles(mute_role, reason="Unmuted")
+        await self.bot.mod_pool.execute("DELETE FROM mutes WHERE id = $1", mute["id"])
+        await self.do_case(self.bot.main_guild.get_member(mute["modid"]), member, "Automatic Un-mute", "Un-Mute")
+
+    async def do_case(self, mod: discord.Member, member: discord.Member, reason, type, time=None):
         last_case_number = await self.bot.mod_pool.fetchval("SELECT COUNT(*) FROM action")
+        if time:
+            string = f"**__Length:__** ``{time.dt}``"
+        else:
+            string = ""
         embed = discord.Embed(title=type.title(), color=discord.Color.blurple(), description=f"""
 **__Victim:__** {member} ({member.id})
 **__Reason:__** ``{reason or f'No reason was set. Do b!reason {last_case_number + 1} <reason> to do so.'}``
+{string}
 """)
-        embed.set_author(name=ctx.author, icon_url=(ctx.author.avatar_url))
+        embed.set_author(name=mod, icon_url=(mod.avatar_url))
         embed.set_footer(text=f"Case #{last_case_number + 1}")
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = datetime.datetime.utcnow()
         message = await self.mod_log.send(embed=embed)
-        await self.bot.mod_pool.execute("INSERT INTO action VALUES($1, $2, $3, $4, $5, $6)", member.id, ctx.author.id, reason or 'None', message.id, type, datetime.utcnow())
-        #userid, modid, reason, messageid, type, time, id
+        await self.bot.mod_pool.execute("INSERT INTO action VALUES($1, $2, $3, $4, $5, $6)", member.id, mod.id, reason or 'None', message.id, type, datetime.datetime.utcnow())
+        return last_case_number + 1
 
     @commands.has_permissions(ban_members=True)
     @commands.command()
@@ -30,8 +60,37 @@ class Mod(commands.Cog):
         if not ctx.author.top_role > member.top_role:
             return await ctx.send("You cannot ban someone higher than you!")
 
-        await self.do_case(ctx, member, reason, "Ban")
+        await self.do_case(ctx.author, member, reason, "Ban")
         await member.ban(reason=reason)
+
+    @commands.has_permissions(kick_members=True)
+    @commands.command()
+    async def mute(self, ctx, member: discord.Member, length: FutureTime, reason):
+        if not ctx.author.top_role > member.top_role:
+            return await ctx.send(f"You cannot kick someone higher than you!")
+
+        is_muted = await self.bot.mod_pool.fetch("SELECT * FROM mutes WHERE userid = $1", member.id)
+        mute_role = self.bot.main_guild.get_role(725899725152190525)
+        if mute_role in member.roles or is_muted != []:
+            return await ctx.send(f"This user is already muted!")        
+
+        await member.add_roles(mute_role, reason=reason)
+        case_number = await self.do_case(ctx.author, member, reason, "Mute", time=length)
+        await self.bot.mod_pool.execute("INSERT INTO mutes VALUES($1, $2, $3, $4, $5)", ctx.author.id, member.id, datetime.datetime.utcnow(), length.dt, case_number)
+
+    @commands.command()
+    async def unmute(self, ctx, member: discord.Member, reason=None):
+        if not ctx.author.top_role > member.top_role:
+            return await ctx.send(f"You cannot un-mute someone higher than you!")
+
+        is_muted = await self.bot.mod_pool.fetch("SELECT * FROM mutes WHERE userid = $1", member.id)
+        mute_role = self.bot.main_guild.get_role(725899725152190525)
+        if mute_role not in member.roles or is_muted == []:
+            return await ctx.send(f"This user is not muted!")
+
+        await self.bot.mod_pool.execute("DELETE FROM mutes WHERE userid = $1", member.id)
+        await member.remove_roles(mute_role, reason=reason)
+        await self.do_case(ctx.author, member, reason, "Un-Mute")
 
     @commands.has_permissions(kick_members=True)
     @commands.command()
@@ -42,7 +101,7 @@ class Mod(commands.Cog):
         if not ctx.author.top_role > member.top_role:
             return await ctx.send(f"You cannot kick someone higher than you!")
 
-        await self.do_case(ctx, member, reason, "Kick")
+        await self.do_case(ctx.author, member, reason, "Kick")
         await member.kick(reason=reason)
 
     @commands.has_permissions(manage_messages=True)
@@ -54,7 +113,7 @@ class Mod(commands.Cog):
         if not ctx.author.top_role > member.top_role:
             return await ctx.send(f"You cannot warn someone higher than you!")
 
-        await self.do_case(ctx, member, reason, "Warn")
+        await self.do_case(ctx.author, member, reason, "Warn")
 
     @commands.command()
     async def purge(self, ctx, amount: int):
