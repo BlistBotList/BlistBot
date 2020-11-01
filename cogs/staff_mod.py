@@ -6,7 +6,7 @@ import discord
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.mod_log = self.bot.main_guild.get_channel(716717997510885477)
+        self.mod_log = self.bot.main_guild.get_channel(716719009499971685)
 
     async def do_case(self, ctx, member: discord.Member, reason, type):
         last_case_number = await self.bot.mod_pool.fetchval("SELECT COUNT(*) FROM action")
