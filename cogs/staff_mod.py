@@ -82,6 +82,7 @@ class Mod(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.has_permissions(kick_members=True)
     async def reason(self, ctx, number: int, *, reason):
         info = await self.bot.mod_pool.fetch("SELECT * FROM action WHERE id = $1", number)
         if info == []:
