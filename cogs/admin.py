@@ -173,21 +173,20 @@ class Admin(commands.Cog):
     async def staff(self, ctx):
         all_staff = {
             "Senior Administrators": [
-                f"{ctx.guild.get_member(679118121943957504).mention} :flag_us:"
+                f"{ctx.guild.get_member(679118121943957504).mention} :flag_us:"  # idk
             ],
-            "Administrators": [
-                f"{ctx.guild.get_member(712737377524777001).mention} :flag_us:"
+            "Website Administrators": [
+                f"{ctx.guild.get_member(712737377524777001).mention} :flag_us:"  # ADU
             ],
-            "Senior Moderators": [
-                f"{ctx.guild.get_member(482536364714491926).mention} :flag_in:",
-                f"{ctx.guild.get_member(670684162113667092).mention} :flag_se:"
+            "Senior Website Moderators": [
+                f"{ctx.guild.get_member(670684162113667092).mention} :flag_se:",  # Baby Kultz
+                f"{ctx.guild.get_member(150665783268212746).mention} :flag_nl:",  # Soheab
             ],
-            "Moderators": [
-                f"{ctx.guild.get_member(150665783268212746).mention} :flag_nl:",
-                f"{ctx.guild.get_member(296044953576931328).mention} :flag_au:",
-                f"{ctx.guild.get_member(664242899105480715).mention} :flag_au:",
-                f"{ctx.guild.get_member(691994304885030972).mention} :flag_gb:",
-                
+            "Website Moderators": [
+                f"{ctx.guild.get_member(296044953576931328).mention} :flag_au:",  # ThatTonybo
+                f"{ctx.guild.get_member(664242899105480715).mention} :flag_au:",  # Thunder
+                f"{ctx.guild.get_member(691994304885030972).mention} :flag_gb:",  # Dylster
+                f"{ctx.guild.get_member(259649217255964672).mention} :flag_gb:",  # Jack Glenn
             ]
         }
         embed = discord.Embed(color = discord.Color.blurple(), title = "Staff")
