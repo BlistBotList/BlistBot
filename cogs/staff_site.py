@@ -146,12 +146,12 @@ class Staff(commands.Cog):
             return
 
         bots = await self.bot.pool.fetchrow(
-            "SELECT main_owner, name, certified FROM main_site_bot WHERE approved = True AND id = $1", bot_user.id)
+            "SELECT main_owner, name, certified FROM main_site_bot WHERE approved = True AND id = $1", bot_user.id if bot_user else bot)
         if not bots:
             await ctx.send("This bot is not on the list")
             return
 
-        await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", bot_user.id)
+        await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", bot_user.id if bot_user else bot)
 
         embed = discord.Embed(description = f"Deleted {bots['name']}", color = discord.Color.red())
         await ctx.send(embed = embed)

@@ -78,6 +78,7 @@ class Mod(commands.Cog):
         case_number = await self.do_case(ctx.author, member, reason, "Mute", time=length)
         await self.bot.mod_pool.execute("INSERT INTO mutes VALUES($1, $2, $3, $4, $5)", ctx.author.id, member.id, datetime.datetime.utcnow(), length.dt, case_number)
 
+    @commands.has_permissions(kick_members=True)
     @commands.command()
     async def unmute(self, ctx, member: discord.Member, reason=None):
         if not ctx.author.top_role > member.top_role:
@@ -115,12 +116,14 @@ class Mod(commands.Cog):
 
         await self.do_case(ctx.author, member, reason, "Warn")
 
+    @commands.has_permissions(manage_messages=True)
     @commands.command()
     async def purge(self, ctx, amount: int):
         if amount < 1:
             return await ctx.send("Cannot purge that amount of messages!")
         await ctx.channel.purge(limit=amount + 1)
 
+    @commands.has_permissions(manage_messages=True)
     @commands.command()
     async def case(self, ctx, number: int):
         info = await self.bot.mod_pool.fetch("SELECT * FROM action WHERE id = $1", number)
@@ -140,6 +143,7 @@ class Mod(commands.Cog):
 """)
         await ctx.send(embed=embed)
 
+    @commands.has_permissions(manage_messages=True)
     @commands.command()
     async def reason(self, ctx, number: int, *, reason):
         info = await self.bot.mod_pool.fetch("SELECT * FROM action WHERE id = $1", number)
@@ -164,6 +168,19 @@ class Mod(commands.Cog):
 
         message = await self.mod_log.fetch_message(info['messageid'])
         await message.edit(embed=embed)
+
+    @commands.command()
+    async def common_prefix(self, ctx, member: discord.Member):
+        if not member.bot:
+            return await ctx.send("This command can only be used on bots!")
+
+        role = ctx.guild.get_role(764686546179325972)
+        if role in member.roles:
+            await member.remove_roles(role)
+            return await ctx.send(f"Removed the common prefix role from {member}")
+        else:
+            await member.add_roles(role)
+            return await ctx.send(f"Added the common prefix role to {member}")
 
 def setup(bot):
     bot.add_cog(Mod(bot))
