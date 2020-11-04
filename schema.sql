@@ -15,3 +15,11 @@ CREATE TABLE IF NOT EXISTS mutes (
     expire TIMESTAMP NOT NULL,
     id BIGINT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS staff (
+    userid BIGINT NOT NULL,
+    joinedat TIMESTAMP NOT NULL,
+    approved BIGINT NOT NULL DEFAULT 0,
+    country_code VARCHAR(5) NOT NULL DEFAULT '',
+    rank VARCHAR(25) NOT NULL DEFAULT ''
+);

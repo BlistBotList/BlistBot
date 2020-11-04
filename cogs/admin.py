@@ -7,6 +7,7 @@ import aiohttp
 from . import config # pylint: disable=relative-beyond-top-level
 import discord
 from discord.ext import commands
+import country_converter as coco
 
 from . import checks  # pylint: disable=relative-beyond-top-level
 
@@ -14,6 +15,40 @@ from . import checks  # pylint: disable=relative-beyond-top-level
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.has_permissions(administrator=True)
+    @commands.command()
+    async def set_country(self, ctx, member: discord.Member, *, country):
+        if member.bot:
+            return await ctx.send("Shut Up")
+
+        iso2 = coco.convert(names=country, to='ISO2')
+        if iso2 == "not found":
+            return await ctx.send("This is not a valid country")
+
+        query = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
+        if query == []:
+            return await ctx.send("This user is not in the database")
+
+        await self.bot.mod_pool.execute("UPDATE staff SET country_code = $1 WHERE userid = $2", iso2, member.id)
+        await ctx.send("Done")
+
+    @commands.has_permissions(administrator=True)
+    @commands.command()
+    async def set_rank(self, ctx, member: discord.Member, *, rank):
+        if member.bot:
+            return await ctx.send("Shut Up")
+
+        ranks = ["Senior Administrator", "Administrator", "Senior Website Moderator", "Website Moderator"]
+        if rank not in ranks:
+            return await ctx.send(f"{rank} is not a valid rank")
+
+        query = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
+        if query == []:
+            return await ctx.send("This user is not in the database")
+
+        await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", rank, member.id)
+        await ctx.send("Done")
 
     @commands.has_permissions(administrator = True)
     @commands.command()
@@ -170,7 +205,7 @@ class Admin(commands.Cog):
     @checks.main_guild_only()
     @commands.has_permissions(administrator = True)
     @commands.command()
-    async def staff(self, ctx):
+    async def staff_embed(self, ctx):
         all_staff = {
             "Senior Administrators": [
                 f"{ctx.guild.get_member(679118121943957504).mention} :flag_us:"

@@ -2,7 +2,7 @@ import random
 import re
 import discord
 from discord.ext import commands, tasks
-
+import datetime
 
 class Events(commands.Cog):
     def __init__(self, bot):
@@ -96,6 +96,15 @@ class Events(commands.Cog):
             embed.set_thumbnail(url = member.avatar_url)
             message = await channel.send(embed = embed)
             await message.pin()
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        role = self.bot.main_guild.get_role(716713561233031239)
+        if role not in before.roles and role in after.roles:
+            await self.bot.mod_pool.execute("INSERT INTO staff VALUES($1, $2)", before.id, datetime.datetime.utcnow())
+
+        if role in before.roles and role not in after.roles:
+            await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", before.id)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):

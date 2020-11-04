@@ -1,3 +1,4 @@
 config.py
 cogs/config.py
 __pycache__
+.vscode

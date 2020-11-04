@@ -5,7 +5,6 @@ from . import checks  # pylint: disable=relative-beyond-top-level
 from typing import Union
 
 
-
 class Staff(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -71,6 +70,7 @@ class Staff(commands.Cog):
 
         await self.bot.pool.execute("UPDATE main_site_user SET developer = True WHERE userid = $1", bots)
         await self.bot.pool.execute("UPDATE main_site_bot SET approved = True WHERE id = $1", bot.id)
+        await self.bot.mod_pool.execute("UPDATE staff SET approved = approved + 1 WHERE id = $1", ctx.author.id)
 
         queued_bots = await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
@@ -198,6 +198,24 @@ class Staff(commands.Cog):
         embed.add_field(name = f"{src} ({translated.src})", value = translated.origin.title(), inline = False)
         embed.add_field(name = f"{dest} ({translated.dest})", value = translated.text.title(), inline = False)
         await ctx.send(embed = embed)
+
+    @commands.command()
+    async def staff(self, ctx, member: discord.Member=None):
+        if not member:
+            member = ctx.author
+
+        query = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
+        if query == []:
+            return await ctx.send("This user is not staff!")
+        query = query[0]
+        embed = discord.Embed(color=discord.Color.blurple(), description = f"""
+>>> Staff Since: ``{query['joinedat'].strftime("%D")}``
+Bots Approved: ``{query['approved']}``
+Country: ``{query['country_code'] or 'Not Specified'}``
+Rank: ``{query['rank'] or 'Not Specified'}``
+""")
+        embed.set_author(name=member, icon_url=str(member.avatar_url))
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
