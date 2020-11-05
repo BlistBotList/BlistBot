@@ -93,6 +93,7 @@ class Events(commands.Cog):
                 """
             )
             embed.add_field(name = "Short Description", value = bot[0]['short_description'], inline = False)
+            embed.add_field(name = "Notes", value = bot[0]['notes'], inline = False)
             embed.set_thumbnail(url = member.avatar_url)
             message = await channel.send(embed = embed)
             await message.pin()
