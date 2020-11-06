@@ -70,7 +70,7 @@ class Staff(commands.Cog):
 
         await self.bot.pool.execute("UPDATE main_site_user SET developer = True WHERE userid = $1", bots)
         await self.bot.pool.execute("UPDATE main_site_bot SET approved = True WHERE id = $1", bot.id)
-        await self.bot.mod_pool.execute("UPDATE staff SET approved = approved + 1 WHERE id = $1", ctx.author.id)
+        await self.bot.mod_pool.execute("UPDATE staff SET approved = approved + 1 WHERE userid = $1", ctx.author.id)
 
         queued_bots = await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
