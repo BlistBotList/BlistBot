@@ -29,7 +29,7 @@ class Blist(commands.Bot):
             case_insensitive = True,
             max_messages = 500,
             reconnect = True,
-            help_command = CustomHelpCommand,
+            help_command = CustomHelpCommand(command_attrs = {'hidden': True}),
             intents = discord.Intents(members = True, emojis = True, messages = True, reactions = True, guilds = True, presences=True)
         )
 

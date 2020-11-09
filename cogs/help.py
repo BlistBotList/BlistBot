@@ -51,7 +51,6 @@ class Help(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.bot.help_command = CustomHelpCommand(command_attrs = {'hidden': True})
         self.old_help_command = MinimalEmbedPaginatorHelp(command_attrs = {'hidden': True})
 
     def cog_unload(self):
