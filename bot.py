@@ -8,6 +8,7 @@ import asyncpg
 import discord
 from discord.ext import commands
 from jishaku import help_command
+from cogs.help import CustomHelpCommand
 
 import config
 
@@ -29,7 +30,7 @@ class Blist(commands.Bot):
             case_insensitive = True,
             max_messages = 500,
             reconnect = True,
-            help_command = help_command.MinimalEmbedPaginatorHelp(),
+            help_command = CustomHelpCommand,
             intents = discord.Intents(members = True, emojis = True, messages = True, reactions = True, guilds = True, presences=True)
         )
 

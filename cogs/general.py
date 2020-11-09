@@ -36,7 +36,7 @@ class General(commands.Cog):
         await ctx.send(embed = embed)
 
     @commands.command()
-    async def top(self, ctx):
+    async d top(self, ctx):
         """Shows leaderboard information"""
         bots = await self.bot.pool.fetch(
             "SELECT * FROM main_site_bot WHERE approved = True ORDER BY total_votes DESC LIMIT 5")

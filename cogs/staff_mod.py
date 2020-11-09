@@ -43,7 +43,7 @@ class Mod(commands.Cog):
 **__Reason:__** ``{reason or f'No reason was set. Do b!reason {last_case_number + 1} <reason> to do so.'}``
 {string}
 """)
-        embed.set_author(name=mod, icon_url=(mod.avatar_url))
+        embed.set_author(name=str(mod), icon_url=mod.avatar_url)
         embed.set_footer(text=f"Case #{last_case_number + 1}")
         embed.timestamp = datetime.datetime.utcnow()
         message = await self.mod_log.send(embed=embed)
@@ -126,7 +126,7 @@ class Mod(commands.Cog):
     @commands.command()
     async def case(self, ctx, number: int):
         info = await self.bot.mod_pool.fetch("SELECT * FROM action WHERE id = $1", number)
-        if info == []:
+        if not info:
             return await ctx.send(f"Case {number} does not exist!")
         else:
             info = info[0]
@@ -146,7 +146,7 @@ class Mod(commands.Cog):
     @commands.command()
     async def reason(self, ctx, number: int, *, reason):
         info = await self.bot.mod_pool.fetch("SELECT * FROM action WHERE id = $1", number)
-        if info == []:
+        if not info:
             return await ctx.send(f"Case {number} does not exist!")
         else:
             info = info[0]

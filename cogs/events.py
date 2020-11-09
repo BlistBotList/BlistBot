@@ -74,23 +74,21 @@ class Events(commands.Cog):
             embed = discord.Embed(
                 title = str(member),
                 color = discord.Color.blurple(),
-                description =
-                f"""
-                >>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
-                Prefix: ``{bot[0]['prefix']}``
-                Tags: ``{', '.join(list(bot[0]['tags']))}``
-                Added: ``{bot[0]['joined'].strftime('%D')}``
-                """
+                description = f"""
+>>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
+Prefix: ``{bot[0]['prefix']}``
+Tags: ``{', '.join(list(bot[0]['tags']))}``
+Added: ``{bot[0]['joined'].strftime('%D')}``
+"""
             )
             embed.add_field(
                 name = "**Links**",
-                value =
-                f"""
-                >>> Privacy Policy: {bot[0]['privacy_policy_url'] or 'None'}
-                Website: {bot[0]['website'] or 'None'}
-                Invite: {bot[0]['invite_url'] or 'Default'}
-                Blist Link: https://blist.xyz/bot/{member.id}/
-                """
+                value = f"""
+>>> Privacy Policy: {bot[0]['privacy_policy_url'] or 'None'}
+Website: {bot[0]['website'] or 'None'}
+Invite: {bot[0]['invite_url'] or 'Default'}
+Blist Link: https://blist.xyz/bot/{member.id}/
+"""
             )
             embed.add_field(name = "Short Description", value = bot[0]['short_description'], inline = False)
             embed.add_field(name = "Notes", value = bot[0]['notes'], inline = False)
