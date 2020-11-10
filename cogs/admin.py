@@ -27,7 +27,7 @@ class Admin(commands.Cog):
             return await ctx.send("This is not a valid country")
 
         query = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
-        if query == []:
+        if not query:
             return await ctx.send("This user is not in the database")
 
         await self.bot.mod_pool.execute("UPDATE staff SET country_code = $1 WHERE userid = $2", iso2, member.id)
@@ -44,7 +44,7 @@ class Admin(commands.Cog):
             return await ctx.send(f"{rank} is not a valid rank")
 
         query = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
-        if query == []:
+        if not query:
             return await ctx.send("This user is not in the database")
 
         await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", rank, member.id)
@@ -280,25 +280,23 @@ class Admin(commands.Cog):
             bot_rules_embed.description += f"\n**{num}.** {rule}"
         links_embed = discord.Embed(
             title = "Links", color = discord.Color.blurple(),
-            description =
-            """
-            [Site](https://blist.xyz)
-            [API](https://blist.xyz/api/)
-            [API Docs](https://docs.blist.xyz/)
-            [Certification Info](https://blist.xyz/certification/)
-            """
+            description = """
+[Site](https://blist.xyz)
+[API](https://blist.xyz/api/)
+[API Docs](https://docs.blist.xyz/)
+[Certification Info](https://blist.xyz/certification/)
+"""
         )
         faq_embed = discord.Embed(
             title = "FAQ's", color = discord.Color.blurple(),
-            description =
-            """
-            **How did I get here?**
-            When logging in on the website, your grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server.
-            \n**How do I add a bot?**
-            To add a bot, head over the https://blist.xyz/bot/add/.
-            \n**How long does the queue take?**
-            We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
-            """
+            description = """
+**How did I get here?**
+When logging in on the website, your grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server.
+\n**How do I add a bot?**
+To add a bot, head over the https://blist.xyz/bot/add/.
+\n**How long does the queue take?**
+We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
+"""
         )
 
         channel = ctx.guild.get_channel(716717317320605736)

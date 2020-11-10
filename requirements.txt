@@ -1,2 +1,7 @@
 parsedatetime
 country-converter
+jishaku
+discord.py
+googletrans
+parsedatetime
+aiohttp
