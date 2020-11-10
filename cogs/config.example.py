@@ -1,2 +1,2 @@
-github_email = ""
-github_token = ""
+cloudflare_email = ""
+cloudflare_token = ""
