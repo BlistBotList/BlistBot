@@ -123,6 +123,17 @@ class Admin(commands.Cog):
             color = discord.Color.blurple())
         await self.bot.get_channel(716446098859884625).send(embed = em)
 
+    @commands.has_permissions(administrator=True)
+    @commands.command()
+    async def poll(self, ctx, poll, image=None):
+        embed = discord.Embed(title="**New Poll**:", description=poll, color=discord.Color.blurple())
+        if image:
+            embed.set_image(url=image)
+        await ctx.message.delete()
+        msg = await ctx.send(content="<@&750771398636601354>", embed=embed)
+        await msg.add_reaction("✅")
+        await msg.add_reaction("❌")
+
     @commands.is_owner()
     @commands.command()
     async def purge_cache(self, ctx):
