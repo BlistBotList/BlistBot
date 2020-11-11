@@ -3,7 +3,7 @@ import googletrans
 from discord.ext import commands
 from . import checks  # pylint: disable=relative-beyond-top-level
 from typing import Union
-
+from textwrap import dedent as wrap
 
 class Staff(commands.Cog):
     def __init__(self, bot):
@@ -205,15 +205,20 @@ class Staff(commands.Cog):
             member = ctx.author
 
         query = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
-        if query == []:
+        if not query:
             return await ctx.send("This user is not staff!")
         query = query[0]
-        embed = discord.Embed(color=discord.Color.blurple(), description = f"""
->>> Staff Since: ``{query['joinedat'].strftime("%D")}``
-Bots Approved: ``{query['approved']}``
-Country: ``{query['country_code'] or 'Not Specified'}``
-Rank: ``{query['rank'] or 'Not Specified'}``
-""")
+        embed = discord.Embed(
+            color=discord.Color.blurple(),
+            description=wrap(
+                f"""
+                >>> Staff Since: ``{query['joinedat'].strftime("%D")}``
+                Bots Approved: ``{query['approved']}``
+                Country: ``{query['country_code'] or 'Not Specified'}``
+                Rank: ``{query['rank'] or 'Not Specified'}``
+                """
+            )
+        )
         embed.set_author(name=member, icon_url=str(member.avatar_url))
         await ctx.send(embed=embed)
 

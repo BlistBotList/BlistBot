@@ -32,7 +32,7 @@ class CustomHelpCommand(MinimalEmbedPaginatorHelp):
         if commands:
             # U+2022 Middle Dot
             joined = ', '.join(f"`{c.name}`" for c in _commands)
-            self.paginator.add_line(f"**__{heading}__**")
+            self.paginator.add_line(f"> **{heading}**")
             self.paginator.add_line(f"{joined}\n")
 
     def get_opening_note(self):

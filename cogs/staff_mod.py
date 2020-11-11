@@ -3,7 +3,10 @@ import discord
 import datetime
 import asyncio
 import asyncpg
+
+from . import checks
 from .time import FutureTime
+from textwrap import dedent as wrap
 
 class Mod(commands.Cog):
     def __init__(self, bot):
@@ -38,11 +41,16 @@ class Mod(commands.Cog):
             string = f"**__Length:__** ``{time.dt}``"
         else:
             string = ""
-        embed = discord.Embed(title=type.title(), color=discord.Color.blurple(), description=f"""
-**__Victim:__** {member} ({member.id})
-**__Reason:__** ``{reason or f'No reason was set. Do b!reason {last_case_number + 1} <reason> to do so.'}``
-{string}
-""")
+        embed = discord.Embed(
+            title=type.title(), color=discord.Color.blurple(),
+            description=wrap(
+            f"""
+            **__Victim:__** {member} ({member.id})
+            **__Reason:__** ``{reason or f'No reason was set. Do b!reason {last_case_number + 1} <reason> to do so.'}``
+            {string}
+            """
+            )
+        )
         embed.set_author(name=str(mod), icon_url=mod.avatar_url)
         embed.set_footer(text=f"Case #{last_case_number + 1}")
         embed.timestamp = datetime.datetime.utcnow()
@@ -134,12 +142,18 @@ class Mod(commands.Cog):
         target = ctx.guild.get_member(info['userid'])
         mod = ctx.guild.get_member(info['modid'])
 
-        embed = discord.Embed(title=info['type'].title(), color=discord.Color.blurple(), description=f"""
-**__Mod:__** {mod} ({mod.id})
-**__Victim:__** {target} ({target.id})
-**__Reason:__** ``{info['reason']}``
-**__Time:__** ``{info['time'].strftime('%c')}``
-""")
+        embed = discord.Embed(
+            title=info['type'].title(),
+            color=discord.Color.blurple(),
+            description=wrap(
+                f"""
+                **__Mod:__** {mod} ({mod.id})
+                **__Victim:__** {target} ({target.id})
+                **__Reason:__** ``{info['reason']}``
+                **__Time:__** ``{info['time'].strftime('%c')}``
+                """
+            )
+        )
         await ctx.send(embed=embed)
 
     @commands.has_permissions(manage_messages=True)
@@ -157,11 +171,17 @@ class Mod(commands.Cog):
         target = ctx.guild.get_member(info['userid'])
         mod = ctx.guild.get_member(info['modid'])
 
-        embed = discord.Embed(title=info['type'].title(), color=discord.Color.blurple(), description=f"""
-**__Victim:__** {target} ({target.id})
-**__Reason:__** ``{reason}``
-""")
-        embed.set_author(name=mod, icon_url=(mod.avatar_url))
+        embed = discord.Embed(
+            title=info['type'].title(),
+            color=discord.Color.blurple(),
+            description=wrap(
+                f"""
+                **__Victim:__** {target} ({target.id})
+                **__Reason:__** ``{reason}``
+                """
+            )
+        )
+        embed.set_author(name=mod, icon_url= mod.avatar_url)
         embed.set_footer(text=f"Case #{number}")
         embed.timestamp = info["time"]
 
@@ -169,6 +189,7 @@ class Mod(commands.Cog):
         await message.edit(embed=embed)
 
     @commands.command()
+    @checks.main_guild_only()
     async def common_prefix(self, ctx, member: discord.Member):
         if not member.bot:
             return await ctx.send("This command can only be used on bots!")

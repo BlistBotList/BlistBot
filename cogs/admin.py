@@ -4,10 +4,12 @@ import os
 import re
 
 import aiohttp
-from . import config # pylint: disable=relative-beyond-top-level
+import config
+# if ^ doesn't work. from import config # pylint: disable=relative-beyond-top-level
 import discord
 from discord.ext import commands
 import country_converter as coco
+from textwrap import dedent as wrap
 
 from . import checks  # pylint: disable=relative-beyond-top-level
 
@@ -291,23 +293,27 @@ class Admin(commands.Cog):
             bot_rules_embed.description += f"\n**{num}.** {rule}"
         links_embed = discord.Embed(
             title = "Links", color = discord.Color.blurple(),
-            description = """
-[Site](https://blist.xyz)
-[API](https://blist.xyz/api/)
-[API Docs](https://docs.blist.xyz/)
-[Certification Info](https://blist.xyz/certification/)
-"""
+            description = wrap(
+                """
+                [Site](https://blist.xyz)
+                [API](https://blist.xyz/api/)
+                [API Docs](https://docs.blist.xyz/)
+                [Certification Info](https://blist.xyz/certification/)
+                """
+            )
         )
         faq_embed = discord.Embed(
             title = "FAQ's", color = discord.Color.blurple(),
-            description = """
-**How did I get here?**
-When logging in on the website, your grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server.
-\n**How do I add a bot?**
-To add a bot, head over the https://blist.xyz/bot/add/.
-\n**How long does the queue take?**
-We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
-"""
+            description = wrap(
+                """
+                **How did I get here?**
+                When logging in on the website, your grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server.
+                \n**How do I add a bot?**
+                To add a bot, head over the https://blist.xyz/bot/add/.
+                \n**How long does the queue take?**
+                We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
+                """
+            )
         )
 
         channel = ctx.guild.get_channel(716717317320605736)
