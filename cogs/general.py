@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-
+from textwrap import dedent as wrap
 
 class General(commands.Cog):
     def __init__(self, bot):
@@ -20,16 +20,17 @@ class General(commands.Cog):
 
         embed = discord.Embed(
             title = "Blist Stats",
-            description =
-            f"""
-            >>> ``Total Bots:`` {approved_bots + queued_bots}
-            ``Total Approved Bots:`` {approved_bots}
-            ``Total Denied Bots:`` {denied_bots}
-            ``Total Queued Bots:`` {queued_bots}
-            ``Total Users:`` {users}
-            ``Total Votes:`` {votes}
-            ``Bot Ping:`` {self.bot.latency * 1000:.2f}ms
-            """,
+            description = wrap(
+                f"""
+                >>> ``Total Bots:`` {approved_bots + queued_bots}
+                ``Total Approved Bots:`` {approved_bots}
+                ``Total Denied Bots:`` {denied_bots}
+                ``Total Queued Bots:`` {queued_bots}
+                ``Total Users:`` {users}
+                ``Total Votes:`` {votes}
+                ``Bot Ping:`` {self.bot.latency * 1000:.2f}ms
+                """
+            ),
             color = discord.Color.blurple()
         )
         embed.set_thumbnail(url = str(ctx.guild.icon_url))
@@ -38,8 +39,7 @@ class General(commands.Cog):
     @commands.command()
     async def top(self, ctx):
         """Shows leaderboard information"""
-        bots = await self.bot.pool.fetch(
-            "SELECT * FROM main_site_bot WHERE approved = True ORDER BY total_votes DESC LIMIT 5")
+        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True ORDER BY total_votes DESC LIMIT 5")
         embed = discord.Embed(title = "Top 5 Voted Bots", color = discord.Color.blurple())
         place = 0
         for x in bots:
@@ -68,32 +68,34 @@ class General(commands.Cog):
         privacy_url = b['privacy_policy_url'] if b['privacy_policy_url'] else None
 
         embed = discord.Embed(
-            title = f"{bot.name}#{bot.discriminator}",
-            description =
-            f"""
-            >>> Owner: ``{self.bot.main_guild.get_member(b['main_owner'])}``
-            Library: ``{b['library']}``
-            Prefix: ``{b['prefix']}``
-            Tags: ``{tags}``
-            Monthly Votes: ``{b['monthly_votes']}``
-            All-Time Votes: ``{b['total_votes']}``
-            Certified: ``{b['certified']}``
-            Server Count: ``{b['server_count']}``
-            Added: ``{b['joined'].strftime('%D')}``
-            """,
+            title = str(bot),
+            description = wrap(
+                f"""
+                >>> Owner: ``{self.bot.main_guild.get_member(b['main_owner'])}``
+                Library: ``{b['library']}``
+                Prefix: ``{b['prefix']}``
+                Tags: ``{tags}``
+                Monthly Votes: ``{b['monthly_votes']}``
+                All-Time Votes: ``{b['total_votes']}``
+                Certified: ``{b['certified']}``
+                Server Count: ``{b['server_count']}``
+                Added: ``{b['joined'].strftime('%D')}``
+                """
+            ),
             color = discord.Color.blurple()
         )
         embed.add_field(
             name = "**Links**",
-            value =
-            f"""
-            >>> GitHub: {github}
-            Privacy Policy: {privacy_url}
-            Website: {website}
-            Support: {support}
-            Invite: {invite}
-            Blist Link: [Click Here](https://blist.xyz/bot/{bot.id}/)
-            """
+            value = wrap(
+                f"""
+                >>> GitHub: {github}
+                Privacy Policy: {privacy_url}
+                Website: {website}
+                Support: {support}
+                Invite: {invite}
+                Blist Link: [Click Here](https://blist.xyz/bot/{bot.id}/)
+                """
+            )
         )
         embed.add_field(name = "Short Description", value = b['short_description'], inline = False)
         embed.set_image(url = f"https://blist.xyz/api/bot/{bot.id}/widget")
@@ -109,28 +111,33 @@ class General(commands.Cog):
             await ctx.send("This user is a bot!")
             return
 
-        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True",
-                                         member.id)
-        if bots is None:
+        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
+        if not bots:
             await ctx.send("This user has no approved bots on our list")
             return
 
         listed_bots = []
         for x in bots:
-            listed_bots.append(f"**{x['name']}** ({self.bot.main_guild.get_member(x['id']).mention})")
+            bot = self.bot.main_guild.get_member(x['id'])
+            listed_bots.append(
+                f"""
+                [**{x['name']}**](https://blist.xyz/bot/{bot.id}/) ({bot.mention})
+                > `Added:` {x['joined'].strftime('%A, %b %d, %X')}
+                > `Certified:` {x['certified']}
+                > `Prefix:` {x['prefix']}
+                """
+            )
 
         embed = discord.Embed(
             title = f"{member.name}'s bots",
-            description = ">>> " + '\n '.join(
-                listed_bots) if listed_bots else 'This user has not bots listed on out site',
+            description = wrap(''.join(listed_bots)) if listed_bots else 'This user has not bots listed on out site',
             color = discord.Color.blurple()
         )
         await ctx.send(embed = embed)
 
     @commands.command()
     async def position(self, ctx):
-        bots = await self.bot.pool.fetch(
-            "SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = False AND denied = False", ctx.author.id)
+        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = False AND denied = False", ctx.author.id)
         if not bots:
             await ctx.send(f"{ctx.author.mention}, you have no bots in the queue!")
             return
@@ -140,24 +147,28 @@ class General(commands.Cog):
         for b in bots:
             await ctx.send(f"{b['name']} is #{queue.index(b) + 1} in the queue")
 
-    @commands.command(aliases = ["user", "member", "memberinfo", "ui"])
+    @commands.command(aliases = ["user", "member", "memberinfo", "ui", "whois"])
     async def userinfo(self, ctx, *, member: discord.Member = None):
         """Shows information on a user"""
-        if member is None:
-            member = ctx.author
+        member = member or ctx.author
 
-        embed = discord.Embed(title = member.name, color = discord.Color.blurple())
-        embed.set_thumbnail(url = member.avatar_url)
-        embed.add_field(name = "Name:", value = member.name)
-        embed.add_field(name = "Discriminator:", value = f"#{member.discriminator}")
-        embed.add_field(name = "ID:", value = member.id)
-        embed.add_field(name = "Bot:", value = member.bot)
-        embed.add_field(name = "Status:", value = member.status)
-        embed.add_field(name = "Highest Role:", value = member.top_role.mention)
-        embed.add_field(name = "Created Account:", value = member.created_at.strftime("%c"), inline = False)
-        embed.add_field(name = "Joined This Server:", value = member.joined_at.strftime("%c"), inline = False)
-        await ctx.send(embed = embed)
-
+        em = discord.Embed(
+            title = str(member),
+            color = discord.Colour.blurple(),
+            description = wrap(
+                f"""
+                >>> `Name:` {member.name} - #{member.discriminator}
+                `ID:` {member.id}
+                `Bot:` {member.bot}
+                `Status: `{member.status}
+                `Highest Role:` {member.top_role.mention}
+                `Created Account:` {member.created_at.strftime("%c")}
+                `Joined This Server:` {member.joined_at.strftime("%c")}
+                """
+            )
+        )
+        em.set_thumbnail(url = member.avatar_url)
+        await ctx.send(embed = em)
 
 def setup(bot):
     bot.add_cog(General(bot))
