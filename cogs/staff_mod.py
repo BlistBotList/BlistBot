@@ -175,7 +175,7 @@ class Mod(commands.Cog):
         mod = ctx.guild.get_member(info['modid'])
         if info['type'] == "Mute":
             mute_info = await self.bot.mod_pool.fetchval("SELECT expire FROM mutes WHERE id = $1", info['id'])
-            time = humanize.naturaldelta(mute_info["expire"] - datetime.datetime.utcnow())
+            time = humanize.naturaldelta(mute_info - datetime.datetime.utcnow())
             string = f"**__Length:__** ``{time}``"
         else:
             string = ""
