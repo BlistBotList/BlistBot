@@ -1,12 +1,15 @@
-from discord.ext import commands
-import discord
-import datetime
 import asyncio
+import datetime
+from textwrap import dedent as wrap
+
 import asyncpg
+import discord
+import humanize
+from discord.ext import commands
 
 from . import checks
 from .time import FutureTime
-from textwrap import dedent as wrap
+
 
 class Mod(commands.Cog):
     def __init__(self, bot):
@@ -38,7 +41,7 @@ class Mod(commands.Cog):
     async def do_case(self, mod: discord.Member, member: discord.Member, reason, type, time=None):
         last_case_number = await self.bot.mod_pool.fetchval("SELECT COUNT(*) FROM action")
         if time:
-            string = f"**__Length:__** ``{time.dt}``"
+            string = f"**__Length:__** ``{humanize.naturaldelta(time.dt - datetime.datetime.utcnow())}``"
         else:
             string = ""
         embed = discord.Embed(
@@ -72,7 +75,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(kick_members=True)
     @commands.command()
-    async def mute(self, ctx, member: discord.Member, length: FutureTime, reason):
+    async def mute(self, ctx, member: discord.Member, length: FutureTime, *, reason):
         if not ctx.author.top_role > member.top_role:
             return await ctx.send(f"You cannot kick someone higher than you!")
 
@@ -170,7 +173,12 @@ class Mod(commands.Cog):
         
         target = ctx.guild.get_member(info['userid'])
         mod = ctx.guild.get_member(info['modid'])
-
+        if info['type'] == "Mute":
+            mute_info = await self.bot.mod_pool.fetchval("SELECT expire FROM mutes WHERE id = $1", info['id'])
+            time = humanize.naturaldelta(mute_info["expire"] - datetime.datetime.utcnow())
+            string = f"**__Length:__** ``{time}``"
+        else:
+            string = ""
         embed = discord.Embed(
             title=info['type'].title(),
             color=discord.Color.blurple(),
@@ -178,6 +186,7 @@ class Mod(commands.Cog):
                 f"""
                 **__Victim:__** {target} ({target.id})
                 **__Reason:__** ``{reason}``
+                {string}
                 """
             )
         )

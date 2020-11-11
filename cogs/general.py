@@ -160,7 +160,7 @@ class General(commands.Cog):
                 >>> `Name:` {member.name} - #{member.discriminator}
                 `ID:` {member.id}
                 `Bot:` {member.bot}
-                `Status: `{member.status}
+                `Status:` {str(member.status).title()}
                 `Highest Role:` {member.top_role.mention}
                 `Created Account:` {member.created_at.strftime("%c")}
                 `Joined This Server:` {member.joined_at.strftime("%c")}
