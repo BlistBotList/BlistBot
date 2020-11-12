@@ -14,7 +14,7 @@ from .time import FutureTime
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.mod_log = self.bot.main_guild.get_channel(716445624517656727)
+        self.mod_log = self.bot.main_guild.get_channel(716719009499971685)
         self._task = bot.loop.create_task(self.dispatch_mutes())
 
     async def dispatch_mutes(self):
