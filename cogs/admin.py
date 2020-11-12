@@ -281,8 +281,7 @@ class Admin(commands.Cog):
             "Bot owner must be in/remain in server for the bot to be listed"
         ]
 
-        main_guild = self.bot.get_guild(716445624517656727)
-        assignable_roles_channel = main_guild.get_channel(716733254308462702).mention
+        assignable_roles_channel = ctx.guild.get_channel(716733254308462702).mention
         server_roles_dict = {
             716722789234638860: "This is for people that report bugs to help improve the site. Gained by reporting bugs, no specific amount.",  # Bug Hunter
             716722845773725806: "This is for people that help improve the site by suggesting things and pring on the public [GitHub repositories](https://github.com/BlistBotList)",  # Community Contributor
@@ -298,7 +297,7 @@ class Admin(commands.Cog):
             750771398636601354: f"This is for if you want to get pinged for polls related to the site and this server. Get it from {assignable_roles_channel}",  # Polls
             716732766796120156: "Everyone human that joins gets this.",  # Member
             716684805286133840: "Everyone with a bot on the site has this. [Add a bot](https://blist.xyz/bot/add/) to the site to get it.",  # (bot) Developer
-            716722689921908756: f"Website developer. DM {main_guild.get_member(679118121943957504).mention} if you know django, js and html (Must know all 3) and want to help code the site back or front.",  # (other) Developer
+            716722689921908756: f"Website developer. DM {ctx.guild.get_member(679118121943957504).mention} if you know django, js and html (Must know all 3) and want to help code the site back or front.",  # (other) Developer
             716724317207003206: "This is for people that have a certified bot. Get it by applying for certification [here](https://blist.xyz/certification/)",  # Certified Developer
             716726167713087589: "Bots with this role help with things around this server like mod related things.",  # Server Bot
             716684129453735936: "This is a role that bots get when they get approved and added to this server.",  # Bot
@@ -316,12 +315,12 @@ class Admin(commands.Cog):
             bot_rules_embed.description += f"\n**{num}.** {rule}"
 
         server_rules_list = []
-        guild_role_ids = [x.id for x in main_guild.roles]
+        guild_role_ids = [x.id for x in ctx.guild.roles]
         ordered_server_roles_list = sorted(server_roles_dict.keys(), key = guild_role_ids.index, reverse = True) # put in order as in server.
         for role_id in ordered_server_roles_list:
-            server_rules_list.append(f"{main_guild.get_role(role_id).mention} - {server_roles_dict[role_id]}")
+            server_rules_list.append(f"{ctx.guild.get_role(role_id).mention} - {server_roles_dict[role_id]}")
         server_roles_embed = discord.Embed(title = "Blist Server Roles", color = discord.Color.blurple(),
-                                            description = "\n".join(server_rules_list))
+                                           description = "\n".join(server_rules_list))
         links_embed = discord.Embed(
             title = "Links", color = discord.Color.blurple(),
             description = wrap(
