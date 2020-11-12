@@ -289,7 +289,7 @@ class Admin(commands.Cog):
             716713293330514041: "First Staff Tier",  # Website Moderator
             716713498360545352: "Second Staff Tier",  # Senior Website Moderator
             716713238955556965: "Third Staff Tier",  # Administrator
-            716713266683969626: "Fourth Staff Tierr",  # Senior Adminstrator
+            716713266683969626: "Fourth Staff Tier",  # Senior Adminstrator
             716713561233031239: "All staff members have this role. You can [apply here](https://forms.gle/4X8cm1Ce58FR2f3P9)",  # Staff
             716713204159479919: "Site owner & Creator",  # Founder
             716723291011678319: f"This is for if you want to get pinged for updates related to the site. Get it from {assignable_roles_channel}",  # Updates
