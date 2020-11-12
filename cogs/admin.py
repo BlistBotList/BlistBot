@@ -314,11 +314,11 @@ class Admin(commands.Cog):
         for num, rule in enumerate(bot_rules_list, start = 1):
             bot_rules_embed.description += f"\n**{num}.** {rule}"
 
-        server_rules_list = []
+        server_roles_list = []
         guild_role_ids = [x.id for x in ctx.guild.roles]
         ordered_server_roles_list = sorted(server_roles_dict.keys(), key = guild_role_ids.index, reverse = True) # put in order as in server.
         for role_id in ordered_server_roles_list:
-            server_rules_list.append(f"{ctx.guild.get_role(role_id).mention} - {server_roles_dict[role_id]}")
+            server_roles_list.append(f"{ctx.guild.get_role(role_id).mention} - {server_roles_dict[role_id]}")
         server_roles_embed = discord.Embed(title = "Blist Server Roles", color = discord.Color.blurple(),
                                            description = "\n".join(server_rules_list))
         links_embed = discord.Embed(
@@ -349,14 +349,13 @@ class Admin(commands.Cog):
         channel = ctx.guild.get_channel(716717317320605736)
         server_rules = await channel.fetch_message(723643619315023873)
         bot_rules = await channel.fetch_message(723643619700899983)
-        #server_roles = await channel.fetch_message(ID) <- uncomment with message id
-        links = await channel.fetch_message(723643620313268291)
-        faqs = await channel.fetch_message(723643620946870272)
+        server_roles = await channel.fetch_message(723643620313268291)
+        links = await channel.fetch_message(723643620946870272)
+        faqs = await channel.fetch_message(776576250567196672)
 
         await server_rules.edit(embed = server_rules_embed)
         await bot_rules.edit(embed = bot_rules_embed)
-        await channel.send(embed = server_roles_embed)  # delete this
-        #await server_roles.edit(embed = server_roles_embed) <- uncomment
+        await server_roles.edit(embed = server_roles_embed)
         await links.edit(embed = links_embed)
         await faqs.edit(embed = faq_embed)
         await ctx.send(f"Updated all embeds in {channel.mention}")
