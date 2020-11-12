@@ -1,8 +1,7 @@
 import argparse
-import asyncio
 import datetime
 import os
-import random
+import aiohttp
 
 import asyncpg
 import discord
@@ -34,6 +33,7 @@ class Blist(commands.Bot):
         )
 
     async def on_ready(self):
+        self.session = aiohttp.ClientSession()
         approved_bots = await self.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
         users = await self.pool.fetchval("SELECT COUNT(*) FROM main_site_user")
@@ -79,6 +79,7 @@ class Blist(commands.Bot):
     async def stop(self):
         await self.pool.close()
         await super().logout()
+        await self.session.close()
 
     def run(self):
         loop = self.loop

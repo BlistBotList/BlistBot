@@ -3,9 +3,7 @@ import datetime
 import os
 import re
 
-import aiohttp
 import config
-# if ^ doesn't work. from import config # pylint: disable=relative-beyond-top-level
 import discord
 from discord.ext import commands
 import country_converter as coco
@@ -143,7 +141,7 @@ class Admin(commands.Cog):
         headers = {
             "X-Auth-Key": config.cloudflare_token,
             "X-Auth-Email": config.cloudflare_email, "Content-Type": "application/json"}
-        async with aiohttp.ClientSession().post(
+        async with self.bot.session.post(
                 url = "https://api.cloudflare.com/client/v4/zones/47697d23bd0d042fd63573cc9030177d/purge_cache/",
                 headers = headers, json = json) as x:
             await ctx.send(f'{await x.json()}')
@@ -343,6 +341,32 @@ class Admin(commands.Cog):
             await self.bot.pool.execute("UPDATE main_site_bot SET monthly_votes = 0 WHERE id = $1", bot["id"])
         await ctx.send("Monthly votes reset!")
 
+    @commands.has_permissions(administrator=True)
+    @commands.command()
+    async def avatars(self, ctx):
+        await ctx.send("Doing Avatars")
+        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")
+        users = await self.bot.pool.fetch("SELECT * FROM main_site_user")
+
+        for bot in bots:
+            bot_user = self.bot.main_guild.get_member(bot['id'])
+            if not bot_user:
+                break
+            url = f"https://cdn.discordapp.com/avatars/{bot['id']}/{bot['avatar_hash']}.webp?size=1024"
+            async with self.bot.session.head(url=url) as resp:
+                if resp.status == 404:
+                    await self.bot.pool.execute("UPDATE main_site_bot SET avatar_hash = $1 WHERE id = $2", bot_user.avatar, bot_user.id)
+
+        for user in users:
+            user_user = self.bot.main_guild.get_member(user['userid'])
+            if not user_user:
+                break
+            url = f"https://cdn.discordapp.com/avatars/{user['userid']}/{user['avatar_hash']}.webp?size=1024"
+            async with self.bot.session.head(url=url) as resp:
+                if resp.status == 404:
+                    await self.bot.pool.execute("UPDATE main_site_bot SET avatar_hash = $1 WHERE id = $2", user_user.avatar, user_user.id)
+        
+        await ctx.send("Done")
 
 def setup(bot):
     bot.add_cog(Admin(bot))
