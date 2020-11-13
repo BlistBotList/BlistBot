@@ -281,6 +281,30 @@ class Admin(commands.Cog):
             "Bot owner must be in/remain in server for the bot to be listed"
         ]
 
+        assignable_roles_channel = ctx.guild.get_channel(716733254308462702).mention
+        server_roles_dict = {
+            716722789234638860: "This is for people that report bugs to help improve the site. Gained by reporting bugs, no specific amount.",  # Bug Hunter
+            716722845773725806: "This is for people that help improve the site by suggesting things and pring on the public [GitHub repositories](https://github.com/BlistBotList)",  # Community Contributor
+            716713293330514041: "First Staff Tier",  # Website Moderator
+            716713498360545352: "Second Staff Tier",  # Senior Website Moderator
+            716713238955556965: "Third Staff Tier",  # Administrator
+            716713266683969626: "Fourth Staff Tier",  # Senior Adminstrator
+            716713561233031239: "All staff members have this role. You can [apply here](https://forms.gle/4X8cm1Ce58FR2f3P9)",  # Staff
+            716713204159479919: "Site owner & Creator",  # Founder
+            716723291011678319: f"This is for if you want to get pinged for updates related to the site. Get it from {assignable_roles_channel}",  # Updates
+            716723357336338482: f"This is for if you want access to a channel where you can play with NSFW bots/commands. Get it from {assignable_roles_channel}",  # NSFW
+            716723257663029372: f"This is for if you want to get pinged for announcements related to the site or this server. Get it from {assignable_roles_channel}",  # Announcements
+            750771398636601354: f"This is for if you want to get pinged for polls related to the site and this server. Get it from {assignable_roles_channel}",  # Polls
+            716732766796120156: "Everyone human that joins gets this.",  # Member
+            716684805286133840: "Everyone with a bot on the site has this. [Add a bot](https://blist.xyz/bot/add/) to the site to get it.",  # (bot) Developer
+            716722689921908756: f"Website developer. DM {ctx.guild.get_member(679118121943957504).mention} if you know django, js and html (Must know all 3) and want to help code the site back or front.",  # (other) Developer
+            716724317207003206: "This is for people that have a certified bot. Get it by applying for certification [here](https://blist.xyz/certification/)",  # Certified Developer
+            716726167713087589: "Bots with this role help with things around this server like mod related things.",  # Server Bot
+            716684129453735936: "This is a role that bots get when they get approved and added to this server.",  # Bot
+            716684142766456832: "This is for bots that are certified on the site.",  # Certified Bot
+            764686546179325972: "This is for bots with a common prefix."  # Common Prefix
+        }
+
         server_rules_embed = discord.Embed(title = "Blist Server Rules", color = discord.Color.blurple(),
                                            description = "")
         for num, rule in enumerate(server_rules_list, start = 1):
@@ -289,6 +313,14 @@ class Admin(commands.Cog):
                                         description = "")
         for num, rule in enumerate(bot_rules_list, start = 1):
             bot_rules_embed.description += f"\n**{num}.** {rule}"
+
+        server_roles_list = []
+        guild_role_ids = [x.id for x in ctx.guild.roles]
+        ordered_server_roles_list = sorted(server_roles_dict.keys(), key = guild_role_ids.index, reverse = True) # put in order as in server.
+        for role_id in ordered_server_roles_list:
+            server_roles_list.append(f"{ctx.guild.get_role(role_id).mention} - {server_roles_dict[role_id]}")
+        server_roles_embed = discord.Embed(title = "Blist Server Roles", color = discord.Color.blurple(),
+                                           description = "\n".join(server_rules_list))
         links_embed = discord.Embed(
             title = "Links", color = discord.Color.blurple(),
             description = wrap(
@@ -317,11 +349,13 @@ class Admin(commands.Cog):
         channel = ctx.guild.get_channel(716717317320605736)
         server_rules = await channel.fetch_message(723643619315023873)
         bot_rules = await channel.fetch_message(723643619700899983)
-        links = await channel.fetch_message(723643620313268291)
-        faqs = await channel.fetch_message(723643620946870272)
+        server_roles = await channel.fetch_message(723643620313268291)
+        links = await channel.fetch_message(723643620946870272)
+        faqs = await channel.fetch_message(776576250567196672)
 
         await server_rules.edit(embed = server_rules_embed)
         await bot_rules.edit(embed = bot_rules_embed)
+        await server_roles.edit(embed = server_roles_embed)
         await links.edit(embed = links_embed)
         await faqs.edit(embed = faq_embed)
         await ctx.send(f"Updated all embeds in {channel.mention}")

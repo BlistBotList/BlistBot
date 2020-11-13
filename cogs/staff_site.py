@@ -25,6 +25,7 @@ class Staff(commands.Cog):
 
         embed = discord.Embed(
             title = "Queue",
+            url = "https://blist.xyz/staff/queue/",
             description = '\n'.join(listed_bots) if listed_bots else "All Clear",
             color = discord.Color.blurple()
         )
