@@ -320,7 +320,7 @@ class Admin(commands.Cog):
         for role_id in ordered_server_roles_list:
             server_roles_list.append(f"{ctx.guild.get_role(role_id).mention} - {server_roles_dict[role_id]}")
         server_roles_embed = discord.Embed(title = "Blist Server Roles", color = discord.Color.blurple(),
-                                           description = "\n".join(server_rules_list))
+                                           description = "\n".join(server_roles_list))
         links_embed = discord.Embed(
             title = "Links", color = discord.Color.blurple(),
             description = wrap(
