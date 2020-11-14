@@ -248,7 +248,7 @@ class Admin(commands.Cog):
         await ctx.send(f"Updated the staff embed in {message.channel.mention}")
 
     @checks.main_guild_only()
-    @commands.has_permissions(administrator = True)
+    @commands.has_permissions(administrator=True)
     @commands.command()
     async def rulesninfo(self, ctx):
         server_rules_list = [
@@ -305,59 +305,68 @@ class Admin(commands.Cog):
             764686546179325972: "This is for bots with a common prefix."  # Common Prefix
         }
 
-        server_rules_embed = discord.Embed(title = "Blist Server Rules", color = discord.Color.blurple(),
-                                           description = "")
-        for num, rule in enumerate(server_rules_list, start = 1):
-            server_rules_embed.description += f"\n**{num}.** {rule}"
-        bot_rules_embed = discord.Embed(title = "Blist Bot Rules/Requirements", color = discord.Color.blurple(),
-                                        description = "")
-        for num, rule in enumerate(bot_rules_list, start = 1):
-            bot_rules_embed.description += f"\n**{num}.** {rule}"
-
-        server_roles_list = []
-        guild_role_ids = [x.id for x in ctx.guild.roles]
-        ordered_server_roles_list = sorted(server_roles_dict.keys(), key = guild_role_ids.index, reverse = True) # put in order as in server.
-        for role_id in ordered_server_roles_list:
-            server_roles_list.append(f"{ctx.guild.get_role(role_id).mention} - {server_roles_dict[role_id]}")
-        server_roles_embed = discord.Embed(title = "Blist Server Roles", color = discord.Color.blurple(),
-                                           description = "\n".join(server_roles_list))
-        links_embed = discord.Embed(
-            title = "Links", color = discord.Color.blurple(),
-            description = wrap(
+        main_embed = discord.Embed(color = discord.Color.blurple())
+        main_embed.set_author(name = "Blist.xyz", icon_url = ctx.bot.user.avatar_url_as(format = "png"), url = "https://blist.xyz/")
+        main_embed.set_thumbnail(url = ctx.guild.icon_url_as(static_format = "png"))
+        main_embed.add_field(
+            name = "Blist Server Rules",
+            value = "\n".join([f"**{num}.** {rule}" for num, rule in enumerate(server_rules_list, start = 1)]),
+            inline = False
+        )
+        main_embed.add_field(
+            name = "Blist Bot Rules/Requirements",
+            value = "\n".join([f"**{num}.** {rule}" for num, rule in enumerate(bot_rules_list, start = 1)]),
+            inline = False
+        )
+        main_embed.add_field(
+            name = "Links",
+            value = wrap(
                 """
                 [Site](https://blist.xyz)
                 [API](https://blist.xyz/api/)
                 [API Docs](https://docs.blist.xyz/)
                 [Certification Info](https://blist.xyz/certification/)
                 """
-            )
+            ),
+            inline = False
         )
+
+        server_roles_list = []
+        guild_role_ids = [x.id for x in ctx.guild.roles]
+        ordered_server_roles_list = sorted(server_roles_dict.keys(), key = guild_role_ids.index, reverse = True)  # put in order as in server.
+        for role_id in ordered_server_roles_list:
+            server_roles_list.append(f"{ctx.guild.get_role(role_id).mention}: {server_roles_dict[role_id]}")
+        server_roles_embed = discord.Embed(title = "Blist Server Roles", color = discord.Color.blurple(), description = "\n".join(server_roles_list))
+
         faq_embed = discord.Embed(
             title = "FAQ's", color = discord.Color.blurple(),
-            description = wrap(
-                """
-                **How did I get here?**
-                When logging in on the website, your grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server.
-                \n**How do I add a bot?**
-                To add a bot, head over the https://blist.xyz/bot/add/.
-                \n**How long does the queue take?**
-                We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
-                """
-            )
+            description =
+            """
+    **How did I get here?**
+    When logging in on the website, you grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server."
+    \n**How do I add a bot?**
+    To add a bot, head over the https://blist.xyz/bot/add/.
+    \n**How long does the queue take?**
+    We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
+            """
         )
 
         channel = ctx.guild.get_channel(716717317320605736)
-        server_rules = await channel.fetch_message(723643619315023873)
-        bot_rules = await channel.fetch_message(723643619700899983)
-        server_roles = await channel.fetch_message(723643620313268291)
-        links = await channel.fetch_message(723643620946870272)
-        faqs = await channel.fetch_message(776576250567196672)
+        all_info = await channel.fetch_message(723643619315023873)
+        server_roles = await channel.fetch_message(723643619700899983)
+        faqs = await channel.fetch_message(723643620313268291)
 
-        await server_rules.edit(embed = server_rules_embed)
-        await bot_rules.edit(embed = bot_rules_embed)
-        await server_roles.edit(embed = server_roles_embed)
-        await links.edit(embed = links_embed)
+        await all_info.edit(embed = main_embed)
         await faqs.edit(embed = faq_embed)
+
+        # just to be sure.
+        if not len(server_roles_embed.description) >= 2048:
+            await server_roles.edit(embed = server_roles_embed)
+        else:
+            e = discord.Embed(title = "Blist Server Roles", description = "Content was over 2000...", color = discord.Color.blurple())
+            await server_roles.edit(embed = e)
+            await ctx.send(f"Roles embed's description is over 2048.. **{len(server_roles_embed.description)}** ({len(server_roles_embed)} total) to be exact.")
+
         await ctx.send(f"Updated all embeds in {channel.mention}")
 
     @checks.main_guild_only()
