@@ -360,12 +360,12 @@ class Admin(commands.Cog):
         await faqs.edit(embed = faq_embed)
 
         # just to be sure.
-        if not len(server_roles_embed.description) >= 2048:
+        try:
             await server_roles.edit(embed = server_roles_embed)
-        else:
-            e = discord.Embed(title = "Blist Server Roles", description = "Content was over 2000...", color = discord.Color.blurple())
-            await server_roles.edit(embed = e)
-            await ctx.send(f"Roles embed's description is over 2048.. **{len(server_roles_embed.description)}** ({len(server_roles_embed)} total) to be exact.")
+        except Exception as e:
+            em = discord.Embed(title = "Blist Server Roles", description = "Content was over 2000...", color = discord.Color.blurple())
+            await server_roles.edit(embed = em)
+            await ctx.send(f"{e}\nRoles embed's description is over 2048 it think.. **{len(server_roles_embed.description)}** ({len(server_roles_embed)} total) to be exact.")
 
         await ctx.send(f"Updated all embeds in {channel.mention}")
 
