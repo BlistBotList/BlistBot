@@ -154,6 +154,7 @@ class General(commands.Cog):
 
         em = discord.Embed(
             title = str(member),
+            url = f"https://blist.xyz/user/{member.id}/",
             color = discord.Colour.blurple(),
             description = wrap(
                 f"""
