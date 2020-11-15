@@ -129,6 +129,13 @@ class Events(commands.Cog):
         if admin2 in before.roles and admin2 not in after.roles:
             await self.bot.pool.execute("UPDATE main_site_user SET administrator = False WHERE userid = $1", before.id)
 
+        if before.bot:
+            staff_bot = self.bot.main_guild.get_role(777575976124547072)
+            if staff_bot not in before.roles and staff_bot in after.roles:
+                await self.bot.pool.execute("UPDATE main_site_bot SET staff = True WHERE id = $1", before.id)
+            if staff_bot in before.roles and staff_bot not in after.roles:
+                await self.bot.pool.execute("UPDATE main_site_bot SET staff = False WHERE id = $1", before.id)
+
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if member.guild == self.bot.verification_guild and member.bot:
