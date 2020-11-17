@@ -50,7 +50,7 @@ class Events(commands.Cog):
             return
         channel = self.bot.get_channel(728994664631500940)
         em = discord.Embed(
-            title='Error:',
+            title='Bot Error:',
             description=f'```py\n{error}\n```',
             color=discord.Color.blurple()
         )
