@@ -19,7 +19,7 @@ class Events(commands.Cog):
     def error_webhook(self):
         token = config.error_webhook_token
         web_id = config.error_webhook_id
-        hook = discord.Webhook.partial(id = web_id, token = token, adapter = discord.AsyncWebhookAdapter(self.bot.session))
+        hook = discord.Webhook.partial(id=web_id, token=token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
         return hook
 
     @commands.Cog.listener()
@@ -49,20 +49,20 @@ class Events(commands.Cog):
                 if not efd:
                     err = str(error)
 
-            em = discord.Embed(description = str(err), color = discord.Color.red())
+            em = discord.Embed(description=str(err), color=discord.Color.red())
             try:
-                await ctx.send(embed = em)
+                await ctx.send(embed=em)
                 return
             except discord.Forbidden:
                 pass
 
         # when error is not handled above
         em = discord.Embed(
-            title = 'Bot Error:',
-            description = f'```py\n{error}\n```',
-            color = discord.Color.blurple()
+            title='Bot Error:',
+            description=f'```py\n{error}\n```',
+            color=discord.Color.blurple()
         )
-        await self.error_webhook.send(embed = em)
+        await self.error_webhook.send(embed=em)
 
     @commands.Cog.listener()
     async def on_message(self, message):
