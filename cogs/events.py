@@ -43,6 +43,19 @@ class Events(commands.Cog):
             em = discord.Embed(color = discord.Color.red(),
                                description = f"`{str(error.param).partition(':')[0]}` is a required argument!")
             await ctx.send(embed = em)
+                               
+    @commands.Cog.listener('on_command_error')
+    async def log_error(self, ctx, error):
+        if isinstance(error, commands.CommandNotFound):
+            return
+        channel = self.bot.get_channel(728994664631500940)
+        em = discord.Embed(
+            title='Bot Error:',
+            description=f'```py\n{error}\n```',
+            color=discord.Color.blurple()
+        )
+        await channel.send(embed=em)
+           
 
     @commands.Cog.listener()
     async def on_message(self, message):
