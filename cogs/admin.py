@@ -214,7 +214,7 @@ class Admin(commands.Cog):
             await ctx.send(f"Un-blacklisted ``{userid}`` for reason: \n```{reason}```")
 
     @checks.main_guild_only()
-    @commands.has_permissions(administrator = True)
+    @commands.has_permissions(administrator=True)
     @commands.command()
     async def staff_embed(self, ctx):
         all_staff = {
@@ -309,17 +309,17 @@ class Admin(commands.Cog):
         main_embed.set_author(name = "Blist.xyz", icon_url = ctx.bot.user.avatar_url_as(format = "png"), url = "https://blist.xyz/")
         main_embed.set_thumbnail(url = ctx.guild.icon_url_as(static_format = "png"))
         main_embed.add_field(
-            name = "Blist Server Rules",
+            name = "**Blist Server Rules**",
             value = "\n".join([f"**{num}.** {rule}" for num, rule in enumerate(server_rules_list, start = 1)]),
             inline = False
         )
         main_embed.add_field(
-            name = "Blist Bot Rules/Requirements",
+            name = "**Blist Bot Rules/Requirements**",
             value = "\n".join([f"**{num}.** {rule}" for num, rule in enumerate(bot_rules_list, start = 1)]),
             inline = False
         )
         main_embed.add_field(
-            name = "Links",
+            name = "**Links**",
             value = wrap(
                 """
                 [Site](https://blist.xyz)
@@ -342,12 +342,12 @@ class Admin(commands.Cog):
             title = "FAQ's", color = discord.Color.blurple(),
             description =
             """
-    **How did I get here?**
-    When logging in on the website, you grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server."
-    \n**How do I add a bot?**
-    To add a bot, head over the https://blist.xyz/bot/add/.
-    \n**How long does the queue take?**
-    We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
+**How did I get here?**
+When logging in on the website, you grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server."
+\n**How do I add a bot?**
+To add a bot, head over the https://blist.xyz/bot/add/.
+\n**How long does the queue take?**
+We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
             """
         )
 
