@@ -62,6 +62,7 @@ class Events(commands.Cog):
             description=f'```py\n{error}\n```',
             color=discord.Color.blurple()
         )
+        await ctx.send(embed=discord.Embed(description=f"Something went wrong... {type(error).__name__}", color=discord.Color.red()))
         await self.error_webhook.send(embed=em)
 
     @commands.Cog.listener()
