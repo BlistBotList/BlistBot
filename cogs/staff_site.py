@@ -152,6 +152,10 @@ class Staff(commands.Cog):
             await ctx.send("This bot is not on the list")
             return
 
+
+        bot_db = await self.bot.pool.fetchval("SELECT unique_id FROM main_site_bot WHERE id = $1", bot_user.id if bot_user else bot)
+        await self.bot.pool.execute("DELETE FROM main_site_vote WHERE bot_id = $1", bot_db)
+        await self.bot.pool.execute("DELETE FROM main_site_review WHERE bot_id = $1", bot_db)
         await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", bot_user.id if bot_user else bot)
 
         embed = discord.Embed(description = f"Deleted {bots['name']}", color = discord.Color.red())
