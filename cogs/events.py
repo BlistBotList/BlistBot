@@ -5,6 +5,9 @@ from discord.ext import commands, tasks
 import datetime
 from textwrap import dedent as wrap
 
+import config
+
+
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -12,50 +15,54 @@ class Events(commands.Cog):
         self.change_status.start()
         self.update_statuses.start()
 
+    @property
+    def error_webhook(self):
+        token = config.error_webhook_token
+        web_id = config.error_webhook_id
+        hook = discord.Webhook.partial(id = web_id, token = token, adapter = discord.AsyncWebhookAdapter(self.bot.session))
+        return hook
+
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandNotFound):
-            return
-        if isinstance(error, commands.CheckFailure):
-            await ctx.send("This command cannot be used in this guild!")
+        ignored = (commands.CommandNotFound, commands.DisabledCommand, commands.TooManyArguments)
+        send_embed = (commands.MissingPermissions, discord.HTTPException, commands.CommandInvokeError,
+                      commands.NotOwner, commands.CheckFailure, commands.MissingRequiredArgument,
+                      commands.BadArgument, commands.BadUnionArgument)
 
         errors = {
-            commands.MissingPermissions: {"msg": "You do not have permissions to run this command."},
-            discord.HTTPException: {"msg": "There was an error connecting to Discord. Please try again."},
-            commands.CommandInvokeError: {"msg": "There was an issue running the command."},
-            commands.NotOwner: {"msg": "You are not the owner."},
+            commands.MissingPermissions: "You do not have permissions to run this command.",
+            discord.HTTPException: "There was an error connecting to Discord. Please try again.",
+            commands.CommandInvokeError: "There was an issue running the command.",
+            commands.NotOwner: "You are not the owner.",
+            commands.CheckFailure: "This command cannot be used in this guild!"
         }
 
-        if not isinstance(error, commands.MissingRequiredArgument):
-            ets = errors.get(error.__class__)
-            if not ets:
-                ets = {"msg": "[ERROR]"}
+        if isinstance(error, ignored):
+            return
 
-            em = discord.Embed(
-                description = ets["msg"].replace("[ERROR]", f"{error}"), color = discord.Color.red())
+        if isinstance(error, send_embed):
+            if isinstance(error, commands.MissingRequiredArgument):
+                err = f"`{str(error.param).partition(':')[0]}` is a required argument!"  # removes "that is missing."
+            else:
+                efd = errors.get(error.__class__)
+                err = str(efd)
+                if not efd:
+                    err = str(error)
 
+            em = discord.Embed(description = str(err), color = discord.Color.red())
             try:
                 await ctx.send(embed = em)
+                return
             except discord.Forbidden:
                 pass
 
-        elif isinstance(error, commands.MissingRequiredArgument):
-            em = discord.Embed(color = discord.Color.red(),
-                               description = f"`{str(error.param).partition(':')[0]}` is a required argument!")
-            await ctx.send(embed = em)
-                               
-    @commands.Cog.listener('on_command_error')
-    async def log_error(self, ctx, error):
-        if isinstance(error, commands.CommandNotFound):
-            return
-        channel = self.bot.get_channel(728994664631500940)
+        # when error is not handled above
         em = discord.Embed(
-            title='Bot Error:',
-            description=f'```py\n{error}\n```',
-            color=discord.Color.blurple()
+            title = 'Bot Error:',
+            description = f'```py\n{error}\n```',
+            color = discord.Color.blurple()
         )
-        await channel.send(embed=em)
-           
+        await self.error_webhook.send(embed = em)
 
     @commands.Cog.listener()
     async def on_message(self, message):
