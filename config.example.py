@@ -5,4 +5,4 @@ mod_db_url = ""
 cloudflare_email = ""
 cloudflare_token = ""
 error_webhook_token = ""
-error_webhook_id = ""
+error_webhook_id = 0
