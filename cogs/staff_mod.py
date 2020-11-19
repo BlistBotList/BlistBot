@@ -14,7 +14,6 @@ from .time import FutureTime
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.mod_log = self.bot.main_guild.get_channel(716719009499971685)
         self._task = bot.loop.create_task(self.dispatch_mutes())
 
     async def dispatch_mutes(self):
@@ -57,7 +56,7 @@ class Mod(commands.Cog):
         embed.set_author(name=str(mod), icon_url=mod.avatar_url)
         embed.set_footer(text=f"Case #{last_case_number + 1}")
         embed.timestamp = datetime.datetime.utcnow()
-        message = await self.mod_log.send(embed=embed)
+        message = await self.bot.main_guild.get_channel(716719009499971685).send(embed=embed)
         await self.bot.mod_pool.execute("INSERT INTO action VALUES($1, $2, $3, $4, $5, $6)", member.id, mod.id, reason or 'None', message.id, type, datetime.datetime.utcnow())
         return last_case_number + 1
 
@@ -194,7 +193,7 @@ class Mod(commands.Cog):
         embed.set_footer(text=f"Case #{number}")
         embed.timestamp = info["time"]
 
-        message = await self.mod_log.fetch_message(info['messageid'])
+        message = await self.bot.main_guild.get_channel(716719009499971685).fetch_message(info['messageid'])
         await message.edit(embed=embed)
 
     @commands.command()
