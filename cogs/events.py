@@ -17,10 +17,10 @@ class Events(commands.Cog):
         self.update_statuses.start()
 
     async def update_staff_embed(self, guild: discord.Guild):
-        web_mods_query = self.bot.mod_pool.fetch.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Website Moderator')
-        senior_web_mod_query = self.bot.mod_pool.fetch.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Website Moderator')
-        admins_query = self.bot.mod_pool.fetch.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Administrator')
-        senior_admins_query = self.bot.mod_pool.fetch.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Administrator')
+        web_mods_query = self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Website Moderator')
+        senior_web_mod_query = self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Website Moderator')
+        admins_query = self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Administrator')
+        senior_admins_query = self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Administrator')
 
         senior_administrators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_admins_query]
         administrators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in admins_query]
