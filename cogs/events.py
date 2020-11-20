@@ -16,6 +16,26 @@ class Events(commands.Cog):
         self.change_status.start()
         self.update_statuses.start()
 
+    async def update_staff_embed(self, guild: discord.Guild):
+        web_mods_query = self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Website Moderator')
+        senior_web_mod_query = self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Website Moderator')
+        admins_query = self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Administrator')
+        senior_admins_query = self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Administrator')
+
+        senior_administrators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_admins_query]
+        administrators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in admins_query]
+        senior_website_moderators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_web_mod_query]
+        website_moderators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in web_mods_query]
+
+        embed = discord.Embed(color=discord.Color.blurple(), title="Staff")
+        embed.add_field(name="> Senior Administrators", value="\n".join(senior_administrators), inline =False)
+        embed.add_field(name="> Administrators", value="\n".join(administrators), inline =False)
+        embed.add_field(name="> Senior Website Moderators", value="\n".join(senior_website_moderators), inline =False)
+        embed.add_field(name="> Website Moderators", value="\n".join(website_moderators), inline =False)
+        channel = guild.get_channel(716823743644696586)
+        message = await channel.fetch_message(723641541486182410)
+        await message.edit(embed=embed)
+
     @property
     def error_webhook(self):
         token = config.error_webhook_token
@@ -166,6 +186,7 @@ class Events(commands.Cog):
             if new_roles[0].id not in staff_roles:
                 return
             await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].name, before.id)
+            await self.update_staff_embed(self.bot.main_guild)
         #else:
         #    new_roles = list(set_difference1)
         #    await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].id, before.id)
