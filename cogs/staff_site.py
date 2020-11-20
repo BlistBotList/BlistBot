@@ -189,17 +189,19 @@ class Staff(commands.Cog):
         await ctx.send(msg)
 
     @commands.has_permissions(kick_members = True)
-    @commands.command(hidden = True)
+    @commands.command(hidden = True, aliases=["t"])
     async def translate(self, ctx, to, *, message: commands.clean_content):
         """Translates a message to English using Google translate."""
         translator = googletrans.Translator()
-        try:
-            translated = translator.translate(message, dest = to)
-        except ValueError:
-            return await ctx.send("That is not a valid language")
+        while True:
+            try:
+                translated = translator.translate(message, dest = to)
+                break
+            except Exception as e:
+                translator = googletrans.Translator()
         src = googletrans.LANGUAGES.get(translated.src, '(auto-detected)').title()
         dest = googletrans.LANGUAGES.get(translated.dest, 'Unknown').title()
-        embed = discord.Embed()
+        embed = discord.Embed(color=discord.Color.blurple())
         embed.add_field(name = f"{src} ({translated.src})", value = translated.origin.title(), inline = False)
         embed.add_field(name = f"{dest} ({translated.dest})", value = translated.text.title(), inline = False)
         await ctx.send(embed = embed)
