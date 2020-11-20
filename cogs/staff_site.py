@@ -197,6 +197,8 @@ class Staff(commands.Cog):
             try:
                 translated = translator.translate(message, dest = to)
                 break
+            except ValueError:
+                return await ctx.send("That is not a valid language")
             except Exception as e:
                 translator = googletrans.Translator()
         src = googletrans.LANGUAGES.get(translated.src, '(auto-detected)').title()
