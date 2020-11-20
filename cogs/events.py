@@ -26,7 +26,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         ignored = (commands.CommandNotFound, commands.DisabledCommand, commands.TooManyArguments)
-        send_embed = (commands.MissingPermissions, discord.HTTPException, commands.CommandInvokeError,
+        send_embed = (commands.MissingPermissions, discord.HTTPException,
                       commands.NotOwner, commands.CheckFailure, commands.MissingRequiredArgument,
                       commands.BadArgument, commands.BadUnionArgument)
 
