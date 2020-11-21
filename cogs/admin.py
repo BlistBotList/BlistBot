@@ -411,5 +411,11 @@ We try to get every bot done as fast as we can. Please take into consideration w
         
         await ctx.send("Done")
 
+    @commands.has_role(779817680488103956)
+    @commands.command()
+    async def tweet(self, ctx, *, message):
+        self.bot.twitter_api.update_status(f"{message} \n\n- {ctx.author.name}")
+        await ctx.send("Done")
+
 def setup(bot):
     bot.add_cog(Admin(bot))

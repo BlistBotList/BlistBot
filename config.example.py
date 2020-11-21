@@ -6,3 +6,7 @@ cloudflare_email = ""
 cloudflare_token = ""
 error_webhook_token = ""
 error_webhook_id = 0
+consumer_key = ""
+consumer_secret_key = ""
+access_token = ""
+access_token_secret = ""
