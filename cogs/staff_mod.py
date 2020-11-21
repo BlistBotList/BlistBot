@@ -196,6 +196,7 @@ class Mod(commands.Cog):
         message = await self.bot.main_guild.get_channel(716719009499971685).fetch_message(info['messageid'])
         await message.edit(embed=embed)
 
+    @commands.has_permissions(manage_messages=True)
     @commands.command()
     @checks.main_guild_only()
     async def common_prefix(self, ctx, member: discord.Member):
@@ -209,6 +210,24 @@ class Mod(commands.Cog):
         else:
             await member.add_roles(role)
             return await ctx.send(f"Added the common prefix role to {member}")
+
+
+    @commands.has_permissions(manage_messages=True)
+    @commands.command()
+    async def dm(self, ctx, member: discord.Member, *, message):
+        try:
+            await member.send(message)
+            embed = discord.Embed(
+                title='DM Sent',
+                description=f'Successfully sent a DM to {member.mention}',
+                color=discord.Color.blurple()
+            )
+            embed.add_field(name='Content', value=message, inline=False)
+            await ctx.send(embed=embed)
+        except discord.Forbidden:
+            await ctx.send(f'{member.mention} has DMs disabled or is a bot user')
+
+    
 
 def setup(bot):
     bot.add_cog(Mod(bot))
