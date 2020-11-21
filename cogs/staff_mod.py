@@ -216,14 +216,15 @@ class Mod(commands.Cog):
     @commands.command()
     async def dm(self, ctx, member: discord.Member, *, message):
         try:
-            await member.send(message)
             embed = discord.Embed(
-                title='DM Sent',
-                description=f'Successfully sent a DM to {member.mention}',
+                title='Official Warning',
+                description=message,
                 color=discord.Color.blurple()
             )
-            embed.add_field(name='Content', value=message, inline=False)
-            await ctx.send(embed=embed)
+            embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
+            embed.set_footer(text='blist.xyz', icon_url=self.bot.user.avatar_url)
+            await ctx.send(f'Sent a message to **{member}**', embed=embed)
+            await member.send(embed=embed)
         except discord.Forbidden:
             await ctx.send(f'{member.mention} has DMs disabled or is a bot user')
 
