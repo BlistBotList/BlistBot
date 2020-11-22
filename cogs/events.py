@@ -94,6 +94,55 @@ class Events(commands.Cog):
                 await message.add_reaction("❌")
 
     @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if payload.message_id == 780106851961667614:
+            # Updates
+            if payload.emoji.id == 780103995879325696:
+                role = self.bot.main_guild.get_role(716723291011678319)
+                await payload.member.add_roles(role, reason="Assignable Roles")
+            # NSFW Channel
+            if payload.emoji.name == "🔞":
+                role = self.bot.main_guild.get_role(716723357336338482)
+                await payload.member.add_roles(role, reason="Assignable Roles")
+            # Giveaways
+            if payload.emoji.id == 780103641519358013:
+                role = self.bot.main_guild.get_role(779891942464421928)
+                await payload.member.add_roles(role, reason="Assignable Roles")
+            # Polls
+            if payload.emoji.id == 780103746432139274:
+                role = self.bot.main_guild.get_role(750771398636601354)
+                await payload.member.add_roles(role, reason="Assignable Roles")
+            # Announcements
+            if payload.emoji.id == 780103872668237835:
+                role = self.bot.main_guild.get_role(716723257663029372)
+                await payload.member.add_roles(role, reason="Assignable Roles")
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        payload.member = self.bot.main_guild.get_member(payload.user_id)
+        if payload.message_id == 780106851961667614:
+            # Updates
+            if payload.emoji.id == 780103995879325696:
+                role = self.bot.main_guild.get_role(716723291011678319)
+                await payload.member.remove_roles(role, reason="Assignable Roles")
+            # NSFW Channel
+            if payload.emoji.name == "🔞":
+                role = self.bot.main_guild.get_role(716723357336338482)
+                await payload.member.remove_roles(role, reason="Assignable Roles")
+            # Giveaways
+            if payload.emoji.id == 780103641519358013:
+                role = self.bot.main_guild.get_role(779891942464421928)
+                await payload.member.remove_roles(role, reason="Assignable Roles")
+            # Polls
+            if payload.emoji.id == 780103746432139274:
+                role = self.bot.main_guild.get_role(750771398636601354)
+                await payload.member.remove_roles(role, reason="Assignable Roles")
+            # Announcements
+            if payload.emoji.id == 780103872668237835:
+                role = self.bot.main_guild.get_role(716723257663029372)
+                await payload.member.adremove_rolesd_roles(role, reason="Assignable Roles")
+
+    @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.guild == self.bot.main_guild and member.bot:
             role = member.guild.get_role(716684129453735936)

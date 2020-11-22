@@ -16,6 +16,24 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.command()
+    async def rr(self, ctx):
+        embed = discord.Embed(color=discord.Color.blurple(), title="Assignable Roles", inline=False)
+        embed.add_field(name="> <a:updating:780103995879325696>", value="Get updates from our site", inline=False)
+        embed.add_field(name="> :underage:", value="Allows access to NSFW channels. 18+ ONLY", inline=False)
+        embed.add_field(name="> <a:giveaway:780103641519358013>", value="Be notified when we host giveaways", inline=False)
+        embed.add_field(name="> <a:check_animated:780103746432139274>", value="Get pinged when we host polls for our site", inline=False)
+        embed.add_field(name="> <:announcementchannel:780103872668237835>", value="Get pinged when we have announcements", inline=False)
+        ch = self.bot.main_guild.get_channel(716733254308462702)
+        msg = await ch.fetch_message(780106851961667614)
+        await msg.edit(embed=embed)
+        await msg.add_reaction(self.bot.get_emoji(780103995879325696))
+        await msg.add_reaction("🔞")
+        await msg.add_reaction(self.bot.get_emoji(780103641519358013))
+        await msg.add_reaction(self.bot.get_emoji(780103746432139274))
+        await msg.add_reaction(self.bot.get_emoji(780103872668237835))
+        await ctx.send("Done")
+
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def set_country(self, ctx, member: discord.Member, *, country):
