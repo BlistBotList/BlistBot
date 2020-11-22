@@ -117,6 +117,8 @@ class Staff(commands.Cog):
             await ctx.send("This bot is not awaiting approval")
             return
 
+        await self.bot.mod_pool.execute("UPDATE staff SET denied = denied + 1 WHERE userid = $1", ctx.author.id)
+
         try:
             owner = self.bot.main_guild.get_member(bots)
             await owner.send(f"Your bot `{bot}` was denied!")
