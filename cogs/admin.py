@@ -202,16 +202,34 @@ class Admin(commands.Cog):
                 title = f"No cogs were updated.", color = discord.Color.red())
             await ctx.send(embed = embed)
 
-    @commands.has_permissions(administrator = True)
+    @commands.has_permissions(administrator=True)
     @commands.command()
-    async def blacklist(self, ctx, userid: int, *, reason):
-        check = await self.bot.pool.fetch(f"SELECT * FROM blacklisted WHERE userid = {userid}")
-        if not check or check == []:
-            await self.bot.pool.execute("INSERT INTO blacklisted VALUES ($1, $2)", userid, reason)
-            await ctx.send(f"Blacklisted ``{userid}`` for: \n```{reason}```")
-        else:
-            await self.bot.pool.execute("DELETE FROM blacklisted WHERE userid = $1", userid)
-            await ctx.send(f"Un-blacklisted ``{userid}`` for reason: \n```{reason}```")
+    async def blacklist(self, ctx, userid: int, *, reason=None):
+        user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE userid = $1", userid)
+        #headers = {
+        #    "X-Auth-Key": config.cloudflare_token,
+        #    "X-Auth-Email": config.cloudflare_email, "Content-Type": "application/json"}
+        try:
+            user = user[0]
+            if user["blacklisted"] is True:
+                await self.bot.pool.execute("UPDATE main_site_user SET blacklisted = False WHERE userid = $1", userid)
+                await ctx.send(f"Un-Blacklisted {userid}")
+                #json = {"cascade": "none"}
+                #async with self.bot.session.delete(
+                #    url="https://api.cloudflare.com/client/v4/zones/47697d23bd0d042fd63573cc9030177d/firewall/access_rules/rules",
+                #    headers=headers, json=json) as x:
+                #    await ctx.send(f'{await x.json()}')
+            else:
+                await self.bot.pool.execute("UPDATE main_site_user SET blacklisted = True WHERE userid = $1", userid)
+                await ctx.send(f"Blacklisted {userid}")
+                #json = {"mode": "block", "configuration": {
+                #    "target": "ip", "value": user["ip"]}, "notes": reason}
+                #async with self.bot.session.post(
+                #    url="https://api.cloudflare.com/client/v4/zones/47697d23bd0d042fd63573cc9030177d/firewall/access_rules/rules",
+                #    headers=headers, json=json) as x:
+                #    await ctx.send(f'{await x.json()}')
+        except KeyError:
+            return await ctx.send("This user is not in the Database!")
 
     @checks.main_guild_only()
     @commands.has_permissions(administrator=True)
