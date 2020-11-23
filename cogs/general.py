@@ -1,6 +1,8 @@
+from textwrap import dedent as wrap
+
 import discord
 from discord.ext import commands
-from textwrap import dedent as wrap
+
 
 class General(commands.Cog):
     def __init__(self, bot):
@@ -19,8 +21,8 @@ class General(commands.Cog):
         votes = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_vote")
 
         embed = discord.Embed(
-            title = "Blist Stats",
-            description = wrap(
+            title="Blist Stats",
+            description=wrap(
                 f"""
                 >>> ``Total Bots:`` {approved_bots + queued_bots}
                 ``Total Approved Bots:`` {approved_bots}
@@ -31,23 +33,25 @@ class General(commands.Cog):
                 ``Bot Ping:`` {self.bot.latency * 1000:.2f}ms
                 """
             ),
-            color = discord.Color.blurple()
+            color=discord.Color.blurple()
         )
-        embed.set_thumbnail(url = str(ctx.guild.icon_url))
-        await ctx.send(embed = embed)
+        embed.set_thumbnail(url=str(ctx.guild.icon_url))
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def top(self, ctx):
         """Shows leaderboard information"""
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True ORDER BY total_votes DESC LIMIT 5")
-        embed = discord.Embed(title = "Top 5 Voted Bots", color = discord.Color.blurple())
+        embed = discord.Embed(title="Top 5 Voted Bots",
+                              color=discord.Color.blurple())
         place = 0
         for x in bots:
             place += 1
-            embed.add_field(name = f"**{place}.** ``{x['name']}: {x['total_votes']}``", value = "** **", inline = False)
-        await ctx.send(embed = embed)
+            embed.add_field(
+                name=f"**{place}.** ``{x['name']}: {x['total_votes']}``", value="** **", inline=False)
+        await ctx.send(embed=embed)
 
-    @commands.command(aliases = ["bot"])
+    @commands.command(aliases=["bot"])
     async def botinfo(self, ctx, *, bot: discord.Member):
         """Shows information on a listed bot"""
         if not bot.bot:
@@ -68,8 +72,8 @@ class General(commands.Cog):
         privacy_url = b['privacy_policy_url'] if b['privacy_policy_url'] else None
 
         embed = discord.Embed(
-            title = str(bot),
-            description = wrap(
+            title=str(bot),
+            description=wrap(
                 f"""
                 >>> Owner: ``{self.bot.main_guild.get_member(b['main_owner'])}``
                 Library: ``{b['library']}``
@@ -82,11 +86,11 @@ class General(commands.Cog):
                 Added: ``{b['joined'].strftime('%D')}``
                 """
             ),
-            color = discord.Color.blurple()
+            color=discord.Color.blurple()
         )
         embed.add_field(
-            name = "**Links**",
-            value = wrap(
+            name="**Links**",
+            value=wrap(
                 f"""
                 >>> GitHub: {github}
                 Privacy Policy: {privacy_url}
@@ -97,11 +101,12 @@ class General(commands.Cog):
                 """
             )
         )
-        embed.add_field(name = "Short Description", value = b['short_description'], inline = False)
-        embed.set_image(url = f"https://blist.xyz/api/bot/{bot.id}/widget")
+        embed.add_field(name="Short Description",
+                        value=b['short_description'], inline=False)
+        embed.set_image(url=f"https://blist.xyz/api/bot/{bot.id}/widget")
 
-        embed.set_thumbnail(url = bot.avatar_url)
-        await ctx.send(embed = embed)
+        embed.set_thumbnail(url=bot.avatar_url)
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def bots(self, ctx, *, member: discord.Member = None):
@@ -129,11 +134,12 @@ class General(commands.Cog):
             )
 
         embed = discord.Embed(
-            title = f"{member.name}'s bots",
-            description = wrap(''.join(listed_bots)) if listed_bots else 'This user has not bots listed on out site',
-            color = discord.Color.blurple()
+            title=f"{member.name}'s bots",
+            description=wrap(''.join(
+                listed_bots)) if listed_bots else 'This user has not bots listed on out site',
+            color=discord.Color.blurple()
         )
-        await ctx.send(embed = embed)
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def position(self, ctx):
@@ -147,16 +153,16 @@ class General(commands.Cog):
         for b in bots:
             await ctx.send(f"{b['name']} is #{queue.index(b) + 1} in the queue")
 
-    @commands.command(aliases = ["user", "member", "memberinfo", "ui", "whois"])
+    @commands.command(aliases=["user", "member", "memberinfo", "ui", "whois"])
     async def userinfo(self, ctx, *, member: discord.Member = None):
         """Shows information on a user"""
         member = member or ctx.author
 
         em = discord.Embed(
-            title = str(member),
-            url = f"https://blist.xyz/user/{member.id}/",
-            color = discord.Colour.blurple(),
-            description = wrap(
+            title=str(member),
+            url=f"https://blist.xyz/user/{member.id}/",
+            color=discord.Colour.blurple(),
+            description=wrap(
                 f"""
                 >>> `Name:` {member.name} - #{member.discriminator}
                 `ID:` {member.id}
@@ -168,8 +174,9 @@ class General(commands.Cog):
                 """
             )
         )
-        em.set_thumbnail(url = member.avatar_url)
-        await ctx.send(embed = em)
+        em.set_thumbnail(url=member.avatar_url)
+        await ctx.send(embed=em)
+
 
 def setup(bot):
     bot.add_cog(General(bot))

@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-
 from jishaku.help_command import MinimalEmbedPaginatorHelp
 from jishaku.paginators import PaginatorEmbedInterface
 
@@ -14,8 +13,8 @@ class CustomPaginatorEmbedInterface(PaginatorEmbedInterface):
         self._embed.description = self.pages[display_page]
         self._embed.color = discord.Colour.blurple()
         self._embed.set_footer(
-            text = f"{self.owner.name} | Page {display_page + 1}/{self.page_count}",
-            icon_url = self.owner.avatar_url_as(static_format = "png")
+            text=f"{self.owner.name} | Page {display_page + 1}/{self.page_count}",
+            icon_url=self.owner.avatar_url_as(static_format="png")
         )
         # self._embed.set_footer(text = f'Page {display_page + 1}/{self.page_count}')
         return {'embed': self._embed}
@@ -25,7 +24,8 @@ class CustomHelpCommand(MinimalEmbedPaginatorHelp):
 
     async def send_pages(self):
         destination = self.get_destination()
-        interface = CustomPaginatorEmbedInterface(self.context.bot, self.paginator, owner = self.context.author)
+        interface = CustomPaginatorEmbedInterface(
+            self.context.bot, self.paginator, owner=self.context.author)
         await interface.send_to(destination)
 
     def add_bot_commands_formatting(self, _commands, heading):
@@ -51,7 +51,8 @@ class Help(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.old_help_command = MinimalEmbedPaginatorHelp(command_attrs = {'hidden': True})
+        self.old_help_command = MinimalEmbedPaginatorHelp(
+            command_attrs={'hidden': True})
 
     def cog_unload(self):
         self.bot.help_command = self.old_help_command

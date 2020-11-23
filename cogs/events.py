@@ -1,12 +1,12 @@
-from operator import ne
+import datetime
 import random
 import re
-import discord
-from discord.ext import commands, tasks
-import datetime
+from operator import ne
 from textwrap import dedent as wrap
 
 import config
+import discord
+from discord.ext import commands, tasks
 
 
 class Events(commands.Cog):
@@ -22,16 +22,24 @@ class Events(commands.Cog):
         admins_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Administrator')
         senior_admins_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Administrator')
 
-        senior_administrators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_admins_query]
-        administrators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in admins_query]
-        senior_website_moderators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_web_mod_query]
-        website_moderators = [f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in web_mods_query]
+        senior_administrators = [
+            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_admins_query]
+        administrators = [
+            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in admins_query]
+        senior_website_moderators = [
+            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_web_mod_query]
+        website_moderators = [
+            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in web_mods_query]
 
         embed = discord.Embed(color=discord.Color.blurple(), title="Staff")
-        embed.add_field(name="> Senior Administrators", value="\n".join(senior_administrators), inline =False)
-        embed.add_field(name="> Administrators", value="\n".join(administrators), inline =False)
-        embed.add_field(name="> Senior Website Moderators", value="\n".join(senior_website_moderators), inline =False)
-        embed.add_field(name="> Website Moderators", value="\n".join(website_moderators), inline =False)
+        embed.add_field(name="> Senior Administrators",
+                        value="\n".join(senior_administrators), inline=False)
+        embed.add_field(name="> Administrators",
+                        value="\n".join(administrators), inline=False)
+        embed.add_field(name="> Senior Website Moderators", value="\n".join(
+            senior_website_moderators), inline=False)
+        embed.add_field(name="> Website Moderators",
+                        value="\n".join(website_moderators), inline=False)
         channel = guild.get_channel(716823743644696586)
         message = await channel.fetch_message(723641541486182410)
         await message.edit(embed=embed)
@@ -40,12 +48,14 @@ class Events(commands.Cog):
     def error_webhook(self):
         token = config.error_webhook_token
         web_id = config.error_webhook_id
-        hook = discord.Webhook.partial(id=web_id, token=token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
+        hook = discord.Webhook.partial(
+            id=web_id, token=token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
         return hook
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        ignored = (commands.CommandNotFound, commands.DisabledCommand, commands.TooManyArguments)
+        ignored = (commands.CommandNotFound,
+                   commands.DisabledCommand, commands.TooManyArguments)
         send_embed = (commands.MissingPermissions, discord.HTTPException,
                       commands.NotOwner, commands.CheckFailure, commands.MissingRequiredArgument,
                       commands.BadArgument, commands.BadUnionArgument)
@@ -63,7 +73,8 @@ class Events(commands.Cog):
 
         if isinstance(error, send_embed):
             if isinstance(error, commands.MissingRequiredArgument):
-                err = f"`{str(error.param).partition(':')[0]}` is a required argument!"  # removes "that is missing."
+                # removes "that is missing."
+                err = f"`{str(error.param).partition(':')[0]}` is a required argument!"
             else:
                 efd = errors.get(error.__class__)
                 err = str(efd)
@@ -152,21 +163,21 @@ class Events(commands.Cog):
             bot_role = self.bot.verification_guild.get_role(763187834219003934)
             await member.add_roles(bot_role)
             overwrites = {
-                member.guild.get_role(763177553636098082): discord.PermissionOverwrite(manage_channels = True),
-                member.guild.get_role(763187834219003934): discord.PermissionOverwrite(read_messages = False),
-                member: discord.PermissionOverwrite(read_messages = True),
+                member.guild.get_role(763177553636098082): discord.PermissionOverwrite(manage_channels=True),
+                member.guild.get_role(763187834219003934): discord.PermissionOverwrite(read_messages=False),
+                member: discord.PermissionOverwrite(read_messages=True),
             }
-            category = await member.guild.create_category(name = member.name, overwrites = overwrites)
-            channel = await category.create_text_channel(name = "Testing")
-            await category.create_text_channel(name = "Testing-NSFW", nsfw = True)
-            await category.create_voice_channel(name = "Voice Testing", bitrate = member.guild.bitrate_limit)
+            category = await member.guild.create_category(name=member.name, overwrites=overwrites)
+            channel = await category.create_text_channel(name="Testing")
+            await category.create_text_channel(name="Testing-NSFW", nsfw=True)
+            await category.create_voice_channel(name="Voice Testing", bitrate=member.guild.bitrate_limit)
 
             bot = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
 
             embed = discord.Embed(
-                title = str(member),
-                color = discord.Color.blurple(),
-                description = wrap(
+                title=str(member),
+                color=discord.Color.blurple(),
+                description=wrap(
                     f"""
                     >>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
                     Prefix: ``{bot[0]['prefix']}``
@@ -176,8 +187,8 @@ class Events(commands.Cog):
                 )
             )
             embed.add_field(
-                name = "**Links**",
-                value = wrap(
+                name="**Links**",
+                value=wrap(
                     f"""
                     >>> Privacy Policy: {bot[0]['privacy_policy_url'] or 'None'}
                     Website: {bot[0]['website'] or 'None'}
@@ -186,10 +197,11 @@ class Events(commands.Cog):
                     """
                 )
             )
-            embed.add_field(name = "Short Description", value = bot[0]['short_description'], inline = False)
-            embed.add_field(name = "Notes", value = bot[0]['notes'], inline = False)
-            embed.set_thumbnail(url = member.avatar_url)
-            message = await channel.send(embed = embed)
+            embed.add_field(name="Short Description",
+                            value=bot[0]['short_description'], inline=False)
+            embed.add_field(name="Notes", value=bot[0]['notes'], inline=False)
+            embed.set_thumbnail(url=member.avatar_url)
+            message = await channel.send(embed=embed)
             await message.pin()
 
     @commands.Cog.listener()
@@ -207,7 +219,6 @@ class Events(commands.Cog):
             await self.bot.pool.execute("UPDATE main_site_user SET bug_hunter = True WHERE userid = $1", before.id)
         if bug_hunter in before.roles and bug_hunter not in after.roles:
             await self.bot.pool.execute("UPDATE main_site_user SET bug_hunter = False WHERE userid = $1", before.id)
-
 
         admin1 = self.bot.main_guild.get_role(716713266683969626)
         admin2 = self.bot.main_guild.get_role(716713238955556965)
@@ -227,7 +238,8 @@ class Events(commands.Cog):
             if staff_bot in before.roles and staff_bot not in after.roles:
                 await self.bot.pool.execute("UPDATE main_site_bot SET staff = False WHERE id = $1", before.id)
 
-        staff_roles = [716713266683969626, 716713238955556965, 716713498360545352, 716713293330514041]
+        staff_roles = [716713266683969626, 716713238955556965,
+                       716713498360545352, 716713293330514041]
         set_difference1 = set(before.roles) - set(after.roles)
         set_difference2 = set(after.roles) - set(before.roles)
         if list(set_difference2) != []:
@@ -236,14 +248,15 @@ class Events(commands.Cog):
                 return
             await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].name, before.id)
             await self.update_staff_embed(self.bot.main_guild)
-        #else:
+        # else:
         #    new_roles = list(set_difference1)
         #    await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].id, before.id)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if member.guild == self.bot.verification_guild and member.bot:
-            category = discord.utils.get(member.guild.categories, name = member.name)
+            category = discord.utils.get(
+                member.guild.categories, name=member.name)
             for channel in category.channels:
                 await channel.delete()
             await category.delete()
@@ -253,9 +266,9 @@ class Events(commands.Cog):
                 x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
                 if x:
                     embed = discord.Embed(
-                        description = f"{member} ({member.id}) has left the server and is listed on the site! Use `b!delete` to delete the bot",
-                        color = discord.Color.red())
-                    await self.bot.get_channel(716727091818790952).send(embed = embed)
+                        description=f"{member} ({member.id}) has left the server and is listed on the site! Use `b!delete` to delete the bot",
+                        color=discord.Color.red())
+                    await self.bot.get_channel(716727091818790952).send(embed=embed)
                     return
             if not member.bot:
                 x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", member.id)
@@ -264,14 +277,16 @@ class Events(commands.Cog):
                         if user["denied"]:
                             await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", user["id"])
                             return
-                        bots = " \n".join([f"{user['name']} (<@{user['id']}>)"])
-                        listed_bots = f"{len(x)} bot listed:" if len(x) == 1 else f"{len(x)} bots listed:"
+                        bots = " \n".join(
+                            [f"{user['name']} (<@{user['id']}>)"])
+                        listed_bots = f"{len(x)} bot listed:" if len(
+                            x) == 1 else f"{len(x)} bots listed:"
                         embed = discord.Embed(
-                            description = f"{member} ({member.id}) left the server and has {listed_bots}\n\n{bots} \n\nUse the `b!delete` command to delete the bot",
-                            color = discord.Color.red())
-                        await self.bot.get_channel(716727091818790952).send(embed = embed)
+                            description=f"{member} ({member.id}) left the server and has {listed_bots}\n\n{bots} \n\nUse the `b!delete` command to delete the bot",
+                            color=discord.Color.red())
+                        await self.bot.get_channel(716727091818790952).send(embed=embed)
 
-    @tasks.loop(minutes = 30)
+    @tasks.loop(minutes=30)
     async def check_join(self):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")
         channel = self.bot.main_guild.get_channel(716727091818790952)
@@ -281,18 +296,19 @@ class Events(commands.Cog):
             b = self.bot.main_guild.get_member(bot['id'])
             if not b:
                 embed = discord.Embed(
-                    title = "Bot Has Not Joined!!",
-                    description = "The following bot has not joined the Support Server after getting approved...",
-                    color = discord.Color.red()
+                    title="Bot Has Not Joined!!",
+                    description="The following bot has not joined the Support Server after getting approved...",
+                    color=discord.Color.red()
                 )
                 embed.add_field(
-                    name = bot['name'],
-                    value = str(
-                        discord.utils.oauth_url(bot['id'], guild = self.bot.main_guild)) + "&disable_guild_select=true"
+                    name=bot['name'],
+                    value=str(
+                        discord.utils.oauth_url(bot['id'], guild=self.bot.main_guild)) + "&disable_guild_select=true"
                 )
-                await channel.send(embed = embed)
+                await channel.send(embed=embed)
 
-    @tasks.loop(minutes = 60) # Minutes = 60 is better than Hours = 1!! This is for you @A Discord User @Soheab_
+    # Minutes = 60 is better than Hours = 1!! This is for you @A Discord User @Soheab_
+    @tasks.loop(minutes=60)
     async def update_statuses(self):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")
         for bot in bots:
@@ -302,7 +318,7 @@ class Events(commands.Cog):
                 pass
             await self.bot.pool.execute("UPDATE main_site_bot SET status = $1 WHERE id = $2", str(member_instance.status), bot["id"])
 
-    @tasks.loop(minutes = 1)
+    @tasks.loop(minutes=1)
     async def change_status(self):
         approved_bots = await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
@@ -314,7 +330,7 @@ class Events(commands.Cog):
             f"with {approved_bots} approved bots",
             f"with {users} total users"
         ]
-        await self.bot.change_presence(activity = discord.Game(name = random.choice(options)))
+        await self.bot.change_presence(activity=discord.Game(name=random.choice(options)))
 
 
 def setup(bot):

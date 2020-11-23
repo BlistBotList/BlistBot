@@ -46,7 +46,7 @@ class Mod(commands.Cog):
         embed = discord.Embed(
             title=type.title(), color=discord.Color.blurple(),
             description=wrap(
-            f"""
+                f"""
             **__Victim:__** {member} ({member.id})
             **__Reason:__** ``{reason or f'No reason was set. Do b!reason {last_case_number + 1} <reason> to do so.'}``
             {string}
@@ -81,7 +81,7 @@ class Mod(commands.Cog):
         is_muted = await self.bot.mod_pool.fetch("SELECT * FROM mutes WHERE userid = $1", member.id)
         mute_role = self.bot.main_guild.get_role(725899725152190525)
         if mute_role in member.roles or is_muted != []:
-            return await ctx.send(f"This user is already muted!")        
+            return await ctx.send(f"This user is already muted!")
 
         await member.add_roles(mute_role, reason=reason)
         case_number = await self.do_case(ctx.author, member, reason, "Mute", time=length)
@@ -169,12 +169,13 @@ class Mod(commands.Cog):
 
         await ctx.send(f"Set the reason to: `{reason}`")
         await self.bot.mod_pool.execute("UPDATE action SET reason = $1 WHERE id = $2", reason, number)
-        
+
         target = ctx.guild.get_member(info['userid'])
         mod = ctx.guild.get_member(info['modid'])
         if info['type'] == "Mute":
             mute_info = await self.bot.mod_pool.fetchval("SELECT expire FROM mutes WHERE id = $1", info['id'])
-            time = humanize.naturaldelta(mute_info - datetime.datetime.utcnow())
+            time = humanize.naturaldelta(
+                mute_info - datetime.datetime.utcnow())
             string = f"**__Length:__** ``{time}``"
         else:
             string = ""
@@ -189,7 +190,7 @@ class Mod(commands.Cog):
                 """
             )
         )
-        embed.set_author(name=mod, icon_url= mod.avatar_url)
+        embed.set_author(name=mod, icon_url=mod.avatar_url)
         embed.set_footer(text=f"Case #{number}")
         embed.timestamp = info["time"]
 
@@ -211,7 +212,6 @@ class Mod(commands.Cog):
             await member.add_roles(role)
             return await ctx.send(f"Added the common prefix role to {member}")
 
-
     @commands.has_permissions(manage_messages=True)
     @commands.command()
     async def dm(self, ctx, member: discord.Member, *, message):
@@ -222,13 +222,13 @@ class Mod(commands.Cog):
                 color=discord.Color.blurple()
             )
             embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
-            embed.set_footer(text='blist.xyz', icon_url=self.bot.user.avatar_url)
+            embed.set_footer(text='blist.xyz',
+                             icon_url=self.bot.user.avatar_url)
             await ctx.send(f'Sent a message to **{member}**', embed=embed)
             await member.send(embed=embed)
         except discord.Forbidden:
             await ctx.send(f'{member.mention} has DMs disabled or is a bot user')
 
-    
 
 def setup(bot):
     bot.add_cog(Mod(bot))
