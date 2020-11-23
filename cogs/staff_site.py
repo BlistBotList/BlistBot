@@ -169,7 +169,7 @@ class Staff(commands.Cog):
         await self.bot.get_channel(716446098859884625).send(embed = em)
 
         member = ctx.guild.get_member(bots['main_owner'])
-        if bots['certified'] is True:
+        if member and bots['certified'] is True:
             certified_dev_role = ctx.guild.get_role(716724317207003206)
             await member.remove_roles(certified_dev_role)
 
