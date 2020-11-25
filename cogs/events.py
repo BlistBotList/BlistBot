@@ -314,8 +314,7 @@ class Events(commands.Cog):
         for bot in bots:
             member_instance = self.bot.main_guild.get_member(bot["id"])
             if member_instance is None:
-                # Shouldn't be, but just in case
-                pass
+                break
             await self.bot.pool.execute("UPDATE main_site_bot SET status = $1 WHERE id = $2", str(member_instance.status), bot["id"])
 
     @tasks.loop(minutes=1)

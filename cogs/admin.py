@@ -462,21 +462,17 @@ We try to get every bot done as fast as we can. Please take into consideration w
 
         for bot in bots:
             bot_user = self.bot.main_guild.get_member(bot['id'])
-            if not bot_user:
-                break
-            url = f"https://cdn.discordapp.com/avatars/{bot['id']}/{bot['avatar_hash']}.webp?size=1024"
-            async with self.bot.session.head(url=url) as resp:
-                if resp.status == 404:
-                    await self.bot.pool.execute("UPDATE main_site_bot SET avatar_hash = $1 WHERE id = $2", bot_user.avatar, bot_user.id)
+            try:
+                await self.bot.pool.execute("UPDATE main_site_bot SET avatar_hash = $1 WHERE id = $2", bot_user.avatar, bot_user.id)
+            except:
+                pass
 
         for user in users:
             user_user = self.bot.main_guild.get_member(user['userid'])
-            if not user_user:
-                break
-            url = f"https://cdn.discordapp.com/avatars/{user['userid']}/{user['avatar_hash']}.webp?size=1024"
-            async with self.bot.session.head(url=url) as resp:
-                if resp.status == 404:
-                    await self.bot.pool.execute("UPDATE main_site_bot SET avatar_hash = $1 WHERE id = $2", user_user.avatar, user_user.id)
+            try:
+                await self.bot.pool.execute("UPDATE main_site_bot SET avatar_hash = $1 WHERE id = $2", user_user.avatar, user_user.id)
+            except:
+                pass
 
         await ctx.send("Done")
 
