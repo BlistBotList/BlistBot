@@ -6,4 +6,3 @@ googletrans
 parsedatetime
 aiohttp
 tweepy
-discord-flags

@@ -6,7 +6,7 @@ from textwrap import dedent as wrap
 
 import config
 import discord
-from discord.ext import commands, tasks, flags
+from discord.ext import commands, tasks
 
 
 class Events(commands.Cog):
@@ -54,10 +54,11 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        ignored = (commands.CommandNotFound, commands.DisabledCommand, commands.TooManyArguments)
-        send_embed = (commands.MissingPermissions, discord.HTTPException, commands.NotOwner,
-                      commands.CheckFailure, commands.MissingRequiredArgument, commands.BadArgument,
-                      commands.BadUnionArgument, flags.ArgumentParsingError)
+        ignored = (commands.CommandNotFound,
+                   commands.DisabledCommand, commands.TooManyArguments)
+        send_embed = (commands.MissingPermissions, discord.HTTPException,
+                      commands.NotOwner, commands.CheckFailure, commands.MissingRequiredArgument,
+                      commands.BadArgument, commands.BadUnionArgument)
 
         errors = {
             commands.MissingPermissions: "You do not have permissions to run this command.",
