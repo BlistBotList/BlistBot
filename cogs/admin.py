@@ -352,18 +352,21 @@ class Admin(commands.Cog):
             # Announcements
             716723257663029372: f"This is for if you want to get pinged for announcements related to the site or this server. Get it from {assignable_roles_channel}",
             # Polls
+            779891942464421928: f"This is for if you want to get pinged for giveaways. Get it from {assignable_roles_channel}",
+            # Giveaways
             750771398636601354: f"This is for if you want to get pinged for polls related to the site and this server. Get it from {assignable_roles_channel}",
             716732766796120156: "Everyone human that joins gets this.",  # Member
-            # (bot) Developer
+            # Developer
             716684805286133840: "Everyone with a bot on the site has this. [Add a bot](https://blist.xyz/bot/add/) to the site to get it.",
-            # (other) Developer
+            # Development Team
             716722689921908756: f"Website developer. DM {ctx.guild.get_member(679118121943957504).mention} if you know django, js and html (Must know all 3) and want to help code the site back or front.",
             # Certified Developer
             716724317207003206: "This is for people that have a certified bot. Get it by applying for certification [here](https://blist.xyz/certification/)",
             716726167713087589: "Bots with this role help with things around this server like mod related things.",  # Server Bot
             716684129453735936: "This is a role that bots get when they get approved and added to this server.",  # Bot
             716684142766456832: "This is for bots that are certified on the site.",  # Certified Bot
-            764686546179325972: "This is for bots with a common prefix."  # Common Prefix
+            764686546179325972: "This is for bots with a common prefix.",  # Common Prefix
+            716724716299091980: "This is for if you have donated 5$ or more. You can donate [here](https://www.paypal.com/paypalme/trashcoder/5)"  # Donator
         }
 
         main_embed = discord.Embed(color=discord.Color.blurple())
