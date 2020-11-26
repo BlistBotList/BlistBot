@@ -401,14 +401,24 @@ class Admin(commands.Cog):
         )
 
         server_roles_list = []
+        server_roles_embeds = []
+        roles_paginator = commands.Paginator(prefix = "", suffix = "", max_size = 2048)
         guild_role_ids = [x.id for x in ctx.guild.roles]
-        ordered_server_roles_list = sorted(server_roles_dict.keys(
-        ), key=guild_role_ids.index, reverse=True)  # put in order as in server.
+        ordered_server_roles_list = sorted(server_roles_dict.keys(), key=guild_role_ids.index, reverse=True)  # put in order as in server.
         for role_id in ordered_server_roles_list:
-            server_roles_list.append(
-                f"{ctx.guild.get_role(role_id).mention}: {server_roles_dict[role_id]}")
-        server_roles_embed = discord.Embed(title="Blist Server Roles", color=discord.Color.blurple(
-        ), description="\n".join(server_roles_list))
+            server_roles_list.append(f"{ctx.guild.get_role(role_id).mention}: {server_roles_dict[role_id]}")
+
+        join_dict = "\n".join(server_roles_list)
+        server_roles_content = [join_dict[i:i + 2000] for i in range(0, len(join_dict), 2000)]
+        for page in server_roles_content:
+            roles_paginator.add_line(page)
+
+        for page_content in roles_paginator.pages:
+            server_roles_embeds.append(discord.Embed(description=page_content, color=discord.Color.blurple()))
+
+        server_roles_embed1 = server_roles_embeds[0]
+        server_roles_embed1.title = "Blist Server Roles"
+        server_roles_embed2 = server_roles_embeds[1]
 
         faq_embed = discord.Embed(
             title="FAQ's", color=discord.Color.blurple(),
@@ -424,20 +434,20 @@ We try to get every bot done as fast as we can. Please take into consideration w
 
         channel = ctx.guild.get_channel(716717317320605736)
         all_info = await channel.fetch_message(723643619315023873)
-        server_roles = await channel.fetch_message(723643619700899983)
-        faqs = await channel.fetch_message(723643620313268291)
+        server_roles1 = await channel.fetch_message(723643619700899983)
+        server_roles2 = await channel.fetch_message(723643620313268291)
+        faqs = await channel.fetch_message(781643618091270173)
 
         await all_info.edit(embed=main_embed)
         await faqs.edit(embed=faq_embed)
 
         # just to be sure.
         try:
-            await server_roles.edit(embed=server_roles_embed)
+            await server_roles1.edit(embed=server_roles_embed1)
+            await server_roles2.edit(embed=server_roles_embed2)
         except Exception as e:
-            em = discord.Embed(title="Blist Server Roles",
-                               description="Content was over 2000...", color=discord.Color.blurple())
-            await server_roles.edit(embed=em)
-            await ctx.send(f"{e}\nRoles embed's description is over 2048 it think.. **{len(server_roles_embed.description)}** ({len(server_roles_embed)} total) to be exact.")
+            await ctx.send(f"{e}\nRoles embeds.")
+            pass
 
         await ctx.send(f"Updated all embeds in {channel.mention}")
 
