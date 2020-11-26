@@ -3,7 +3,7 @@ from typing import Union
 
 import discord
 import googletrans
-from discord.ext import commands
+from discord.ext import commands, flags
 
 from . import checks  # pylint: disable=relative-beyond-top-level
 
@@ -195,27 +195,36 @@ class Staff(commands.Cog):
         """Make blist repeat what you said"""
         await ctx.send(msg)
 
+    @flags.add_flag("--to", type=str, default="en")
+    @flags.add_flag("--from", type=str, default="auto")
+    @flags.add_flag("message", nargs = "+")
     @commands.has_permissions(kick_members=True)
-    @commands.command(hidden=True, aliases=["t"])
-    async def translate(self, ctx, to, *, message: commands.clean_content):
-        """Translates a message to English using Google translate."""
+    @commands.command(hidden=True, aliases=["t"], cls=flags.FlagCommand)
+    async def translate(self, ctx, **arguments):
+        """
+        Translates a message to English (default) using Google translate.
+
+        **Optional Arguments**:
+
+        --to | translate text to x language. Example: `b!translate cool --to en`
+        --from | translate text from x language. Example: `b!translate cool --from nl`
+        """
+        message = ' '.join(arguments['message'])
         translator = googletrans.Translator()
         while True:
             try:
-                translated = translator.translate(message, dest=to)
+                translated = translator.translate(message, dest=arguments['to'], src=arguments['from'])
                 break
             except ValueError:
                 return await ctx.send("That is not a valid language")
-            except Exception as e:
+            except Exception:
                 translator = googletrans.Translator()
         src = googletrans.LANGUAGES.get(
             translated.src, '(auto-detected)').title()
         dest = googletrans.LANGUAGES.get(translated.dest, 'Unknown').title()
         embed = discord.Embed(color=discord.Color.blurple())
-        embed.add_field(name=f"{src} ({translated.src})",
-                        value=translated.origin.title(), inline=False)
-        embed.add_field(name=f"{dest} ({translated.dest})",
-                        value=translated.text.title(), inline=False)
+        embed.add_field(name=f"{src} ({translated.src})", value=translated.origin, inline=False)
+        embed.add_field(name=f"{dest} ({translated.dest})", value=translated.text, inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
