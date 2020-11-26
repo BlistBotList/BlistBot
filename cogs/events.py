@@ -206,6 +206,18 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
+        premium = self.bot.main_guild.get_role(716724716299091980)
+        if premium not in before.roles and premium in after.roles:
+            await self.bot.pool.execute("UPDATE main_site_user SET premium = True WHERE userid = $1", before.id)
+            bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", before.id)
+            for bot in bots:
+                await self.bot.pool.execute("UPDATE main_site_bot SET premium = True WHERE id = $1", bot["id"])
+        if premium in before.roles and premium not in after.roles:
+            await self.bot.pool.execute("UPDATE main_site_user SET premium = False WHERE userid = $1", before.id)
+            bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", before.id)
+            for bot in bots:
+                await self.bot.pool.execute("UPDATE main_site_bot SET premium = False WHERE id = $1", bot["id"])
+
         staff = self.bot.main_guild.get_role(716713561233031239)
         if staff not in before.roles and staff in after.roles:
             await self.bot.mod_pool.execute("INSERT INTO staff VALUES($1, $2)", before.id, datetime.datetime.utcnow())
