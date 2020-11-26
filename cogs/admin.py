@@ -366,7 +366,7 @@ class Admin(commands.Cog):
             716684129453735936: "This is a role that bots get when they get approved and added to this server.",  # Bot
             716684142766456832: "This is for bots that are certified on the site.",  # Certified Bot
             764686546179325972: "This is for bots with a common prefix.",  # Common Prefix
-            716724716299091980: "This is for if you have premium on the site. You can get it by donating 5$ or more [here](https://www.paypal.com/paypalme/trashcoder/5)"  # Premium
+            716724716299091980: "This is for if you have premium on the site. You can get it by donating 5$ or more [here](https://www.paypal.com/paypalme/trashcoder/5)",  # Premium
             779817680488103956: "This is for our Social Media Manager, they manage our Official Social accounts like twitter."  # Social Media Access
         }
 
