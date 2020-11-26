@@ -337,7 +337,7 @@ class Admin(commands.Cog):
         server_roles_dict = {
             716722789234638860: "This is for people that report bugs to help improve the site. Gained by reporting bugs, no specific amount.",  # Bug Hunter
             # Community Contributor
-            716722845773725806: "This is for people that help improve the site by suggesting things and pring on the public [GitHub repositories](https://github.com/BlistBotList)",
+            716722845773725806: "This is for people that help improve the site by suggesting things and pr'ing on our public [GitHub repositories](https://github.com/BlistBotList)",
             716713293330514041: "First Staff Tier",  # Website Moderator
             716713498360545352: "Second Staff Tier",  # Senior Website Moderator
             716713238955556965: "Third Staff Tier",  # Administrator
@@ -366,7 +366,8 @@ class Admin(commands.Cog):
             716684129453735936: "This is a role that bots get when they get approved and added to this server.",  # Bot
             716684142766456832: "This is for bots that are certified on the site.",  # Certified Bot
             764686546179325972: "This is for bots with a common prefix.",  # Common Prefix
-            716724716299091980: "This is for if you have donated 5$ or more. You can donate [here](https://www.paypal.com/paypalme/trashcoder/5)"  # Donator
+            716724716299091980: "This is for if you have premium on the site. You can get it by donating 5$ or more [here](https://www.paypal.com/paypalme/trashcoder/5)"  # Premium
+            779817680488103956: "This is for our Social Media Manager, they manage our Official Social accounts like twitter."  # Social Media Access
         }
 
         main_embed = discord.Embed(color=discord.Color.blurple())
