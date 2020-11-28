@@ -242,6 +242,7 @@ class Staff(commands.Cog):
                 f"""
                 >>> Staff Since: ``{query['joinedat'].strftime("%D")}``
                 Bots Approved: ``{query['approved']}``
+                Bots Denied: ``{query['denied']}``
                 Country: ``{query['country_code'] or 'Not Specified'}``
                 Rank: ``{query['rank'] or 'Not Specified'}``
                 """

@@ -13,6 +13,8 @@ class General(commands.Cog):
         """Shows info on Blist"""
         approved_bots = await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
+        certified_bots = await self.bot.pool.fetchval(
+            "SELECT COUNT(*) FROM main_site_bot WHERE certified = True")
         queued_bots = await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
         denied_bots = await self.bot.pool.fetchval(
@@ -24,8 +26,9 @@ class General(commands.Cog):
             title="Blist Stats",
             description=wrap(
                 f"""
-                >>> ``Total Bots:`` {approved_bots + queued_bots}
+                >>> ``Total Bots:`` {approved_bots + queued_bots + denied_bots}
                 ``Total Approved Bots:`` {approved_bots}
+                ``Total Certified Bots:`` {certified_bots}
                 ``Total Denied Bots:`` {denied_bots}
                 ``Total Queued Bots:`` {queued_bots}
                 ``Total Users:`` {users}
