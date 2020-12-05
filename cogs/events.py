@@ -128,7 +128,7 @@ class Events(commands.Cog):
                 await payload.member.add_roles(role, reason="Assignable Roles")
             # Leaks
             if payload.emoji.id == 784923587785916487:
-                role = self.bot.main_guild.get_role(784923587785916487)
+                role = self.bot.main_guild.get_role(784924059065516052)
                 await payload.member.add_roles(role, reason="Assignable Roles")
 
     @commands.Cog.listener()
@@ -157,7 +157,7 @@ class Events(commands.Cog):
                 await payload.member.remove_roles(role, reason="Assignable Roles")
             # Leaks
             if payload.emoji.id == 784923587785916487:
-                role = self.bot.main_guild.get_role(784923587785916487)
+                role = self.bot.main_guild.get_role(784924059065516052)
                 await payload.member.remove_roles(role, reason="Assignable Roles")
 
     @commands.Cog.listener()
