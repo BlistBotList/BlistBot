@@ -30,6 +30,8 @@ class Admin(commands.Cog):
                         value="Get pinged when we host polls for our site", inline=False)
         embed.add_field(name="> <:announcementchannel:780103872668237835>",
                         value="Get pinged when we have announcements", inline=False)
+        embed.add_field(name="> <a:Loading:784923587785916487>",
+                        value="Get pinged when we have new leaks", inline=False)
         ch = self.bot.main_guild.get_channel(716733254308462702)
         msg = await ch.fetch_message(780106851961667614)
         await msg.edit(embed=embed)
@@ -38,6 +40,7 @@ class Admin(commands.Cog):
         await msg.add_reaction(self.bot.get_emoji(780103641519358013))
         await msg.add_reaction(self.bot.get_emoji(780103746432139274))
         await msg.add_reaction(self.bot.get_emoji(780103872668237835))
+        await msg.add_reaction(self.bot.get_emoji(784923587785916487))
         await ctx.send("Done")
 
     @commands.has_permissions(administrator=True)
