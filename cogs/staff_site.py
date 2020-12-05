@@ -11,6 +11,7 @@ from . import checks  # pylint: disable=relative-beyond-top-level
 class Staff(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.translator = googletrans.Translator()
 
     @commands.has_permissions(kick_members=True)
     @commands.group(invoke_without_command=True, aliases=["q"])
@@ -205,20 +206,16 @@ class Staff(commands.Cog):
         Translates a message to English (default) using Google translate.
 
         **Optional Arguments**:
-
         --to | translate text to x language. Example: `b!translate cool --to en`
         --from | translate text from x language. Example: `b!translate cool --from nl`
         """
         message = ' '.join(arguments['message'])
-        translator = googletrans.Translator()
-        while True:
-            try:
-                translated = translator.translate(message, dest=arguments['to'], src=arguments['from'])
-                break
-            except ValueError:
-                return await ctx.send("That is not a valid language")
-            except Exception:
-                translator = googletrans.Translator()
+        try:
+            translated = self.translator.translate(message, dest=arguments['to'], src=arguments['from'])
+        except ValueError:
+            return await ctx.send(
+                embed=discord.Embed(description="That is not a valid language!", color=discord.Color.red()))
+
         src = googletrans.LANGUAGES.get(
             translated.src, '(auto-detected)').title()
         dest = googletrans.LANGUAGES.get(translated.dest, 'Unknown').title()
