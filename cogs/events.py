@@ -98,6 +98,15 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.guild is None:
+            channel = self.bot.main_guild.get_channel(716727091818790952)
+            embed = discord.Embed(color=discord.Color.blurple(), description=f"""
+New Message
+
+>>> **Author:** `{message.author} ({message.author.id})`
+**Message:** ```{message.content}```
+""")
+            await channel.send(embed=embed)
         if message.channel.id == 743127622053003364:
             if message.attachments or re.findall(r"<(?P<animated>a?):(?P<name>[a-zA-Z0-9_]{2,32}):(?P<id>[0-9]{18,22})>", message.content):
                 await message.add_reaction("✔")
@@ -274,9 +283,16 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if member.guild == self.bot.verification_guild and member.bot:
+            file = open(member.name.replace(" ", "_") + ".txt", "w")
+            file = open(member.name.replace(" ", "_") + ".txt", "r+")
             category = discord.utils.get(
                 member.guild.categories, name=member.name)
             for channel in category.channels:
+                if channel.type != discord.ChannelType.voice:
+                    messages = await channel.history().flatten()
+                    for message in messages[::-1]:
+                        content = message.content if message.content != "" else "embed"
+                        file.write(f"{message.author.name}: {content}" + "\n-------\n")
                 await channel.delete()
             await category.delete()
 
