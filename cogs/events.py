@@ -99,6 +99,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.guild is None:
+            if message.author == self.bot.user:
+                return
             channel = self.bot.main_guild.get_channel(716727091818790952)
             embed = discord.Embed(color=discord.Color.blurple(), description=f"""
 New Message
