@@ -89,7 +89,7 @@ class Staff(commands.Cog):
         await self.bot.verification_guild.get_channel(763183376311517215).send(content=ctx.author.mention, embed=embed)
 
         em = discord.Embed(
-            description=f"``{bot.name}`` by ``{self.bot.main_guild.get_member(bots)}`` was approved by ``{ctx.author.name}``",
+            description=f"``{bot}`` by ``{self.bot.main_guild.get_member(bots)}`` was approved by ``{ctx.author}``",
             color=discord.Color.blurple())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
@@ -135,7 +135,7 @@ class Staff(commands.Cog):
             description=f"Denied {bot.name}", color=discord.Color.red())
         await ctx.send(embed=embed)
         em = discord.Embed(
-            description=f"``{bot.name}`` by ``{self.bot.main_guild.get_member(bots)}`` was denied by ``{ctx.author.name}`` for: \n```{reason}```",
+            description=f"``{bot}`` by ``{self.bot.main_guild.get_member(bots)}`` was denied by ``{ctx.author.name}{ctx.author.discriminator}`` for: \n```{reason}```",
             color=discord.Color.red())
         await self.bot.get_channel(716446098859884625).send(embed=em)
         await bot.kick(reason="Bot Denied")
@@ -170,7 +170,7 @@ class Staff(commands.Cog):
         await ctx.send(embed=embed)
 
         em = discord.Embed(
-            description=f"``{bots['name']}`` by ``{ctx.guild.get_member(bots['main_owner']) or bots['main_owner']}`` was deleted by ``{ctx.author.name}`` for: \n```{reason}```",
+            description=f"``{bots['name']}#{bots['discriminator']}`` by ``{ctx.guild.get_member(bots['main_owner']) or bots['main_owner']}`` was deleted by ``{ctx.author}`` for: \n```{reason}```",
             color=discord.Color.red())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
