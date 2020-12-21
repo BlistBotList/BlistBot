@@ -120,7 +120,7 @@ class Admin(commands.Cog):
         await ctx.send(embed=embed)
 
         owner = ctx.guild.get_member(is_waiting)
-        em = discord.Embed(description=f"``{bot.name}`` by ``{owner}`` was certified",
+        em = discord.Embed(description=f"``{bot}`` by ``{owner}`` was certified",
                            color=discord.Color.blurple())
 
         await self.bot.pool.execute("UPDATE main_site_user SET certified_developer = True WHERE userid = $1", owner.id)
@@ -149,7 +149,7 @@ class Admin(commands.Cog):
         await self.bot.pool.execute("UPDATE main_site_bot SET awaiting_certification = False WHERE id = $1", bot.id)
         await ctx.send(f"Denied certification for {bot.name}")
         em = discord.Embed(
-            description=f"``{bot.name}`` by ``{ctx.guild.get_member(is_waiting)}`` was denied for certification for: \n```{reason}```",
+            description=f"``{bot}`` by ``{ctx.guild.get_member(is_waiting)}`` was denied for certification for: \n```{reason}```",
             color=discord.Color.blurple())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
