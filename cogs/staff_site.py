@@ -135,7 +135,7 @@ class Staff(commands.Cog):
             description=f"Denied {bot.name}", color=discord.Color.red())
         await ctx.send(embed=embed)
         em = discord.Embed(
-            description=f"``{bot}`` by ``{self.bot.main_guild.get_member(bots)}`` was denied by ``{ctx.author.name}{ctx.author.discriminator}`` for: \n```{reason}```",
+            description=f"``{bot}`` by ``{self.bot.main_guild.get_member(bots)}`` was denied by ``{ctx.author}`` for: \n```{reason}```",
             color=discord.Color.red())
         await self.bot.get_channel(716446098859884625).send(embed=em)
         await bot.kick(reason="Bot Denied")
