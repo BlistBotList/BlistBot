@@ -172,6 +172,15 @@ New Message
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        # Adding member role if they already passed member screening somehow..
+        if member.guild.id == self.bot.main_guild.id and not member.bot:
+            if member.pending is False:
+                role = member.guild.get_role(716732766796120156)
+                await member.add_roles(role)
+
+            # wanted to do join logs but too lazy...
+            # members = sorted(self.bot.main_guild.members, key = lambda m: m.joined_at)
+            # joined_position = list(members).index(member) + 1
         if member.guild == self.bot.main_guild and member.bot:
             role = member.guild.get_role(716684129453735936)
             await member.add_roles(role)
@@ -223,6 +232,13 @@ New Message
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
+        # Adding member role after member screening.
+        if before.guild.id == self.bot.main_guild.id and not before.bot:
+            if before.pending is True and after.pending is False:
+                role = self.bot.main_guild.get_role(716732766796120156)
+                if role not in after.roles:
+                    await after.add_roles(role)
+
         premium = self.bot.main_guild.get_role(716724716299091980)
         if premium not in before.roles and premium in after.roles:
             await self.bot.pool.execute("UPDATE main_site_user SET premium = True WHERE userid = $1", before.id)
@@ -267,13 +283,13 @@ New Message
             if staff_bot in before.roles and staff_bot not in after.roles:
                 await self.bot.pool.execute("UPDATE main_site_bot SET staff = False WHERE id = $1", before.id)
 
-        staff_roles = [716713266683969626, 716713238955556965,
-                       716713498360545352, 716713293330514041]
+        #staff_roles = [716713266683969626, 716713238955556965,
+                       #716713498360545352, 716713293330514041]
         set_difference1 = set(before.roles) - set(after.roles)
         set_difference2 = set(after.roles) - set(before.roles)
         if list(set_difference2) != []:
             new_roles = list(set_difference2)
-            if new_roles[0].id not in staff_roles:
+            if new_roles[0].id not in self.bot.staff_roles:
                 return
             await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].name, before.id)
             await self.update_staff_embed(self.bot.main_guild)

@@ -16,6 +16,66 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.has_permissions(administrator=True)
+    @commands.command()
+    async def fire(self, ctx, member: discord.Member):
+        verification_guild = self.bot.verification_guild
+        main_guild = self.bot.main_guild
+        staff_bot_role = main_guild.get_role(777575976124547072)
+        staff_role = self.bot.main_guild.get_role(716713561233031239)
+        user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True",
+                                              member.id)
+        if staff_role not in member.roles or member.bot:
+            return await ctx.send("That is a bot or not a staff member.")
+
+        msg = await ctx.send(f"**{ctx.author.name}**, do you really want to fire {member}? react with ✅ or ❌ in 30 seconds.")
+        await msg.add_reaction("\U00002705")
+        await msg.add_reaction("\U0000274c")
+
+        def check(r, u):
+            return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and \
+                   str(r.emoji) in ["\U00002705", "\U0000274c"]
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', checks=check, timeout=30)
+        except asyncio.TimeoutError:
+            await ctx.send(f"**{ctx.author.name}**, i guess not..")
+            return
+        else:
+            if str(reaction.emoji) == "\U00002705":
+                pass
+            if str(reaction.emoji) == "\U0000274c":
+                return await ctx.send(f"Cancelled...")
+
+        success_text = []
+
+        for role_id in self.bot.staff_role:
+            for role in member.roles:
+                if role.id == role_id:
+                    await member.remove_roles(role)
+                    success_text.append("✅ **Removed staff roles.**")
+                else:
+                    success_text.append(f"❌ **{member} didn't have any staff roles.**")
+
+        if user_bots:
+            for x in user_bots:
+                bot = self.bot.main_guild.get_member(x['id'])
+                if staff_bot_role in bot.roles:
+                    await bot.remove_roles(staff_bot_role)
+                    success_text.append("✅ **Removed staff bot roles.**")
+        else:
+            success_text.append(f"❌ **{member} didn't have any bots with the staff bot role.**")
+
+        if member in verification_guild.members:
+            await self.bot.verification_guild.get_member(member.id).kick()
+            success_text.append(f"✅ **Kicked {member} from the verification server.**")
+        else:
+            success_text.append(f"❌ **{member} wasn't in the verification server.. somehow.**")
+
+        join_list = "\n".join(success_text)
+        await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
+        await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
+
+    @commands.has_permissions(administrator = True)
     @commands.command()
     async def rr(self, ctx):
         embed = discord.Embed(color=discord.Color.blurple(),
@@ -265,41 +325,11 @@ class Admin(commands.Cog):
 
     @checks.main_guild_only()
     @commands.has_permissions(administrator=True)
-    @commands.command()
-    async def staff_embed(self, ctx):
-        all_staff = {
-            "Senior Administrators": [
-                f"{ctx.guild.get_member(679118121943957504).mention} :flag_us:"
-            ],
-            "Administrators": [
-                f"{ctx.guild.get_member(712737377524777001).mention} :flag_us:"
-            ],
-            "Senior Moderators": [
-                f"{ctx.guild.get_member(150665783268212746).mention} :flag_nl:",
-                f"{ctx.guild.get_member(670684162113667092).mention} :flag_se:"
-            ],
-            "Moderators": [
-                f"{ctx.guild.get_member(272442568275525634).mention} :flag_gb:",
-                f"{ctx.guild.get_member(664242899105480715).mention} :flag_au:",
-                f"{ctx.guild.get_member(691994304885030972).mention} :flag_gb:",
-                f"{ctx.guild.get_member(259649217255964672).mention} :flag_gb:",
-
-            ]
-        }
-        embed = discord.Embed(color=discord.Color.blurple(), title="Staff")
-        people = list(all_staff.items())
-        embed.add_field(name=f"> {people[0][0]}", value="\n".join(
-            people[0][1]), inline=False)
-        embed.add_field(name=f"> {people[1][0]}", value="\n".join(
-            people[1][1]), inline=False)
-        embed.add_field(name=f"> {people[2][0]}", value="\n".join(
-            people[2][1]), inline=False)
-        embed.add_field(name=f"> {people[3][0]}", value="\n".join(
-            people[3][1]), inline=False)
-        channel = ctx.guild.get_channel(716823743644696586)
-        message = await channel.fetch_message(723641541486182410)
-        await message.edit(embed=embed)
-        await ctx.send(f"Updated the staff embed in {message.channel.mention}")
+    @commands.command(aliases=['forcestaffembed', 'staffembed', 'staff_embed'])
+    async def force_update_staff_embed(self, ctx):
+        event_cog = self.bot.get_cog("Events")
+        await event_cog.update_staff_embed(self.bot.main_guild)
+        await ctx.send(f"Updated the staff embed!")
 
     @checks.main_guild_only()
     @commands.has_permissions(administrator=True)
