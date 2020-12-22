@@ -1,9 +1,9 @@
 parsedatetime
 country-converter
 jishaku
-discord.py
 googletrans
 parsedatetime
 aiohttp
 tweepy
 discord-flags
+git+https://github.com/Rapptz/discord.py
