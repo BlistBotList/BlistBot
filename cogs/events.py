@@ -21,7 +21,6 @@ class Events(commands.Cog):
         senior_web_mod_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Website Moderator')
         admins_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Administrator')
         senior_admins_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Administrator')
-
         senior_administrators = [
             f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_admins_query]
         administrators = [
@@ -33,13 +32,13 @@ class Events(commands.Cog):
 
         embed = discord.Embed(color=discord.Color.blurple(), title="Staff")
         embed.add_field(name="> Senior Administrators",
-                        value="\n".join(senior_administrators), inline=False)
+                        value="\n".join(senior_administrators) or "None", inline=False)
         embed.add_field(name="> Administrators",
-                        value="\n".join(administrators), inline=False)
+                        value="\n".join(administrators) or "None", inline=False)
         embed.add_field(name="> Senior Website Moderators", value="\n".join(
-            senior_website_moderators), inline=False)
+            senior_website_moderators) or "None", inline=False)
         embed.add_field(name="> Website Moderators",
-                        value="\n".join(website_moderators), inline=False)
+                        value="\n".join(website_moderators) or "None", inline=False)
         channel = guild.get_channel(716823743644696586)
         message = await channel.fetch_message(723641541486182410)
         await message.edit(embed=embed)
