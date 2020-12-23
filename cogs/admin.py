@@ -23,31 +23,46 @@ class Admin(commands.Cog):
         main_guild = self.bot.main_guild
         staff_bot_role = main_guild.get_role(777575976124547072)
         staff_role = self.bot.main_guild.get_role(716713561233031239)
-        user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True",
-                                              member.id)
+        user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
+
         if staff_role not in member.roles or member.bot:
             return await ctx.send("That is a bot or not a staff member.")
+        if member.id == ctx.author.id:
+            return await ctx.send(f"Please contact a fellow Admin if you want to resign from being staff at Blist. **{ctx.author}**")
 
-        msg = await ctx.send(f"**{ctx.author.name}**, do you really want to fire {member}? react with ✅ or ❌ in 30 seconds.")
+        msg = await ctx.send(f"**{ctx.author.name}**, do you really want to fire {member}? "
+                             f"React with ✅ or ❌ in 30 seconds. **This action will remove __all__ staff privileges from {member}!**")
         await msg.add_reaction("\U00002705")
         await msg.add_reaction("\U0000274c")
 
         def check(r, u):
             return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and \
                    str(r.emoji) in ["\U00002705", "\U0000274c"]
+
+        async def remove_reactions():
+            try:
+                await msg.clear_reactions()
+            except (discord.HTTPException, discord.Forbidden):  # ignore it.
+                # this should always work.
+                await msg.remove_reaction("\U00002705", ctx.guild.me)
+                await msg.remove_reaction("\U0000274c", ctx.guild.me)
+
         try:
             reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30)
         except asyncio.TimeoutError:
-            await ctx.send(f"**{ctx.author.name}**, i guess not..")
+            await remove_reactions()
+            await msg.edit(content=f"~~{msg.content}~~ i guess not, cancelled.")
             return
         else:
             if str(reaction.emoji) == "\U00002705":
+                await remove_reactions()
                 pass
             if str(reaction.emoji) == "\U0000274c":
-                return await ctx.send(f"Cancelled...")
+                await remove_reactions()
+                await msg.edit(content=f"~~{msg.content}~~ okay, cancelled.")
+                return
 
         success_text = []
-
         for role_id in self.bot.staff_roles:
             author_roles = [role.id for role in member.roles]
             if role_id in author_roles:
@@ -61,18 +76,24 @@ class Admin(commands.Cog):
                 bot = self.bot.main_guild.get_member(x['id'])
                 if staff_bot_role in bot.roles:
                     await bot.remove_roles(staff_bot_role)
-                    success_text.append("✅ **Removed staff bot roles.**")
+                    success_text.append(f"✅ **Removed staff bot role from {bot} ({bot.id}).**")
+                else:
+                    success_text.append(f"❌ **{member}'s bot: {bot} ({bot.id}) didn't have the staff bot role.**")
         else:
-            success_text.append(f"❌ **{member} didn't have any bots with the staff bot role.**")
+            success_text.append(f"❌ **{member} didn't have any bots listed on the site.**")
 
         if member in verification_guild.members:
             await self.bot.verification_guild.get_member(member.id).kick()
             success_text.append(f"✅ **Kicked {member} from the verification server.**")
         else:
-            success_text.append(f"❌ **{member} wasn't in the verification server.. somehow.**")
+            success_text.append(f"❌ **{member} wasn't in the verification server...**")
 
         join_list = "\n".join(success_text)
         await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
+        try:
+            await msg.delete()
+        except discord.NotFound:  # maybe someone decided to the message..
+            pass
         await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
 
     @commands.has_permissions(administrator = True)
