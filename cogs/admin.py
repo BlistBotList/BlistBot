@@ -38,8 +38,7 @@ class Admin(commands.Cog):
         await msg.add_reaction("\U0000274c")
 
         def check(r, u):
-            return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and \
-                   str(r.emoji) in ["\U00002705", "\U0000274c"]
+            return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and str(r.emoji) in ["\U00002705", "\U0000274c"]
 
         try:
             reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30)
@@ -88,7 +87,6 @@ class Admin(commands.Cog):
 
         join_list = "\n".join(success_text)
         await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
-
         await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
 
     @commands.has_permissions(administrator = True)
