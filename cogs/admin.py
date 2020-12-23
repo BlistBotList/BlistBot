@@ -28,7 +28,9 @@ class Admin(commands.Cog):
         if staff_role not in member.roles or member.bot:
             return await ctx.send("That is a bot or not a staff member.")
         if member.id == ctx.author.id:
-            return await ctx.send(f"Please contact a fellow Admin if you want to resign from being staff at Blist. **{ctx.author}**")
+            atc = str(self.bot.main_guild.get_member(679118121943957504))
+            adu = str(self.bot.main_guild.get_member(712737377524777001)) if ctx.author.id != 712737377524777001 else atc
+            return await ctx.send(f"**{ctx.author.mention}**, i can't let you do that. Please contact {adu} if you want to resign from your staff position at Blist. ")
 
         msg = await ctx.send(f"**{ctx.author.name}**, do you really want to fire {member}? "
                              f"React with ✅ or ❌ in 30 seconds. **This action will remove __all__ staff privileges from {member}!**")
