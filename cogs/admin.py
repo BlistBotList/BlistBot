@@ -36,7 +36,7 @@ class Admin(commands.Cog):
             return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and \
                    str(r.emoji) in ["\U00002705", "\U0000274c"]
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', checks=check, timeout=30)
+            reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30)
         except asyncio.TimeoutError:
             await ctx.send(f"**{ctx.author.name}**, i guess not..")
             return
@@ -48,13 +48,13 @@ class Admin(commands.Cog):
 
         success_text = []
 
-        for role_id in self.bot.staff_role:
-            for role in member.roles:
-                if role.id == role_id:
-                    await member.remove_roles(role)
-                    success_text.append("✅ **Removed staff roles.**")
-                else:
-                    success_text.append(f"❌ **{member} didn't have any staff roles.**")
+        for role_id in self.bot.staff_roles:
+            author_roles = [role.id for role in member.roles]
+            if role_id in author_roles:
+                await member.remove_roles(self.bot.main_guild.get_role(role_id))
+                success_text.append(f"✅ **Removed staff role: {self.bot.main_guild.get_role(role_id)}.**")
+            else:
+                success_text.append(f"❌ **{member} didn't have the: {self.bot.main_guild.get_role(role_id)} staff role.**")
 
         if user_bots:
             for x in user_bots:
