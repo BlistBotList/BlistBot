@@ -39,26 +39,22 @@ class Admin(commands.Cog):
             return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and \
                    str(r.emoji) in ["\U00002705", "\U0000274c"]
 
-        async def remove_reactions():
-            try:
-                await msg.clear_reactions()
-            except (discord.HTTPException, discord.Forbidden):  # ignore it.
-                # this should always work.
-                await msg.remove_reaction("\U00002705", ctx.guild.me)
-                await msg.remove_reaction("\U0000274c", ctx.guild.me)
-
         try:
             reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30)
         except asyncio.TimeoutError:
-            await remove_reactions()
+            await msg.remove_reaction("\U00002705", ctx.guild.me)
+            await msg.remove_reaction("\U0000274c", ctx.guild.me)
             await msg.edit(content=f"~~{msg.content}~~ i guess not, cancelled.")
             return
         else:
             if str(reaction.emoji) == "\U00002705":
-                await remove_reactions()
+                await msg.remove_reaction("\U00002705", ctx.guild.me)
+                await msg.remove_reaction("\U0000274c", ctx.guild.me)
+                await msg.edit(content = f"~~{msg.content}~~ You reacted with ✅:")
                 pass
             if str(reaction.emoji) == "\U0000274c":
-                await remove_reactions()
+                await msg.remove_reaction("\U00002705", ctx.guild.me)
+                await msg.remove_reaction("\U0000274c", ctx.guild.me)
                 await msg.edit(content=f"~~{msg.content}~~ okay, cancelled.")
                 return
 
@@ -90,10 +86,7 @@ class Admin(commands.Cog):
 
         join_list = "\n".join(success_text)
         await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
-        try:
-            await msg.delete()
-        except discord.NotFound:  # maybe someone decided to the message..
-            pass
+
         await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
 
     @commands.has_permissions(administrator = True)
