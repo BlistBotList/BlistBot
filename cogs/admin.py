@@ -109,6 +109,9 @@ class Admin(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def fire(self, ctx, member: discord.Member):
+        """
+        Fire someone with confirmation from Blist.
+        """
         verification_guild = self.bot.verification_guild
         main_guild = self.bot.main_guild
         staff_bot_role = main_guild.get_role(777575976124547072)
@@ -119,7 +122,7 @@ class Admin(commands.Cog):
             return await ctx.send("That is a bot or not a staff member.")
 
         if member.top_role > ctx.author.top_role:
-            return await ctx.send(f"**{ctx.author}**, I won't let you your fire someone higher than you.")
+            return await ctx.send(f"**{ctx.author}**, I won't let you fire someone higher than you.")
         if member.id == ctx.author.id:
             atc = str(self.bot.main_guild.get_member(679118121943957504))
             adu = str(self.bot.main_guild.get_member(712737377524777001)) if ctx.author.id != 712737377524777001 else atc
