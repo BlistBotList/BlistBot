@@ -8,7 +8,6 @@ import config
 import country_converter as coco
 import discord
 from discord.ext import commands
-
 from . import checks  # pylint: disable=relative-beyond-top-level
 
 
@@ -18,12 +17,105 @@ class Admin(commands.Cog):
 
     @commands.has_permissions(administrator=True)
     @commands.command()
+    async def hire(self, ctx, member: discord.Member, *, country: str):
+        """
+        Command to hire someone as staff this will do the following:
+
+        1. Add Website Moderator & Staff role
+        2. Add the staff bot role to the member's bot(s)
+        3. Send member a invite to the verification guild if they are not offline.
+        4. Set member's country flag.
+        5. Update staff embed.
+
+        **Warning:** This command should only be used once and only supports the first tier.\n
+        **Warning:** This will take affect immediately, no confirmation.
+        """
+        verification_guild = self.bot.verification_guild
+        main_guild = self.bot.main_guild
+        staff_bot_role = main_guild.get_role(777575976124547072)
+        staff_role = self.bot.main_guild.get_role(716713561233031239)
+        web_mod_role = self.bot.main_guild.get_role(716713293330514041)
+        user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
+        verification_guild_channel = self.bot.verification_guild.get_channel(734527843098165269)
+        staff_chat_channel = self.bot.main_guild.get_channel(716717923359784980)
+
+        if staff_role in member.roles or member.bot:
+            return await ctx.send("That is a bot or already a staff member.")
+
+        await self.bot.mod_pool.execute("INSERT INTO staff VALUES($1, $2)", member.id, datetime.datetime.utcnow())
+        success_text = []
+        roles_to_add = [staff_role, web_mod_role]
+        for role in roles_to_add:
+            if role not in member.roles:
+                await member.add_roles(role)
+                success_text.append(f"✅ **Added staff role:** {role}.")
+            else:
+                success_text.append(f"❌ **{member} already has the:** {role} staff role.")
+
+        if user_bots:
+            for x in user_bots:
+                bot = self.bot.main_guild.get_member(x['id'])
+                if staff_bot_role not in bot.roles:
+                    await bot.add_roles(staff_bot_role)
+                    success_text.append(f"✅ **Added staff bot role to: {bot} ({bot.id}).**")
+                else:
+                    success_text.append(f"❌ **{member}'s bot: {bot} ({bot.id}) already has the staff bot role.**")
+        else:
+            success_text.append(f"❌ **{member} doesn't have any bots listed on the site.**")
+
+        if member not in verification_guild.members:
+            if member.status.value in ['online', 'idle', 'dnd']:
+                generated_invite = await verification_guild_channel.create_invite(reason="new staff member", max_age=1800, max_uses=1)
+                try:
+                    await member.send(
+                        discord.utils.escape_markdown(
+                        f"Hello {member.name},\n\nHere is your personal invite to our testing server: <{generated_invite.url}>."
+                        f" See more in {staff_chat_channel.mention}\n\nSincerely,\n{ctx.author.name}, on behalf of Blist"
+                        )
+                    )
+                    success_text.append(f"✅ **Send {member} a invite to the verification server. "
+                                        f"The invite is valid for 30 minutes and can only be used once.**")
+                except Exception:
+                    success_text.append(f"❌ **Couldn't DM {member} a invite to the verification server. DM's closed?** "
+                                        f"**Here is the invite i generated for them:** <{generated_invite.url}>, "
+                                        f"**it's valid for 30 minutes and can only be used once.**")
+                    await generated_invite.delete()
+            else:
+                success_text.append(f"❌ **{member} is not online, "
+                                    f"therefore i didn't send them a invite to the verification server.**")
+        else:
+            success_text.append(f"❌ **{member} is already in the verification server...**")
+
+        # set country flag from forum ---------------
+        iso2_country = coco.convert(names=country, to='ISO2')
+        if iso2_country != "not found":
+
+            member_in_db = self.bot.main_guild.get_member(406887683999137792)
+            member_in_db = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
+            if not member_in_db:
+                success_text.append(f"❌ **Couldn't set {member}'s country flag because:** they aren't in the database.")
+            else:
+                await self.bot.mod_pool.execute("UPDATE staff SET country_code = $1 WHERE userid = $2", iso2_country, member.id)
+                success_text.append(f"✅ **Set {member}'s country to:** {iso2_country}.")
+        else:
+            success_text.append(f"❌ **Couldn't set {member}'s country flag because:** "
+                                f"{country} is not a valid country or something else happened.")
+
+        join_list = "\n".join(success_text)
+        await self.bot.pool.execute("UPDATE main_site_user SET staff = True WHERE userid = $1", member.id)
+        await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", web_mod_role.name, member.id)
+        await self.bot.get_cog("Events").update_staff_embed(self.bot.main_guild)
+        await ctx.send(f"Successfully hired {member} ({member.id}).\n\n{join_list}")
+
+    @commands.has_permissions(administrator=True)
+    @commands.command()
     async def fire(self, ctx, member: discord.Member):
         verification_guild = self.bot.verification_guild
         main_guild = self.bot.main_guild
         staff_bot_role = main_guild.get_role(777575976124547072)
         staff_role = self.bot.main_guild.get_role(716713561233031239)
-        user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
+        user_bots = []
+        #user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
 
         if staff_role not in member.roles or member.bot:
             return await ctx.send("That is a bot or not a staff member.")
@@ -64,18 +156,18 @@ class Admin(commands.Cog):
             author_roles = [role.id for role in member.roles]
             if role_id in author_roles:
                 await member.remove_roles(self.bot.main_guild.get_role(role_id))
-                success_text.append(f"✅ **Removed staff role: {self.bot.main_guild.get_role(role_id)}.**")
+                success_text.append(f"✅ **Removed staff role:** {self.bot.main_guild.get_role(role_id)}.")
             else:
-                success_text.append(f"❌ **{member} didn't have the: {self.bot.main_guild.get_role(role_id)} staff role.**")
+                success_text.append(f"❌ **{member} didn't have the staff role:** {self.bot.main_guild.get_role(role_id)}.")
 
         if user_bots:
             for x in user_bots:
                 bot = self.bot.main_guild.get_member(x['id'])
                 if staff_bot_role in bot.roles:
                     await bot.remove_roles(staff_bot_role)
-                    success_text.append(f"✅ **Removed staff bot role from {bot} ({bot.id}).**")
+                    success_text.append(f"✅ **Removed staff bot role from:** {bot} ({bot.id}).")
                 else:
-                    success_text.append(f"❌ **{member}'s bot: {bot} ({bot.id}) didn't have the staff bot role.**")
+                    success_text.append(f"❌ **{member}'s bot:** {bot} ({bot.id}) **didn't have the staff bot role.**")
         else:
             success_text.append(f"❌ **{member} didn't have any bots listed on the site.**")
 
@@ -86,7 +178,7 @@ class Admin(commands.Cog):
             success_text.append(f"❌ **{member} wasn't in the verification server...**")
 
         join_list = "\n".join(success_text)
-        await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
+        #await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
         await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
 
     @commands.has_permissions(administrator = True)
