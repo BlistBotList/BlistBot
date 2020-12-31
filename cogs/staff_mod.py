@@ -216,6 +216,7 @@ class Mod(commands.Cog):
 
     @flags.add_flag("-t", "--title", type = str, default = 'Official Warning')
     @flags.add_flag("-f", "--footer", type = str, default = 'blist.xyz')
+    @flags.add_flag("-s", "--signature", type = str, default = None)
     @flags.add_flag("message", nargs = "+")
     @commands.has_permissions(manage_messages = True)
     @commands.command(cls = flags.FlagCommand)
@@ -234,6 +235,7 @@ class Mod(commands.Cog):
         **[MEMBER]** - This will get replaced with the target's name with discriminator.
         **[AUTHOR_NAME]** - This will get replaced with your name without discriminator.
         **[MEMBER_NAME]** - This will get replaced with the target's name without discriminator.
+        **[RANK]** - This will get replaced with your rank. E.g, Website Moderator
         **[SERVER]** - This will get replaced with the server's current name.
         **[SITE]** - This will get replaced with https://blist.xyz
         **[API]** - This will get replaced with https://blist.xyz/api/v2/
@@ -261,6 +263,7 @@ class Mod(commands.Cog):
                 "[MEMBER]": str(member),
                 "[AUTHOR_NAME]": str(ctx.author.name),
                 "[MEMBER_NAME]": str(member.name),
+                "[RANK]": str(ctx.author.top_role.name),
                 "[SERVER]": str(ctx.guild.name),
                 "[SITE]": "https://blist.xyz",
                 "[API]": "https://blist.xyz/api/v2/",
@@ -284,16 +287,18 @@ class Mod(commands.Cog):
             return await ctx.send(f"I can't dm a bot.")
 
         message = parse_arguments(str(' '.join(arguments['message'])))
+        signature = f"{ctx.author.name}, {ctx.author.top_role.name}" if not arguments['signature'] else parse_arguments(arguments['signature'])
+
         embed = discord.Embed(
-            title = arguments['title'],
-            description = message,
-            color = discord.Color.blurple()
+            title=arguments['title'],
+            description=f"{message}\n\n{signature}",
+            color=discord.Color.blurple()
         )
         embed.set_author(name = ctx.author, icon_url = ctx.author.avatar_url)
         embed.set_footer(text = arguments['footer'], icon_url = self.bot.user.avatar_url)
         try:
             await ctx.send(f'Sent a message to **{member}**.', embed = embed)
-            await member.send(embed = embed)
+            #await member.send(embed = embed)
         except discord.Forbidden:
             await ctx.send(f'{member.mention} has DMs disabled or has blocked me.')
 

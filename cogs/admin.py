@@ -86,7 +86,6 @@ class Admin(commands.Cog):
                     success_text.append(f"❌ **Couldn't DM {member} a invite to the verification server. DM's closed?** "
                                         f"**Here is the invite i generated for them:** <{generated_invite.url}>, "
                                         f"**it's valid for 30 minutes and can only be used once.**")
-                    await generated_invite.delete()
             else:
                 success_text.append(f"❌ **{member} is not online, "
                                     f"therefore i didn't send them a invite to the verification server.**")
@@ -126,18 +125,20 @@ class Admin(commands.Cog):
         main_guild = self.bot.main_guild
         staff_bot_role = main_guild.get_role(777575976124547072)
         staff_role = self.bot.main_guild.get_role(716713561233031239)
-        user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
+       # user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
 
         if staff_role not in member.roles or member.bot:
             return await ctx.send("That is a bot or not a staff member.")
 
-        if member.top_role > ctx.author.top_role:
-            return await ctx.send(f"**{ctx.author}**, I won't let you fire someone higher than you.")
+
         if member.id == ctx.author.id:
             atc = str(self.bot.main_guild.get_member(679118121943957504))
             adu = str(self.bot.main_guild.get_member(712737377524777001)
                       ) if ctx.author.id != 712737377524777001 else atc
             return await ctx.send(f"**{ctx.author}**, I can't let you do that. Please contact {adu} if you want to resign from your staff position at Blist. ")
+
+        if member.top_role >= ctx.author.top_role:
+            return await ctx.send(f"**{ctx.author}**, I won't let you fire someone higher than you or with the same rank.")
 
         msg = await ctx.send(f"**{ctx.author.name}**, do you really want to fire {member}? "
                              f"React with ✅ or ❌ in 30 seconds. **This action will remove __all__ staff privileges from {member}!**")

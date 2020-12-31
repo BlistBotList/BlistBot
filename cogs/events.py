@@ -213,50 +213,60 @@ New Message
             role = member.guild.get_role(716684129453735936)
             await member.add_roles(role)
 
-        if member.guild == self.bot.verification_guild and member.bot:
-            bot_role = self.bot.verification_guild.get_role(763187834219003934)
-            await member.add_roles(bot_role)
-            overwrites = {
-                member.guild.get_role(763177553636098082): discord.PermissionOverwrite(manage_channels=True),
-                member.guild.get_role(763187834219003934): discord.PermissionOverwrite(read_messages=False),
-                member: discord.PermissionOverwrite(read_messages=True),
-            }
-            category = await member.guild.create_category(name=member.name, overwrites=overwrites)
-            channel = await category.create_text_channel(name="Testing")
-            await category.create_text_channel(name="Testing-NSFW", nsfw=True)
-            await category.create_voice_channel(name="Voice Testing", bitrate=member.guild.bitrate_limit)
+        if member.guild == self.bot.verification_guild:
+            if member.bot:
+                bot_role = self.bot.verification_guild.get_role(763187834219003934)
+                await member.add_roles(bot_role)
+                overwrites = {
+                    member.guild.get_role(763177553636098082): discord.PermissionOverwrite(manage_channels=True),
+                    member.guild.get_role(763187834219003934): discord.PermissionOverwrite(read_messages=False),
+                    member: discord.PermissionOverwrite(read_messages=True),
+                }
+                category = await member.guild.create_category(name=member.name, overwrites=overwrites)
+                channel = await category.create_text_channel(name="Testing")
+                await category.create_text_channel(name="Testing-NSFW", nsfw=True)
+                await category.create_voice_channel(name="Voice Testing", bitrate=member.guild.bitrate_limit)
 
-            bot = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
+                bot = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
 
-            embed = discord.Embed(
-                title=str(member),
-                color=discord.Color.blurple(),
-                description=wrap(
-                    f"""
-                    >>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
-                    Prefix: ``{bot[0]['prefix']}``
-                    Tags: ``{', '.join(list(bot[0]['tags']))}``
-                    Added: ``{bot[0]['joined'].strftime('%D')}``
-                    """
+                embed = discord.Embed(
+                    title=str(member),
+                    color=discord.Color.blurple(),
+                    description=wrap(
+                        f"""
+                        >>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
+                        Prefix: ``{bot[0]['prefix']}``
+                        Tags: ``{', '.join(list(bot[0]['tags']))}``
+                        Added: ``{bot[0]['joined'].strftime('%D')}``
+                        """
+                    )
                 )
-            )
-            embed.add_field(
-                name="**Links**",
-                value=wrap(
-                    f"""
-                    >>> Privacy Policy: {bot[0]['privacy_policy_url'] or 'None'}
-                    Website: {bot[0]['website'] or 'None'}
-                    Invite: {bot[0]['invite_url'] or 'Default'}
-                    Blist Link: https://blist.xyz/bot/{member.id}/
-                    """
+                embed.add_field(
+                    name="**Links**",
+                    value=wrap(
+                        f"""
+                        >>> Privacy Policy: {bot[0]['privacy_policy_url'] or 'None'}
+                        Website: {bot[0]['website'] or 'None'}
+                        Invite: {bot[0]['invite_url'] or 'Default'}
+                        Blist Link: https://blist.xyz/bot/{member.id}/
+                        """
+                    )
                 )
-            )
-            embed.add_field(name="Short Description",
-                            value=bot[0]['short_description'], inline=False)
-            embed.add_field(name="Notes", value=bot[0]['notes'], inline=False)
-            embed.set_thumbnail(url=member.avatar_url)
-            message = await channel.send(embed=embed)
-            await message.pin()
+                embed.add_field(name="Short Description",
+                                value=bot[0]['short_description'], inline=False)
+                embed.add_field(name="Notes", value=bot[0]['notes'] or 'None', inline=False)
+                embed.set_thumbnail(url=member.avatar_url)
+                message = await channel.send(embed=embed)
+                await message.pin()
+
+            if not member.bot:
+                rank_user = self.bot.main_guild.get_member(member.id)
+                if not rank_user:
+                    return
+                rank = rank_user.top_role.name
+                role = discord.utils.get(self.bot.verification_guild.roles, name = str(rank))
+                if role:
+                    await member.add_roles(role, role)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
