@@ -8,6 +8,7 @@ import config
 import country_converter as coco
 import discord
 from discord.ext import commands
+
 from . import checks  # pylint: disable=relative-beyond-top-level
 
 
@@ -36,8 +37,10 @@ class Admin(commands.Cog):
         staff_role = self.bot.main_guild.get_role(716713561233031239)
         web_mod_role = self.bot.main_guild.get_role(716713293330514041)
         user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
-        verification_guild_channel = self.bot.verification_guild.get_channel(734527843098165269)
-        staff_chat_channel = self.bot.main_guild.get_channel(716717923359784980)
+        verification_guild_channel = self.bot.verification_guild.get_channel(
+            734527843098165269)
+        staff_chat_channel = self.bot.main_guild.get_channel(
+            716717923359784980)
 
         if staff_role in member.roles or member.bot:
             return await ctx.send("That is a bot or already a staff member.")
@@ -50,18 +53,22 @@ class Admin(commands.Cog):
                 await member.add_roles(role)
                 success_text.append(f"✅ **Added staff role:** {role}.")
             else:
-                success_text.append(f"❌ **{member} already has the:** {role} staff role.")
+                success_text.append(
+                    f"❌ **{member} already has the:** {role} staff role.")
 
         if user_bots:
             for x in user_bots:
                 bot = self.bot.main_guild.get_member(x['id'])
                 if staff_bot_role not in bot.roles:
                     await bot.add_roles(staff_bot_role)
-                    success_text.append(f"✅ **Added staff bot role to: {bot} ({bot.id}).**")
+                    success_text.append(
+                        f"✅ **Added staff bot role to: {bot} ({bot.id}).**")
                 else:
-                    success_text.append(f"❌ **{member}'s bot: {bot} ({bot.id}) already has the staff bot role.**")
+                    success_text.append(
+                        f"❌ **{member}'s bot: {bot} ({bot.id}) already has the staff bot role.**")
         else:
-            success_text.append(f"❌ **{member} doesn't have any bots listed on the site.**")
+            success_text.append(
+                f"❌ **{member} doesn't have any bots listed on the site.**")
 
         if member not in verification_guild.members:
             if member.status.value in ['online', 'idle', 'dnd']:
@@ -69,8 +76,8 @@ class Admin(commands.Cog):
                 try:
                     await member.send(
                         discord.utils.escape_markdown(
-                        f"Hello {member.name},\n\nHere is your personal invite to our testing server: <{generated_invite.url}>."
-                        f" See more in {staff_chat_channel.mention}\n\nSincerely,\n{ctx.author.name}, on behalf of Blist"
+                            f"Hello {member.name},\n\nHere is your personal invite to our testing server: <{generated_invite.url}>."
+                            f" See more in {staff_chat_channel.mention}\n\nSincerely,\n{ctx.author.name}, on behalf of Blist"
                         )
                     )
                     success_text.append(f"✅ **Send {member} a invite to the verification server. "
@@ -84,7 +91,8 @@ class Admin(commands.Cog):
                 success_text.append(f"❌ **{member} is not online, "
                                     f"therefore i didn't send them a invite to the verification server.**")
         else:
-            success_text.append(f"❌ **{member} is already in the verification server...**")
+            success_text.append(
+                f"❌ **{member} is already in the verification server...**")
 
         # set country flag from forum ---------------
         iso2_country = coco.convert(names=country, to='ISO2')
@@ -92,10 +100,12 @@ class Admin(commands.Cog):
 
             member_in_db = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
             if not member_in_db:
-                success_text.append(f"❌ **Couldn't set {member}'s country flag because:** they aren't in the database.")
+                success_text.append(
+                    f"❌ **Couldn't set {member}'s country flag because:** they aren't in the database.")
             else:
                 await self.bot.mod_pool.execute("UPDATE staff SET country_code = $1 WHERE userid = $2", iso2_country, member.id)
-                success_text.append(f"✅ **Set {member}'s country to:** {iso2_country}.")
+                success_text.append(
+                    f"✅ **Set {member}'s country to:** {iso2_country}.")
         else:
             success_text.append(f"❌ **Couldn't set {member}'s country flag because:** "
                                 f"{country} is not a valid country or something else happened.")
@@ -125,7 +135,8 @@ class Admin(commands.Cog):
             return await ctx.send(f"**{ctx.author}**, I won't let you fire someone higher than you.")
         if member.id == ctx.author.id:
             atc = str(self.bot.main_guild.get_member(679118121943957504))
-            adu = str(self.bot.main_guild.get_member(712737377524777001)) if ctx.author.id != 712737377524777001 else atc
+            adu = str(self.bot.main_guild.get_member(712737377524777001)
+                      ) if ctx.author.id != 712737377524777001 else atc
             return await ctx.send(f"**{ctx.author}**, I can't let you do that. Please contact {adu} if you want to resign from your staff position at Blist. ")
 
         msg = await ctx.send(f"**{ctx.author.name}**, do you really want to fire {member}? "
@@ -147,7 +158,7 @@ class Admin(commands.Cog):
             if str(reaction.emoji) == "\U00002705":
                 await msg.remove_reaction("\U00002705", ctx.guild.me)
                 await msg.remove_reaction("\U0000274c", ctx.guild.me)
-                await msg.edit(content = f"~~{msg.content}~~ You reacted with ✅:")
+                await msg.edit(content=f"~~{msg.content}~~ You reacted with ✅:")
                 pass
             if str(reaction.emoji) == "\U0000274c":
                 await msg.remove_reaction("\U00002705", ctx.guild.me)
@@ -160,32 +171,39 @@ class Admin(commands.Cog):
             author_roles = [role.id for role in member.roles]
             if role_id in author_roles:
                 await member.remove_roles(self.bot.main_guild.get_role(role_id))
-                success_text.append(f"✅ **Removed staff role:** {self.bot.main_guild.get_role(role_id)}.")
+                success_text.append(
+                    f"✅ **Removed staff role:** {self.bot.main_guild.get_role(role_id)}.")
             else:
-                success_text.append(f"❌ **{member} didn't have the staff role:** {self.bot.main_guild.get_role(role_id)}.")
+                success_text.append(
+                    f"❌ **{member} didn't have the staff role:** {self.bot.main_guild.get_role(role_id)}.")
 
         if user_bots:
             for x in user_bots:
                 bot = self.bot.main_guild.get_member(x['id'])
                 if staff_bot_role in bot.roles:
                     await bot.remove_roles(staff_bot_role)
-                    success_text.append(f"✅ **Removed staff bot role from:** {bot} ({bot.id}).")
+                    success_text.append(
+                        f"✅ **Removed staff bot role from:** {bot} ({bot.id}).")
                 else:
-                    success_text.append(f"❌ **{member}'s bot:** {bot} ({bot.id}) **didn't have the staff bot role.**")
+                    success_text.append(
+                        f"❌ **{member}'s bot:** {bot} ({bot.id}) **didn't have the staff bot role.**")
         else:
-            success_text.append(f"❌ **{member} didn't have any bots listed on the site.**")
+            success_text.append(
+                f"❌ **{member} didn't have any bots listed on the site.**")
 
         if member in verification_guild.members:
             await self.bot.verification_guild.get_member(member.id).kick()
-            success_text.append(f"✅ **Kicked {member} from the verification server.**")
+            success_text.append(
+                f"✅ **Kicked {member} from the verification server.**")
         else:
-            success_text.append(f"❌ **{member} wasn't in the verification server...**")
+            success_text.append(
+                f"❌ **{member} wasn't in the verification server...**")
 
         join_list = "\n".join(success_text)
         await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
         await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
 
-    @commands.has_permissions(administrator = True)
+    @commands.has_permissions(administrator=True)
     @commands.command()
     async def rr(self, ctx):
         embed = discord.Embed(color=discord.Color.blurple(),
@@ -509,7 +527,8 @@ class Admin(commands.Cog):
             716684129453735936: "This is a role that bots get when they get approved and added to this server.",  # Bot
             716684142766456832: "This is for bots that are certified on the site.",  # Certified Bot
             764686546179325972: "This is for bots with a common prefix.",  # Common Prefix
-            716724716299091980: "This is for if you have premium on the site. You can get it by donating 5$ or more [here](https://www.paypal.com/paypalme/trashcoder/5)",  # Premium
+            # Premium
+            716724716299091980: "This is for if you have premium on the site. You can get it by donating 5$ or more [here](https://www.paypal.com/paypalme/trashcoder/5)",
             779817680488103956: "This is for our Social Media Manager, they manage our Official Social accounts like twitter."  # Social Media Access
         }
 
@@ -545,19 +564,24 @@ class Admin(commands.Cog):
 
         server_roles_list = []
         server_roles_embeds = []
-        roles_paginator = commands.Paginator(prefix = "", suffix = "", max_size = 2048)
+        roles_paginator = commands.Paginator(
+            prefix="", suffix="", max_size=2048)
         guild_role_ids = [x.id for x in ctx.guild.roles]
-        ordered_server_roles_list = sorted(server_roles_dict.keys(), key=guild_role_ids.index, reverse=True)  # put in order as in server.
+        ordered_server_roles_list = sorted(server_roles_dict.keys(
+        ), key=guild_role_ids.index, reverse=True)  # put in order as in server.
         for role_id in ordered_server_roles_list:
-            server_roles_list.append(f"{ctx.guild.get_role(role_id).mention}: {server_roles_dict[role_id]}")
+            server_roles_list.append(
+                f"{ctx.guild.get_role(role_id).mention}: {server_roles_dict[role_id]}")
 
         join_dict = "\n".join(server_roles_list)
-        server_roles_content = [join_dict[i:i + 2000] for i in range(0, len(join_dict), 2000)]
+        server_roles_content = [join_dict[i:i + 2000]
+                                for i in range(0, len(join_dict), 2000)]
         for page in server_roles_content:
             roles_paginator.add_line(page)
 
         for page_content in roles_paginator.pages:
-            server_roles_embeds.append(discord.Embed(description=page_content, color=discord.Color.blurple()))
+            server_roles_embeds.append(discord.Embed(
+                description=page_content, color=discord.Color.blurple()))
 
         server_roles_embed1 = server_roles_embeds[0]
         server_roles_embed1.title = "Blist Server Roles"

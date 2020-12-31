@@ -41,6 +41,23 @@ class General(commands.Cog):
         embed.set_thumbnail(url=str(ctx.guild.icon_url))
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["lb"])
+    async def leaderboard(self, ctx):
+        """Sends the top 10 users on the user leaderboard"""
+        leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC LIMIT 10")
+        embed = discord.Embed(title="User Leaderboard",
+                              url="https://blist.xyz/leaderboard/")
+        embed.set_thumbnail(url=str(ctx.guild.icon_url))
+        place = 0
+        for leader in leaderboard:
+            place += 1
+            user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE unique_id = $1", leader["user_id"])
+            user = user[0]
+            embed.add_field(name=f"#{place} - {user['name']}#{user['discriminator']}",
+                            value=f"Level: {leader['level']} | XP: {leader['xp']}", inline=False)
+
+        await ctx.send(embed=embed)
+
     @commands.command()
     async def top(self, ctx):
         """Shows leaderboard information"""
@@ -160,25 +177,48 @@ class General(commands.Cog):
     async def userinfo(self, ctx, *, member: discord.Member = None):
         """Shows information on a user"""
         member = member or ctx.author
-
-        em = discord.Embed(
-            title=str(member),
-            url=f"https://blist.xyz/user/{member.id}/",
-            color=discord.Colour.blurple(),
-            description=wrap(
-                f"""
-                >>> `Name:` {member.name} - #{member.discriminator}
-                `ID:` {member.id}
-                `Bot:` {member.bot}
-                `Status:` {str(member.status).title()}
-                `Highest Role:` {member.top_role.mention}
-                `Created Account:` {member.created_at.strftime("%c")}
-                `Joined This Server:` {member.joined_at.strftime("%c")}
-                """
+        user = await self.bot.pool.fetchval("SELECT unique_id FROM main_site_user WHERE userid = $1", member.id)
+        leveling = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", user)
+        if leveling:
+            em = discord.Embed(
+                title=str(member),
+                url=f"https://blist.xyz/user/{member.id}/",
+                color=discord.Colour.blurple(),
+                description=wrap(
+                    f"""
+                    >>> `Name:` {member.name} - #{member.discriminator}
+                    `ID:` {member.id}
+                    `Bot:` {member.bot}
+                    `Status:` {str(member.status).title()}
+                    `Highest Role:` {member.top_role.mention}
+                    `Created Account:` {member.created_at.strftime("%c")}
+                    `Joined This Server:` {member.joined_at.strftime("%c")}
+                    `XP:` {leveling[0]["xp"]:,d}
+                    `Level:` {leveling[0]["level"]:,d}
+                    """
+                )
             )
-        )
-        em.set_thumbnail(url=member.avatar_url)
-        await ctx.send(embed=em)
+            em.set_thumbnail(url=member.avatar_url)
+            await ctx.send(embed=em)
+        else:
+            em = discord.Embed(
+                title=str(member),
+                url=f"https://blist.xyz/user/{member.id}/",
+                color=discord.Colour.blurple(),
+                description=wrap(
+                    f"""
+                    >>> `Name:` {member.name} - #{member.discriminator}
+                    `ID:` {member.id}
+                    `Bot:` {member.bot}
+                    `Status:` {str(member.status).title()}
+                    `Highest Role:` {member.top_role.mention}
+                    `Created Account:` {member.created_at.strftime("%c")}
+                    `Joined This Server:` {member.joined_at.strftime("%c")}
+                    """
+                )
+            )
+            em.set_thumbnail(url=member.avatar_url)
+            await ctx.send(embed=em)
 
 
 def setup(bot):

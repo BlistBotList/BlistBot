@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import datetime
 import os
 
@@ -34,7 +35,8 @@ class Blist(commands.Bot):
             intents=discord.Intents(
                 members=True, emojis=True, messages=True, reactions=True, guilds=True, presences=True)
         )
-        self.staff_roles = {716713561233031239, 716713293330514041, 716713498360545352, 716713238955556965, 716713266683969626}
+        self.staff_roles = {716713561233031239, 716713293330514041,
+                            716713498360545352, 716713238955556965, 716713266683969626}
 
     async def on_ready(self):
         self.session = aiohttp.ClientSession()

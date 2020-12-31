@@ -198,7 +198,7 @@ class Staff(commands.Cog):
 
     @flags.add_flag("--to", type=str, default="en")
     @flags.add_flag("--from", type=str, default="auto")
-    @flags.add_flag("message", nargs = "+")
+    @flags.add_flag("message", nargs="+")
     @commands.has_permissions(kick_members=True)
     @commands.command(hidden=True, aliases=["t"], cls=flags.FlagCommand)
     async def translate(self, ctx, **arguments):
@@ -211,7 +211,8 @@ class Staff(commands.Cog):
         """
         message = ' '.join(arguments['message'])
         try:
-            translated = self.translator.translate(message, dest=arguments['to'], src=arguments['from'])
+            translated = self.translator.translate(
+                message, dest=arguments['to'], src=arguments['from'])
         except ValueError:
             return await ctx.send(
                 embed=discord.Embed(description="That is not a valid language!", color=discord.Color.red()))
@@ -220,8 +221,10 @@ class Staff(commands.Cog):
             translated.src, '(auto-detected)').title()
         dest = googletrans.LANGUAGES.get(translated.dest, 'Unknown').title()
         embed = discord.Embed(color=discord.Color.blurple())
-        embed.add_field(name=f"{src} ({translated.src})", value=translated.origin, inline=False)
-        embed.add_field(name=f"{dest} ({translated.dest})", value=translated.text, inline=False)
+        embed.add_field(name=f"{src} ({translated.src})",
+                        value=translated.origin, inline=False)
+        embed.add_field(name=f"{dest} ({translated.dest})",
+                        value=translated.text, inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
