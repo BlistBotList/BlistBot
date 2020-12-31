@@ -1,11 +1,12 @@
 import asyncio
 import datetime
+import re
 from textwrap import dedent as wrap
 
 import asyncpg
 import discord
 import humanize
-from discord.ext import commands
+from discord.ext import commands, flags
 
 from . import checks
 from .time import FutureTime
@@ -212,22 +213,88 @@ class Mod(commands.Cog):
             await member.add_roles(role)
             return await ctx.send(f"Added the common prefix role to {member}")
 
-    @commands.has_permissions(manage_messages=True)
-    @commands.command()
-    async def dm(self, ctx, member: discord.Member, *, message):
+    @flags.add_flag("-t", "--title", type = str, default = 'Official Warning')
+    @flags.add_flag("-f", "--footer", type = str, default = 'blist.xyz')
+    @flags.add_flag("message", nargs = "+")
+    @commands.has_permissions(manage_messages = True)
+    @commands.command(cls = flags.FlagCommand)
+    async def dm(self, ctx, member: discord.Member, **arguments):
+        """
+        Send a official DM on behalf of Blist.
+
+        **Required Arguments:**
+        message | The message you want to send, this must be first.
+
+        Optional **Arguments:**
+        **--title**/-t | Choose a different title. Defaults to 'Official Warning'.
+        **--footer**/-f | Choose a different footer with the blist logo. Default to 'blist.xyz'.
+        ----
+        **[AUTHOR]** - This will get replaced with your name with discriminator.
+        **[MEMBER]** - This will get replaced with the target's name with discriminator.
+        **[AUTHOR_NAME]** - This will get replaced with your name without discriminator.
+        **[MEMBER_NAME]** - This will get replaced with the target's name without discriminator.
+        **[SERVER]** - This will get replaced with the server's current name.
+        **[SITE]** - This will get replaced with https://blist.xyz
+        **[API]** - This will get replaced with https://blist.xyz/api/v2/
+        **[API_DOCS]** - This will get replaced with https://blist.xyz/docs
+        **[BOT_SITE:bot_id_here]** - This will get replaced with the given bot's link to the site. Will ignore if id isn't a bot.
+        **[BOT:bot_id_here]** - This will get replaced with the given bot's name with discriminator. Will ignore if id isn't a bot.
+        **[BOT_NAME:bot_id_here]** - This will get replaced with the given bot's name without discriminator. Will ignore if id isn't a bot.
+        """
+
+        def parse_arguments(text: str):
+            def get_bot(reg):
+                reg_type = str(reg.group(1))
+                m = self.bot.main_guild.get_member(int(reg.group(2)))
+                if not m.bot or not m:
+                    return str(reg.group())  # ignore it, kinda
+                if reg_type == "BOT":
+                    return str(m)
+                if reg_type == "BOT_NAME":
+                    return str(m.name)
+                if reg_type == "BOT_SITE":
+                    return f"https://blist.xyz/bot/{m.id}"
+
+            dict_of_arguments = {
+                "[AUTHOR]": str(ctx.author),
+                "[MEMBER]": str(member),
+                "[AUTHOR_NAME]": str(ctx.author.name),
+                "[MEMBER_NAME]": str(member.name),
+                "[SERVER]": str(ctx.guild.name),
+                "[SITE]": "https://blist.xyz",
+                "[API]": "https://blist.xyz/api/v2/",
+                "[API_DOCS]": "https://blist.xyz/docs",
+            }
+            has_bot_arg = [x for x in re.finditer("\[(BOT|BOT_NAME|BOT_SITE):([0-9]{18})]", text)]
+            if has_bot_arg:
+                for match in has_bot_arg:
+                    try:
+                        dict_of_arguments[match.group()] = get_bot(match)
+                    except (ValueError, KeyError):
+                        pass
+
+            search_keys = map(lambda x: re.escape(x), dict_of_arguments.keys())
+            regex = re.compile('|'.join(search_keys))
+            res = regex.sub(lambda m: dict_of_arguments[m.group()], text)
+
+            return res
+
+        if member.bot:
+            return await ctx.send(f"I can't dm a bot.")
+
+        message = parse_arguments(str(' '.join(arguments['message'])))
+        embed = discord.Embed(
+            title = arguments['title'],
+            description = message,
+            color = discord.Color.blurple()
+        )
+        embed.set_author(name = ctx.author, icon_url = ctx.author.avatar_url)
+        embed.set_footer(text = arguments['footer'], icon_url = self.bot.user.avatar_url)
         try:
-            embed = discord.Embed(
-                title='Official Warning',
-                description=message,
-                color=discord.Color.blurple()
-            )
-            embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
-            embed.set_footer(text='blist.xyz',
-                             icon_url=self.bot.user.avatar_url)
-            await ctx.send(f'Sent a message to **{member}**', embed=embed)
-            await member.send(embed=embed)
+            await ctx.send(f'Sent a message to **{member}**.', embed = embed)
+            await member.send(embed = embed)
         except discord.Forbidden:
-            await ctx.send(f'{member.mention} has DMs disabled or is a bot user')
+            await ctx.send(f'{member.mention} has DMs disabled or has blocked me.')
 
 
 def setup(bot):
