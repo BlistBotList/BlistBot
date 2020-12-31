@@ -139,7 +139,7 @@ New Message
         lvl = user[0]["level"]
         if xp >= lvl * 50:
             await self.bot.pool.execute("UPDATE main_site_leveling SET level = level + 1, xp = $1 WHERE user_id = $2", 0, db_user["unique_id"])
-            await message.channel.send(f"Congrats {message.author}, you are now level {user[0]['level'] + 1}")
+            await message.channel.send(f"Congrats {message.author}, you are now **Level {user[0]['level'] + 1}** :tada:")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
