@@ -44,8 +44,8 @@ class General(commands.Cog):
     @commands.command(aliases=["lb"])
     async def leaderboard(self, ctx):
         """Sends the top 10 users on the user leaderboard"""
-        leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC LIMIT 10")
-        embed = discord.Embed(title="User Leaderboard",
+        leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC LIMIT 5")
+        embed = discord.Embed(title="User Leaderboard", color=discord.Color.blurple(),
                               url="https://blist.xyz/leaderboard/")
         embed.set_thumbnail(url=str(ctx.guild.icon_url))
         place = 0
@@ -53,7 +53,17 @@ class General(commands.Cog):
             place += 1
             user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE unique_id = $1", leader["user_id"])
             user = user[0]
-            embed.add_field(name=f"#{place} - {user['name']}#{user['discriminator']}",
+            
+            if place == 1:
+                trophy = ":first_place:"
+            elif place == 2:
+                trophy = ":second_place:"
+            elif place == 3:
+                trophy = ":third_place:"
+            else:
+                trophy = ":medal:"
+
+            embed.add_field(name=f"{trophy} #{place} - {user['name']}#{user['discriminator']}",
                             value=f"Level: {leader['level']} | XP: {leader['xp']}", inline=False)
 
         await ctx.send(embed=embed)

@@ -34,9 +34,10 @@ class Mod(commands.Cog):
     async def call_mute(self, mute):
         member = self.bot.main_guild.get_member(mute["userid"])
         mute_role = self.bot.main_guild.get_role(725899725152190525)
-        await member.remove_roles(mute_role, reason="Unmuted")
-        await self.bot.mod_pool.execute("DELETE FROM mutes WHERE id = $1", mute["id"])
-        await self.do_case(self.bot.main_guild.get_member(mute["modid"]), member, "Automatic Un-mute", "Un-Mute")
+        if member:
+            await member.remove_roles(mute_role, reason="Unmuted")
+            await self.bot.mod_pool.execute("DELETE FROM mutes WHERE id = $1", mute["id"])
+            await self.do_case(self.bot.main_guild.get_member(mute["modid"]), member, "Automatic Un-mute", "Un-Mute")
 
     async def do_case(self, mod: discord.Member, member: discord.Member, reason, type, time=None):
         last_case_number = await self.bot.mod_pool.fetchval("SELECT COUNT(*) FROM action")
