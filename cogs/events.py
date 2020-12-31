@@ -341,6 +341,12 @@ New Message
                 await channel.delete()
             await category.delete()
 
+        muted = await self.bot.mod_pool.fetchval("SELECT userid FROM mutes WHERE userid = $1", member.id)
+        if muted:
+            return
+        else:
+            await member.guild.ban(discord.Object(id=member.id), reason="Left whilst muted")
+
         if member.guild == self.bot.main_guild:
             if member.bot:
                 x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
