@@ -298,7 +298,7 @@ class Mod(commands.Cog):
         embed.set_footer(text = arguments['footer'], icon_url = self.bot.user.avatar_url)
         try:
             await ctx.send(f'Sent a message to **{member}**.', embed = embed)
-            #await member.send(embed = embed)
+            await member.send(embed = embed)
         except discord.Forbidden:
             await ctx.send(f'{member.mention} has DMs disabled or has blocked me.')
 
