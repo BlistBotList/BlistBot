@@ -115,6 +115,9 @@ New Message
                 await message.add_reaction("✔")
                 await message.add_reaction("❌")
 
+        ignored_cats = [716445624517656729]
+        if message.channel.category and message.channel.category_id in ignored_cats:
+            return 
         user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE userid = $1", message.author.id)
         if user:
             user = user[0]
