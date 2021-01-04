@@ -115,26 +115,27 @@ New Message
                 await message.add_reaction("✔")
                 await message.add_reaction("❌")
 
-        ignored_cats = [716445624517656729]
-        if message.channel.category and message.channel.category_id in ignored_cats:
-            return 
-        user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE userid = $1", message.author.id)
-        if user:
-            user = user[0]
-            last_time = await self.bot.pool.fetchval("SELECT last_time FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
-            now = datetime.datetime.utcnow().replace(tzinfo=utc)
-            one_minute = now + datetime.timedelta(seconds=60)
-            xp = random.randint(5, 10)
+        if message.guild == self.bot.main_guild:
+            ignored_cats = [716445624517656729]
+            if message.channel.category and message.channel.category_id in ignored_cats:
+                return 
+            user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE userid = $1", message.author.id)
+            if user:
+                user = user[0]
+                last_time = await self.bot.pool.fetchval("SELECT last_time FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
+                now = datetime.datetime.utcnow().replace(tzinfo=utc)
+                one_minute = now + datetime.timedelta(seconds=60)
+                xp = random.randint(5, 10)
 
-            if last_time is None:
-                return await self.bot.pool.execute("INSERT INTO main_site_leveling (xp, level, user_id, last_time) VALUES ($1, $2, $3, $4)", xp, 1, user["unique_id"], one_minute.replace(tzinfo=utc))
-            
-            if last_time.replace(tzinfo=utc) is not None and last_time.replace(tzinfo=utc) > now:
-                return
-            else:
-                await self.bot.pool.execute("UPDATE main_site_leveling SET last_time = $1 WHERE user_id = $2", one_minute.replace(tzinfo=utc), user["unique_id"])
-                await self.bot.pool.execute("UPDATE main_site_leveling SET xp = xp + $1 WHERE user_id = $2", xp, user["unique_id"])
-                await self.lvl_up(user, message)
+                if last_time is None:
+                    return await self.bot.pool.execute("INSERT INTO main_site_leveling (xp, level, user_id, last_time) VALUES ($1, $2, $3, $4)", xp, 1, user["unique_id"], one_minute.replace(tzinfo=utc))
+                
+                if last_time.replace(tzinfo=utc) is not None and last_time.replace(tzinfo=utc) > now:
+                    return
+                else:
+                    await self.bot.pool.execute("UPDATE main_site_leveling SET last_time = $1 WHERE user_id = $2", one_minute.replace(tzinfo=utc), user["unique_id"])
+                    await self.bot.pool.execute("UPDATE main_site_leveling SET xp = xp + $1 WHERE user_id = $2", xp, user["unique_id"])
+                    await self.lvl_up(user, message)
 
     async def lvl_up(self, db_user, message):
         user = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", db_user["unique_id"])
