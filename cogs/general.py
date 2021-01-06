@@ -1,7 +1,53 @@
 from textwrap import dedent as wrap
 
+import asyncio
 import discord
-from discord.ext import commands
+from discord.ext import commands, menus, flags
+
+# subclass menu to add numbers button.
+class MenuMain(menus.MenuPages):
+    def __init__(self, source, **kwargs):
+        super().__init__(source=source, check_embeds=True, **kwargs)
+
+    @menus.button('\N{INPUT SYMBOL FOR NUMBERS}', position=menus.Last(1.5))
+    async def numbered_page(self, payload):
+        """lets you type a page number to go to"""
+        channel = self.message.channel
+        author_id = payload.user_id
+        to_delete = [await channel.send('What page do you want to go to?')]
+
+        def message_check(m):
+            return m.author.id == author_id and channel == m.channel and m.content.isdigit()
+
+        try:
+            msg = await self.bot.wait_for('message', check=message_check, timeout=30.0)
+        except asyncio.TimeoutError:
+            to_delete.append(await channel.send('Took too long.'))
+            await asyncio.sleep(5)
+        else:
+            page = int(msg.content)
+            to_delete.append(msg)
+            await self.show_checked_page(page - 1)
+
+        try:
+            await channel.delete_messages(to_delete)
+        except Exception:
+            pass
+
+
+class LeaderboardPage(menus.ListPageSource):
+    def __init__(self, entries, **kwargs):
+        super().__init__(entries, **kwargs)
+
+    async def format_page(self, menu, entry):
+        em = discord.Embed(title="User Leaderboard | Pagination", color=discord.Color.blurple(),
+                           url="https://blist.xyz/leaderboard/")
+        em.set_thumbnail(url=str(menu.ctx.guild.icon_url))
+        em.set_footer(text=f"Page: {menu.current_page + 1} / {self.get_max_pages()}")
+        for name,value in entry:
+            em.add_field(name=name, value=value, inline=False)
+
+        return em
 
 
 class General(commands.Cog):
@@ -41,19 +87,26 @@ class General(commands.Cog):
         embed.set_thumbnail(url=str(ctx.guild.icon_url))
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=["lb"])
-    async def leaderboard(self, ctx):
-        """Sends the top 10 users on the user leaderboard"""
-        leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC LIMIT 5")
+    @flags.add_flag("-a", "--all", action = 'store_true')
+    @commands.command(aliases=["lb"], cls=flags.FlagCommand)
+    async def leaderboard(self, ctx, **args):
+        """
+        Sends the top 5 users on the user leaderboard
+        **Args:**
+            **--all**/-a - Flag to output everyone on the leaderboard as a menu.
+        """
+        leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp")
         embed = discord.Embed(title="User Leaderboard", color=discord.Color.blurple(),
                               url="https://blist.xyz/leaderboard/")
         embed.set_thumbnail(url=str(ctx.guild.icon_url))
         place = 0
+        for_menu = []
+        leaderboard = leaderboard[:5] if not args['all'] else leaderboard
         for leader in leaderboard:
             place += 1
             user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE unique_id = $1", leader["user_id"])
             user = user[0]
-            
+
             if place == 1:
                 trophy = ":first_place:"
             elif place == 2:
@@ -63,10 +116,19 @@ class General(commands.Cog):
             else:
                 trophy = ":medal:"
 
+            if args['all']:
+                for_menu.append((f"{trophy} #{place} - {user['name']}#{user['discriminator']}",
+                                 f"Level: {leader['level']} | XP: {leader['xp']}"))
+
             embed.add_field(name=f"{trophy} #{place} - {user['name']}#{user['discriminator']}",
                             value=f"Level: {leader['level']} | XP: {leader['xp']}", inline=False)
 
-        await ctx.send(embed=embed)
+        if args['all']:
+            menu = MenuMain(LeaderboardPage(entries=list(for_menu), per_page=5), clear_reactions_after=True)
+            await menu.start(ctx)
+            return
+
+        return await ctx.send(embed=embed)
 
     @commands.command()
     async def top(self, ctx):
