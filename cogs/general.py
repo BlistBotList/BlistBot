@@ -95,7 +95,7 @@ class General(commands.Cog):
         **Args:**
             **--all**/-a - Flag to output everyone on the leaderboard as a menu.
         """
-        leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp")
+        leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC")
         embed = discord.Embed(title="User Leaderboard", color=discord.Color.blurple(),
                               url="https://blist.xyz/leaderboard/")
         embed.set_thumbnail(url=str(ctx.guild.icon_url))
