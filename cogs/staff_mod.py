@@ -230,6 +230,7 @@ class Mod(commands.Cog):
         Optional **Arguments:**
         **--title**/-t | Choose a different title. Defaults to 'Official Warning'.
         **--footer**/-f | Choose a different footer with the blist logo. Default to 'blist.xyz'.
+        **--signature**/-s | Choose a different signature  (endline). Defaults to '[AUTHOR_NAME], [RANK]'.
         ----
         **[AUTHOR]** - This will get replaced with your name with discriminator.
         **[MEMBER]** - This will get replaced with the target's name with discriminator.
