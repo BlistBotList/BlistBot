@@ -122,15 +122,18 @@ New Message
             user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE userid = $1", message.author.id)
             if user:
                 user = user[0]
-                last_time = await self.bot.pool.fetchval("SELECT last_time FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
+                leveling_user = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
+                leveling_user = leveling_user[0]
+                if leveling_user["blacklisted"]:
+                    return
                 now = datetime.datetime.utcnow().replace(tzinfo=utc)
                 one_minute = now + datetime.timedelta(seconds=60)
                 xp = random.randint(5, 10)
 
-                if last_time is None:
-                    return await self.bot.pool.execute("INSERT INTO main_site_leveling (xp, level, user_id, last_time) VALUES ($1, $2, $3, $4)", xp, 1, user["unique_id"], one_minute.replace(tzinfo=utc))
+                if leveling_user["last_time"] is None:
+                    return await self.bot.pool.execute("INSERT INTO main_site_leveling (xp, level, user_id, last_time, blacklisted) VALUES ($1, 1, $2, $3, False)", xp, user["unique_id"], one_minute.replace(tzinfo=utc))
                 
-                if last_time.replace(tzinfo=utc) is not None and last_time.replace(tzinfo=utc) > now:
+                if leveling_user["last_time"].replace(tzinfo=utc) is not None and leveling_user["last_time"].replace(tzinfo=utc) > now:
                     return
                 else:
                     await self.bot.pool.execute("UPDATE main_site_leveling SET last_time = $1 WHERE user_id = $2", one_minute.replace(tzinfo=utc), user["unique_id"])

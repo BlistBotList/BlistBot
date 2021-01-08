@@ -4,6 +4,8 @@ import os
 import re
 from textwrap import dedent as wrap
 
+from discord import member
+
 import config
 import country_converter as coco
 import discord
@@ -448,6 +450,28 @@ class Admin(commands.Cog):
                 #    await ctx.send(f'{await x.json()}')
         except KeyError:
             return await ctx.send("This user is not in the Database!")
+
+
+    @commands.has_role(716713266683969626)
+    @commands.command()
+    async def xpblacklist(self, ctx, user: discord.Member):
+        db_user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE userid = $1", user.id)
+        try:
+            db_user = db_user[0]
+            leveling_user = await self.bot.pool.fetch(f"SELECT * FROM main_site_leveling WHERE user_id = $1", db_user["unique_id"])
+            try:
+                leveling_user = leveling_user[0]
+                if leveling_user["blacklisted"]:
+                    await self.bot.pool.execute("UPDATE main_site_leveling SET blacklisted = False WHERE user_id = $1", db_user["unique_id"])
+                    await ctx.send(f"Un-Blacklisted {user} from using leveling!")
+                else:
+                    await self.bot.pool.execute("UPDATE main_site_leveling SET blacklisted = True WHERE user_id = $1", db_user["unique_id"])
+                    await ctx.send(f"Blacklisted {user} from using leveling!")
+            except KeyError:
+                return await ctx.send("This user is not in the Leveling Database!")
+        except KeyError:
+            return await ctx.send("This user is not in the Database!")
+
 
     @checks.main_guild_only()
     @commands.has_permissions(administrator=True)
