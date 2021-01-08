@@ -60,12 +60,15 @@ class Events(commands.Cog):
                       commands.CheckFailure, commands.MissingRequiredArgument, commands.BadArgument,
                       commands.BadUnionArgument, flags.ArgumentParsingError)
 
+        role = ctx.guild.get_role(error.missing_role)
+
         errors = {
             commands.MissingPermissions: "You do not have permissions to run this command.",
             discord.HTTPException: "There was an error connecting to Discord. Please try again.",
             commands.CommandInvokeError: "There was an issue running the command.",
             commands.NotOwner: "You are not the owner.",
-            commands.CheckFailure: "This command cannot be used in this guild!"
+            commands.CheckFailure: "This command cannot be used in this guild!",
+            commands.MissingRole: f"You're missing the **{role.mention}** role"
         }
 
         if isinstance(error, ignored):
