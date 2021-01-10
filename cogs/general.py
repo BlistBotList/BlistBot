@@ -1,4 +1,5 @@
 from textwrap import dedent as wrap
+from datetime import datetime
 
 import asyncio
 import discord
@@ -53,6 +54,87 @@ class LeaderboardPage(menus.ListPageSource):
 class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @flags.add_flag("-pin", "--pinned", action = 'store_true', default = False)
+    @flags.add_flag("announcement", nargs="+", type = str)
+    @commands.command(cls = flags.FlagCommand, aliases=['boa', 'botannounce'])
+    async def botannouncement(self, ctx, bot: discord.Member, **arguments):
+        """
+        Announce something for you bot! With confirmation and you have to be the owner or co-owners.
+
+        Announcements may not be greater than 2,000 characters, or less than 200.
+
+        **Example:** `b!botannouncement your_bot your_announcement (or file) --pinned (optional)`.
+
+        Announcement can also be `file` to read from a .txt file.
+        You can also pin the announcement using the optional `--pinned` argument, defaults to False.
+        """
+        if not bot.bot:
+            return await ctx.send("That is not a bot!")
+
+        owners_query = await self.bot.pool.fetchrow(
+            "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id)
+        bot_owners = [owners_query['main_owner']]
+        if owners_query['owners']:
+            for x in owners_query['owners'].split(" "):
+                bot_owners.append(int(x))
+
+        if ctx.author.id not in bot_owners:
+            return await ctx.send(f"{ctx.author.name}, you are not the owner of {bot}!")
+
+        announcement = ' '.join(arguments['announcement'])
+        if announcement.startswith("file"):
+            if not ctx.message.attachments:
+                return await ctx.send(f"{ctx.author.name}, you didn't attach a .txt file...")
+
+            text_file = await ctx.message.attachments[0].to_file()
+            if not text_file.filename.endswith(".txt"):
+                return await ctx.send(f"{ctx.author.name}, you didn't attach a valid .txt file...")
+
+            read_text_file = text_file.fp.read()
+            if not bool(read_text_file.decode('utf-8')):
+                return await ctx.send(f"{ctx.author.name}, that .txt file is empty...")
+
+            announcement = str(read_text_file.decode('utf-8'))
+
+        if len(announcement) >= 2000 or len(announcement) < 200:
+            return await ctx.send(
+                f"{ctx.author.name}, announcements may not be greater than 2,000 characters, or less than 200."
+                f" **{len(announcement)} currently**")
+
+        msg = await ctx.send(f"**{ctx.author.name}**, do you really want announce that for {bot}?"
+                             f" React with ✅ or ❌ in 30 seconds.")
+        await msg.add_reaction("\U00002705")
+        await msg.add_reaction("\U0000274c")
+
+        def check(r, u):
+            return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and str(r.emoji) in ["\U00002705",
+                                                                                                         "\U0000274c"]
+
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', check = check, timeout = 30)
+        except asyncio.TimeoutError:
+            await msg.remove_reaction("\U00002705", ctx.guild.me)
+            await msg.remove_reaction("\U0000274c", ctx.guild.me)
+            await msg.edit(content = f"~~{msg.content}~~ i guess not, cancelled.")
+            return
+        else:
+            if str(reaction.emoji) == "\U00002705":
+                await msg.remove_reaction("\U00002705", ctx.guild.me)
+                await msg.remove_reaction("\U0000274c", ctx.guild.me)
+                await msg.edit(content = f"~~{msg.content}~~ You reacted with ✅:")
+                pass
+            if str(reaction.emoji) == "\U0000274c":
+                await msg.remove_reaction("\U00002705", ctx.guild.me)
+                await msg.remove_reaction("\U0000274c", ctx.guild.me)
+                await msg.edit(content = f"~~{msg.content}~~ okay, cancelled.")
+                return
+
+        announcement_query = "INSERT INTO main_site_announcement (bot_id, creator_id, announcement, time, pinned) VALUES ($1, $2, $3, $4, $4, $5)"
+        await self.bot.pool.execute(announcement_query, bot.id, ctx.author.id, announcement, datetime.utcnow(), arguments['pinned'])
+        bot_site = f"https://blist.xyz/bot/{bot.id}/announcements"
+        await ctx.send(f"Successfully announced that for {bot}, see it here: <{bot_site}>.")
+        return
 
     @commands.command()
     async def stats(self, ctx):
