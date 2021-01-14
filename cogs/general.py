@@ -2,7 +2,6 @@ from textwrap import dedent as wrap
 from datetime import datetime
 
 import asyncio
-from typing import Union
 
 import discord
 from discord.ext import commands, menus, flags
