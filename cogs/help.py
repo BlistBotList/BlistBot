@@ -12,10 +12,7 @@ class CustomPaginatorEmbedInterface(PaginatorEmbedInterface):
         self._embed.title = self.bot.user.name
         self._embed.description = self.pages[display_page]
         self._embed.color = discord.Colour.blurple()
-        self._embed.set_footer(
-            text=f"{self.owner.name} | Page {display_page + 1}/{self.page_count}",
-            icon_url=self.owner.avatar_url_as(static_format="png")
-        )
+        self._embed.set_footer(text=str(self.owner.name), icon_url=self.owner.avatar_url_as(static_format="png"))
         # self._embed.set_footer(text = f'Page {display_page + 1}/{self.page_count}')
         return {'embed': self._embed}
 
