@@ -60,15 +60,14 @@ class Events(commands.Cog):
                       commands.CheckFailure, commands.MissingRequiredArgument, commands.BadArgument,
                       commands.BadUnionArgument, flags.ArgumentParsingError)
 
-        role = ctx.guild.get_role(error.missing_role)
-
         errors = {
             commands.MissingPermissions: "You do not have permissions to run this command.",
             discord.HTTPException: "There was an error connecting to Discord. Please try again.",
             commands.CommandInvokeError: "There was an issue running the command.",
             commands.NotOwner: "You are not the owner.",
             commands.CheckFailure: "This command cannot be used in this guild!",
-            commands.MissingRole: f"You're missing the **{role.mention}** role"
+            commands.MissingRole: "You're missing the **{}** role",
+            commands.MissingRequiredArgument: "`{}` is a required argument!"
         }
 
         if isinstance(error, ignored):
@@ -76,8 +75,10 @@ class Events(commands.Cog):
 
         if isinstance(error, send_embed):
             if isinstance(error, commands.MissingRequiredArgument):
-                # removes "that is missing."
-                err = f"`{str(error.param).partition(':')[0]}` is a required argument!"
+                err = errors.get(error.__class__).format(str(error.param).partition(':')[0])
+            elif isinstance(error, commands.MissingRole):
+                role = ctx.guild.get_role(error.missing_role)
+                err = errors.get(error.__class__).format(role.mention)
             else:
                 efd = errors.get(error.__class__)
                 err = str(efd)
