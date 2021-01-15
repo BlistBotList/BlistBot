@@ -1,58 +1,217 @@
 from textwrap import dedent as wrap
+from utils.pages import MainMenu, LeaderboardPage, AnnouncementPage
+from utils import announcements as announce_file
 
 import asyncio
 import discord
-from discord.ext import commands, menus, flags
-
-# subclass menu to add numbers button.
-class MenuMain(menus.MenuPages):
-    def __init__(self, source, **kwargs):
-        super().__init__(source=source, check_embeds=True, **kwargs)
-
-    @menus.button('\N{INPUT SYMBOL FOR NUMBERS}', position=menus.Last(1.5))
-    async def numbered_page(self, payload):
-        """lets you type a page number to go to"""
-        channel = self.message.channel
-        author_id = payload.user_id
-        to_delete = [await channel.send('What page do you want to go to?')]
-
-        def message_check(m):
-            return m.author.id == author_id and channel == m.channel and m.content.isdigit()
-
-        try:
-            msg = await self.bot.wait_for('message', check=message_check, timeout=30.0)
-        except asyncio.TimeoutError:
-            to_delete.append(await channel.send('Took too long.'))
-            await asyncio.sleep(5)
-        else:
-            page = int(msg.content)
-            to_delete.append(msg)
-            await self.show_checked_page(page - 1)
-
-        try:
-            await channel.delete_messages(to_delete)
-        except Exception:
-            pass
-
-
-class LeaderboardPage(menus.ListPageSource):
-    def __init__(self, entries, **kwargs):
-        super().__init__(entries, **kwargs)
-
-    async def format_page(self, menu, entry):
-        em = discord.Embed(title="User Leaderboard | Pagination", color=discord.Color.blurple(),
-                           url="https://blist.xyz/leaderboard/")
-        em.set_thumbnail(url=str(menu.ctx.guild.icon_url))
-        em.set_footer(text=f"Page: {menu.current_page + 1} / {self.get_max_pages()}")
-        for name,value in entry:
-            em.add_field(name=name, value=value, inline=False)
-
-        return em
-
+from discord.ext import commands, flags
 
 class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.announcements = announce_file.Announcement
+
+    @commands.group(aliases=['boa', 'botannounce'], invoke_without_command=True)
+    async def botannouncement(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(str(ctx.command))
+
+    @flags.add_flag("-pin", "--pinned", action='store_true', default=False)
+    @flags.add_flag("announcement", nargs="+", type=str)
+    @botannouncement.command(cls=flags.FlagCommand, name='create', aliases=['make'], brief="See [p]help botannouncement create")
+    async def botannouncement_create(self, ctx, bot: discord.Member, **arguments):
+        """
+        Announce something for your bot! you have to be the owner or co-owners.
+
+        Announcements may not be greater than 2,000 characters, or less than 50.
+
+        **Example:** `b!botannouncement create your_bot your_announcement (or file) --pinned (optional)`.
+
+        Announcement can also be `file` to read from a .txt file.
+        You can also pin the announcement using the optional `--pinned` argument, defaults to False.
+        """
+        check_listed = await announce_file.check_bot_on_site(ctx, bot.id)
+        if not check_listed or not bot.bot:
+            return await ctx.send("That is not a bot or it's not listed on the site!")
+
+        owners_query = await self.bot.pool.fetchrow(
+            "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id)
+        bot_owners = [owners_query['main_owner']]
+        if owners_query['owners']:
+            for x in owners_query['owners'].split(" "):
+                bot_owners.append(int(x))
+
+        if ctx.author.id not in bot_owners:
+            return await ctx.send(f"{ctx.author.name}, you are not the owner of {bot}!")
+
+        announcement = ' '.join(arguments['announcement'])
+        if announcement.startswith("file"):
+            if not ctx.message.attachments:
+                return await ctx.send(f"{ctx.author.name}, you didn't attach a .txt file...")
+
+            text_file = await ctx.message.attachments[0].to_file()
+            if not text_file.filename.endswith(".txt"):
+                return await ctx.send(f"{ctx.author.name}, you didn't attach a valid .txt file...")
+
+            read_text_file = text_file.fp.read()
+            if not bool(read_text_file.decode('utf-8')):
+                return await ctx.send(f"{ctx.author.name}, that .txt file is empty...")
+
+            announcement = str(read_text_file.decode('utf-8'))
+
+        if len(announcement) >= 2000 or len(announcement) < 50:
+            return await ctx.send(
+                f"{ctx.author.name}, announcements may not be greater than 2,000 characters, or less than 50."
+                f" **{len(announcement)} currently**")
+
+        inserted = await self.announcements.insert(
+            ctx, announcement, bot.id, arguments['pinned'])
+
+        if isinstance(inserted, str):
+            return await ctx.send(f"{ctx.author.name}, something went wrong... {inserted}")
+
+        # Sending the announcement in chat because we can...
+        announcement_object: announce_file.Announcement = inserted
+        announcement_content: str = inserted.content
+        creator: announce_file.AnnouncementCreator = await inserted.get_creator_object(ctx)
+        bot: announce_file.AnnouncementBot = await inserted.get_bot_object(ctx)
+
+        if len(announcement_content) >= 1700:
+            announcement = announcement[:1700]
+            more_characters = f"{2000 - 1700} [more characters](https://blist.xyz/bot/{bot.id}/announcements)"
+            announcement += f"... **{more_characters}...**"
+
+        menu = MainMenu(AnnouncementPage(entries=list([(announcement_object, announcement_content, creator, bot)]),
+                                         per_page=1), clear_reactions_after=True)
+        bot_site = f"https://blist.xyz/bot/{bot.id}/announcements"
+        await ctx.send(f"Successfully announced that for {bot}, see it here: <{bot_site}>")
+        await menu.start(ctx)
+        return
+
+    @flags.add_flag("-i", "--id", type=int, default=None)
+    @flags.add_flag("-b", "--bot", type=discord.Member, default=None)
+    @flags.add_flag("-old", "--oldest", action='store_true', default=False)
+    @flags.add_flag("-a", "--all", action='store_true', default=False)
+    @botannouncement.command(cls=flags.FlagCommand, name='view', aliases=['show'], brief="See [p]help botannouncement view")
+    async def botannouncement_view(self, ctx, **arguments):
+        """
+        Get announcements for a bot or a specific announcement via the unique id, this can be found on the bottom of the announcement card.
+
+        **Example**: `b!botannouncement view --bot bot_here` or `b!botannouncement view --id id_here`
+
+        **Arguments**:
+
+        **--bot**/-b - Get the most recent announcement of bot.
+        **--id**/-i - Get the announcement that matches the id.
+
+        **Can only be used in combination with `--bot`**:
+
+        **--all**/-a - Get all announcements for bot.
+        **--oldest**/-old - Sort bot announcements on oldest, works with `-all`. Defaults to newest.
+        """
+        if arguments['bot']:
+            bot_arg = arguments['bot']
+            check_listed = await announce_file.check_bot_on_site(ctx, bot_arg.id)
+            if not check_listed or not bot_arg.bot:
+                return await ctx.send("That is not a bot or it's not listed on the site!")
+            limit = 1 if not arguments['all'] else None
+            fetched_announcements = await self.announcements.fetch_bot_announcements(
+                ctx, bot_id=bot_arg.id, limit=limit, oldest=arguments['oldest'])
+        elif arguments['id']:
+            fetched_announcements = await self.announcements.fetch_from_unique_id(ctx, arguments['id'])
+            if fetched_announcements:
+                fetched_announcements = [fetched_announcements]
+        else:
+            return await ctx.send(f"{ctx.author.name}, please provide either `--bot` or `--id` not nothing. See {ctx.prefix}help {ctx.command.qualified_name}")
+
+        if isinstance(fetched_announcements, str):
+            return await ctx.send(
+                f"{ctx.author.name}, i couldn't find any announcements.\n{fetched_announcements}")
+
+        if not fetched_announcements:
+            return await ctx.send(
+                f"{ctx.author.name}, i couldn't find any announcements.")
+
+        all_bot_announcements = []
+
+        for x in fetched_announcements:
+            announcement: announce_file.Announcement = x
+            announcement_content: str = x.content
+            creator: announce_file.AnnouncementCreator = await x.get_creator_object(ctx)
+            bot: announce_file.AnnouncementBot = await x.get_bot_object(ctx)
+
+            if len(announcement_content) >= 1700:
+                announcement = announcement[:1700]
+                more_characters = f"{2000 - 1700} [more characters](https://blist.xyz/bot/{bot.id}/announcements)"
+                announcement += f"... **{more_characters}...**"
+
+            all_bot_announcements.append((announcement, announcement_content, creator, bot))
+
+        menu = MainMenu(AnnouncementPage(entries=list(all_bot_announcements), per_page=1), clear_reactions_after=True)
+        await menu.start(ctx)
+        return
+
+    @botannouncement.command(cls=flags.FlagCommand, name='delete', aliases=['remove'], brief="See [p]help botannouncement delete")
+    async def botannouncement_delete(self, ctx, bot: discord.Member, announcement_id: int):
+        """
+        Delete an announcement from your bot page via the unique id, this can be found on the bottom of the announcement card.
+        With confirmation.
+
+        **Example:** `b!botannouncement delete your_bot announcement_id`.
+        """
+        check_listed = await announce_file.check_bot_on_site(ctx, bot.id)
+        if not check_listed or not bot.bot:
+            return await ctx.send("That is not a bot or it's not listed on the site!")
+
+        owners_query = await self.bot.pool.fetchrow(
+            "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id)
+        bot_owners = [owners_query['main_owner']]
+        if owners_query['owners']:
+            for x in owners_query['owners'].split(" "):
+                bot_owners.append(int(x))
+
+        if ctx.author.id not in bot_owners:
+            return await ctx.send(f"{ctx.author.name}, you are not the owner of {bot}!")
+
+        the_announcement = await self.announcements.fetch_from_unique_id(ctx, announcement_id)
+        if not the_announcement:
+            return await ctx.send(f"{ctx.author.name}, i couldn't find any announcement matching the announcement id.")
+        else:
+            pass
+
+        msg = await ctx.send(f"**{ctx.author.name}**, do you really want delete that announcement "
+                             f"with ID: {announcement_id} for {bot} ? React with ✅ or ❌ in 30 seconds.")
+        await msg.add_reaction("\U00002705")
+        await msg.add_reaction("\U0000274c")
+
+        def check(r, u):
+            return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and str(r.emoji) in ["\U00002705",
+                                                                                                         "\U0000274c"]
+
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', check = check, timeout = 30)
+        except asyncio.TimeoutError:
+            await msg.remove_reaction("\U00002705", ctx.guild.me)
+            await msg.remove_reaction("\U0000274c", ctx.guild.me)
+            await msg.edit(content = f"~~{msg.content}~~ i guess not, cancelled.")
+            return
+        else:
+            if str(reaction.emoji) == "\U00002705":
+                await msg.remove_reaction("\U00002705", ctx.guild.me)
+                await msg.remove_reaction("\U0000274c", ctx.guild.me)
+                await msg.edit(content = f"~~{msg.content}~~ You reacted with ✅:")
+                pass
+            if str(reaction.emoji) == "\U0000274c":
+                await msg.remove_reaction("\U00002705", ctx.guild.me)
+                await msg.remove_reaction("\U0000274c", ctx.guild.me)
+                await msg.edit(content = f"~~{msg.content}~~ okay, cancelled.")
+                return
+
+        delete_announcement = await the_announcement.delete(ctx, bot.id)
+        if not delete_announcement:
+            return await ctx.send(f"{ctx.author.name}, that announcement id didn't match that bot.")
+        await ctx.send(f"Successfully deleted announcement with ID: {announcement_id} for {bot}.")
+        return
 
     @commands.command()
     async def stats(self, ctx):
@@ -87,7 +246,7 @@ class General(commands.Cog):
         embed.set_thumbnail(url=str(ctx.guild.icon_url))
         await ctx.send(embed=embed)
 
-    @flags.add_flag("-a", "--all", action = 'store_true')
+    @flags.add_flag("-a", "--all", action='store_true')
     @commands.command(aliases=["lb"], cls=flags.FlagCommand)
     async def leaderboard(self, ctx, **args):
         """
@@ -124,7 +283,7 @@ class General(commands.Cog):
                             value=f"Level: {leader['level']} | XP: {leader['xp']}", inline=False)
 
         if args['all']:
-            menu = MenuMain(LeaderboardPage(entries=list(for_menu), per_page=5), clear_reactions_after=True)
+            menu = MainMenu(LeaderboardPage(entries=list(for_menu), per_page=5), clear_reactions_after=True)
             await menu.start(ctx)
             return
 

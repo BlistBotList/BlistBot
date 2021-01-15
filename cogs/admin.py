@@ -4,14 +4,12 @@ import os
 import re
 from textwrap import dedent as wrap
 
-from discord import member
-
 import config
 import country_converter as coco
 import discord
 from discord.ext import commands
 
-from . import checks  # pylint: disable=relative-beyond-top-level
+from utils import checks
 
 
 class Admin(commands.Cog):

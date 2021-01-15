@@ -8,8 +8,8 @@ import discord
 import humanize
 from discord.ext import commands, flags
 
-from . import checks
-from .time import FutureTime
+from utils import checks
+from utils.time import FutureTime
 
 
 class Mod(commands.Cog):

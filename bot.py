@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import datetime
 import os
 
@@ -10,7 +9,7 @@ import tweepy
 from discord.ext import commands
 
 import config
-from cogs.help import CustomHelpCommand
+from utils.help import CustomHelpCommand
 
 extensions = ["jishaku"]
 
@@ -75,8 +74,6 @@ class Blist(commands.Bot):
                 print("There was a problem connecting to the mod database")
                 print(f"\n{error}")
 
-        extensions.remove("cogs.checks")
-        extensions.remove("cogs.time")
         for extension in extensions:
             self.load_extension(extension)
 
