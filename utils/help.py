@@ -42,18 +42,3 @@ class CustomHelpCommand(MinimalEmbedPaginatorHelp):
 
         """
         return f"To get help on a specific command or category do `{self.clean_prefix}help [command or category name]`"
-
-
-class Help(commands.Cog):
-
-    def __init__(self, bot):
-        self.bot = bot
-        self.old_help_command = MinimalEmbedPaginatorHelp(
-            command_attrs={'hidden': True})
-
-    def cog_unload(self):
-        self.bot.help_command = self.old_help_command
-
-
-def setup(bot):
-    bot.add_cog(Help(bot))

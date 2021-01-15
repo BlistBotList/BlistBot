@@ -5,7 +5,7 @@ import discord
 import googletrans
 from discord.ext import commands, flags
 
-from . import checks  # pylint: disable=relative-beyond-top-level
+from utils import checks
 
 
 class Staff(commands.Cog):

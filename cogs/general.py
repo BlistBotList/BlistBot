@@ -1,74 +1,10 @@
 from textwrap import dedent as wrap
-from datetime import datetime
+from utils.pages import MainMenu, LeaderboardPage, AnnouncementPage
+from utils import announcement as announcement_file
 
 import asyncio
 import discord
-from discord.ext import commands, menus, flags
-
-# subclass menu to add numbers button.
-class MenuMain(menus.MenuPages):
-    def __init__(self, source, **kwargs):
-        super().__init__(source=source, check_embeds=True, **kwargs)
-
-    @menus.button('\N{INPUT SYMBOL FOR NUMBERS}', position=menus.Last(1.5))
-    async def numbered_page(self, payload):
-        """lets you type a page number to go to"""
-        channel = self.message.channel
-        author_id = payload.user_id
-        to_delete = [await channel.send('What page do you want to go to?')]
-
-        def message_check(m):
-            return m.author.id == author_id and channel == m.channel and m.content.isdigit()
-
-        try:
-            msg = await self.bot.wait_for('message', check=message_check, timeout=30.0)
-        except asyncio.TimeoutError:
-            to_delete.append(await channel.send('Took too long.'))
-            await asyncio.sleep(5)
-        else:
-            page = int(msg.content)
-            to_delete.append(msg)
-            await self.show_checked_page(page - 1)
-
-        try:
-            await channel.delete_messages(to_delete)
-        except Exception:
-            pass
-
-
-class LeaderboardPage(menus.ListPageSource):
-    def __init__(self, entries, **kwargs):
-        super().__init__(entries, **kwargs)
-
-    async def format_page(self, menu, entry):
-        em = discord.Embed(title="User Leaderboard | Pagination", color=discord.Color.blurple(),
-                           url="https://blist.xyz/leaderboard/")
-        em.set_thumbnail(url=str(menu.ctx.guild.icon_url))
-        em.set_footer(text=f"Page: {menu.current_page + 1} / {self.get_max_pages()}")
-        for name,value in entry:
-            em.add_field(name=name, value=value, inline=False)
-
-        return em
-
-
-class AnnouncementPage(menus.ListPageSource):
-    def __init__(self, entries, **kwargs):
-        super().__init__(entries, **kwargs)
-
-    async def format_page(self, menu, entry):
-        announcement, announcement_id, time, pinned, creator, creator_avatar, bot_user, bot_user_avatar = entry
-        em = discord.Embed(
-            title=f"{len(self.entries)} Announcements for {bot_user['name']}#{bot_user['discriminator']}",
-            color=discord.Color.blurple(),
-            url=f"https://blist.xyz/bot/{bot_user['id']}/announcements",
-            description=f"{time.strftime('%b. %d, %Y, %I:%M %p')}\n\n{announcement}\n\n"
-                        f"**Pinned?**: {pinned}\n**ID**: {announcement_id}"
-        )
-        em.set_thumbnail(url=str(bot_user_avatar))
-        em.set_footer(text=f"Page: {menu.current_page + 1} / {self.get_max_pages()}")
-        em.set_author(name =f"{creator['name']}#{creator['discriminator']}", icon_url=str(creator_avatar))
-        return em
-
+from discord.ext import commands, flags
 
 class General(commands.Cog):
     def __init__(self, bot):
@@ -126,10 +62,27 @@ class General(commands.Cog):
                 f"{ctx.author.name}, announcements may not be greater than 2,000 characters, or less than 50."
                 f" **{len(announcement)} currently**")
 
-        announcement_query = "INSERT INTO main_site_announcement (bot_id, creator_id, announcement, time, pinned) VALUES ($1, $2, $3, $4, $4, $5)"
-        await self.bot.pool.execute(announcement_query, bot.id, ctx.author.id, announcement, datetime.utcnow(), arguments['pinned'])
+        inserted = await announcement_file.Announcement.insert(
+            ctx, announcement, bot.id, arguments['pinned'])
+        if isinstance(inserted, str):
+            return await ctx.send(f"{ctx.author.name}, something went wrong... {inserted}")
+
+        # Sending the announcement in chat because we can...
+        announcement: announcement_file.Announcement = inserted
+        announcement_content: str = inserted.content
+        creator: announcement_file.AnnouncementCreator = await inserted.get_creator_object(ctx)
+        bot: announcement_file.AnnouncementBot = await inserted.get_bot_object(ctx)
+
+        if len(announcement_content) >= 1700:
+            announcement = announcement[:1700]
+            more_characters = f"{2000 - 1700} [more characters](https://blist.xyz/bot/{bot.id}/announcements)"
+            announcement += f"... **{more_characters}...**"
+
+        menu = MainMenu(AnnouncementPage(entries=list([(announcement, announcement_content, creator, bot)]),
+                                         per_page=1), clear_reactions_after=True)
         bot_site = f"https://blist.xyz/bot/{bot.id}/announcements"
         await ctx.send(f"Successfully announced that for {bot}, see it here: <{bot_site}>.")
+        await menu.start(ctx)
         return
 
     @flags.add_flag("-i", "--id", type=int, default=None)
@@ -153,92 +106,42 @@ class General(commands.Cog):
         **--all**/-a - Get all announcements for bot.
         **--oldest**/-old - Sort bot announcements on oldest, works with `-all`. Defaults to newest.
         """
+        announcement_object = announcement_file.Announcement
+        if arguments['bot']:
+            limit = 1 if not arguments['all'] else None
+            fetched_announcements = await announcement_object.fetch_bot_announcements(
+                ctx, bot_id=arguments['bot'].id, limit=limit, oldest=arguments['oldest'])
+        elif arguments['id']:
+            fetched_announcements = [await announcement_object.fetch_from_unique_id(ctx, arguments['id'])]
+        else:
+            return await ctx.send(f"{ctx.author.name}, please provide either `--bot` or `--id` not nothing.")
 
-        def get_avatar(user_id: int, av_hash: str):
-            av_format = "png"
-            if av_hash.startswith("a_"):
-                av_format = "gif"
-            return f"https://cdn.discordapp.com/avatars/{user_id}/{av_hash}.{av_format}?size=1024"
+        if isinstance(fetched_announcements, str):
+            return await ctx.send(
+                f"{ctx.author.name}, i couldn't find any announcements.\n{fetched_announcements}")
 
-        async def _from_unique_id(table_type: str, unique_id: int):
-            if table_type == "USER":
-                return await self.bot.pool.fetchrow(
-                    "SELECT name, discriminator, userid, avatar_hash FROM main_site_user WHERE unique_id = $1",
-                    int(unique_id))
-
-            if table_type == "BOT":
-                return await self.bot.pool.fetchrow(
-                    "SELECT name, id, avatar_hash, discriminator FROM main_site_bot WHERE unique_id = $1",
-                    int(unique_id))
-
-        async def fetch_announcements():
-            fetched_all_announcements = None
-            bot_unique_id = None
-            if arguments['bot']:
-                bot_unique_id = await self.bot.pool.fetchrow(
-                    "SELECT unique_id FROM main_site_bot WHERE id = $1", int(arguments['bot'].id))
-            # ------------------------
-
-            if arguments['id']:
-                fetched_all_announcements = await self.bot.pool.fetchrow(
-                    "SELECT * FROM main_site_announcement WHERE unique_id = $1", int(arguments['id']))
-
-            if arguments['bot']:
-                query = "SELECT * FROM main_site_announcement WHERE bot_id = $1 ORDER BY time DESC"
-                if arguments['oldest']:
-                    query = "SELECT * FROM main_site_announcement WHERE bot_id = $1 ORDER BY time ASC"
-
-                if arguments['all']:
-                    fetched_all_announcements = await self.bot.pool.fetch(query, bot_unique_id['unique_id'])
-                else:
-                    fetched_all_announcements = await self.bot.pool.fetchrow(query, bot_unique_id['unique_id'])
-
-            return fetched_all_announcements
-
-        if not await fetch_announcements():
+        if not fetched_announcements:
             return await ctx.send(
                 f"{ctx.author.name}, i couldn't find any announcements.")
 
         all_bot_announcements = []
 
-        for x in await fetch_announcements():
-            announcement: str = x['announcement']
-            announcement_id: int = x['unique_id']
-            time: datetime = x['time']
-            pinned: bool = x['pinned']
-            creator = await _from_unique_id("USER", x['creator_id'])
-            creator_avatar: str = str(get_avatar(creator['id'], creator['avatar_hash']))
-            bot_user = await _from_unique_id("BOT", x['bot_id'])
-            bot_user_avatar: str = str(get_avatar(bot_user['id'], bot_user['avatar_hash']))
+        for x in fetched_announcements:
+            announcement: announcement_object = x
+            announcement_content: str = x.content
+            creator: announcement_file.AnnouncementCreator = await x.get_creator_object(ctx)
+            bot: announcement_file.AnnouncementBot = await x.get_bot_object(ctx)
 
-            if len(announcement) >= 1700:
+            if len(announcement_content) >= 1700:
                 announcement = announcement[:1700]
-                more_characters = f"{2000 - 1700} [more characters](https://blist.xyz/bot/{bot_user['id']}/announcements)"
+                more_characters = f"{2000 - 1700} [more characters](https://blist.xyz/bot/{bot.id}/announcements)"
                 announcement += f"... **{more_characters}...**"
 
-            all_bot_announcements.append((announcement, announcement_id, time, pinned, creator,
-                                          creator_avatar, bot_user, bot_user_avatar))
+            all_bot_announcements.append((announcement, announcement_content, creator, bot))
 
-        if not all_bot_announcements:
-            return await ctx.send(
-                f"{ctx.author.name}, i couldn't find any announcements.")
-
-        if len(all_bot_announcements) >= 2:
-            menu = MenuMain(AnnouncementPage(entries=list(all_bot_announcements), per_page=1), clear_reactions_after=True)
-            await menu.start(ctx)
-            return
-
-        announcement, announcement_id, time, pinned, creator, creator_avatar, bot_user, bot_user_avatar = all_bot_announcements[0]
-        em = discord.Embed(
-            title=f"Announcement for {bot_user['name']}#{bot_user['discriminator']}",
-            color=discord.Color.blurple(),
-            url=f"https://blist.xyz/bot/{bot_user['id']}/announcements",
-            description=f"{time.strftime('%b. %d, %Y, %I:%M %p')}\n\n{announcement}\n\n"
-                        f"**Pinned?**: {pinned}\n**ID**: {announcement_id}"
-        )
-        em.set_thumbnail(url=str(bot_user_avatar))
-        em.set_author(name =f"{creator['name']}#{creator['discriminator']}", icon_url=str(creator_avatar))
-        return await ctx.send(embed=em)
+        menu = MainMenu(AnnouncementPage(entries=list(all_bot_announcements), per_page=1), clear_reactions_after=True)
+        await menu.start(ctx)
+        return
 
     @botannouncement.command(cls=flags.FlagCommand, name='delete', aliases=['remove'])
     async def botannouncement_delete(self, ctx, bot: discord.Member, announcement_id: int):
@@ -261,14 +164,12 @@ class General(commands.Cog):
         if ctx.author.id not in bot_owners:
             return await ctx.send(f"{ctx.author.name}, you are not the owner of {bot}!")
 
-
-        bot_id = await self.bot.pool.fetchrow("SELECT unique_id FROM main_site_bot WHERE id = $1", bot.id)
-        the_announcement = await self.bot.pool.fetchrow(
-            "SELECT * FROM main_site_announcement WHERE unique_id = $1 AND bot_id = $2", int(announcement_id), int(bot_id))
-
+        announcement_object = announcement_file.Announcement
+        the_announcement = await announcement_object.fetch_from_unique_id(announcement_id)
         if not the_announcement:
-            return await ctx.send(f"{ctx.author.name}, "
-                                  f"i can't find any announcement that matches the announcement id and bot id.")
+            return await ctx.send(f"{ctx.author.name}, i can't find any announcement that matches the announcement id.")
+        else:
+            pass
 
         msg = await ctx.send(f"**{ctx.author.name}**, do you really want delete that announcement "
                              f"with ID: {announcement_id}for {bot} ? React with ✅ or ❌ in 30 seconds.")
@@ -298,9 +199,9 @@ class General(commands.Cog):
                 await msg.edit(content = f"~~{msg.content}~~ okay, cancelled.")
                 return
 
-
-        await self.bot.pool.execute(
-            "DELETE FROM main_site_announcement WHERE unique_id = $1 AND bot_id = $2", int(announcement_id), int(bot_id))
+        delete_announcement = await the_announcement.delete(ctx, bot.id)
+        if not delete_announcement:
+            return await ctx.send(f"{ctx.author.name}, that announcement id doesn't match that bot.")
         await ctx.send(f"Successfully delete announcement with ID: {announcement_id} for {bot}.")
         return
 
@@ -374,7 +275,7 @@ class General(commands.Cog):
                             value=f"Level: {leader['level']} | XP: {leader['xp']}", inline=False)
 
         if args['all']:
-            menu = MenuMain(LeaderboardPage(entries=list(for_menu), per_page=5), clear_reactions_after=True)
+            menu = MainMenu(LeaderboardPage(entries=list(for_menu), per_page=5), clear_reactions_after=True)
             await menu.start(ctx)
             return
 
