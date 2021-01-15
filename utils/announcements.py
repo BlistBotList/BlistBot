@@ -1,6 +1,6 @@
 from datetime import datetime
 import asyncpg
-from typing import List
+from typing import List, Union
 
 
 def get_avatar(user_id: int, av_hash: str):
@@ -106,7 +106,7 @@ class Announcement:
         return cls(dict(announcement_fetched))
 
     @classmethod
-    async def fetch_bot_announcements(cls, ctx, bot_id: int, limit = None, *, oldest: bool = False, is_unique: bool = False) -> List[Announcement]:
+    async def fetch_bot_announcements(cls, ctx, bot_id: int, limit = None, *, oldest: bool = False, is_unique: bool = False) -> Union[List[Announcement], Exception]:
         """ Gets all bot announcements via their id and returns an Announement object,
             if successful, else, will return the error.
 
@@ -133,7 +133,8 @@ class Announcement:
         except Exception as err:
             return err
 
-    async def delete(self, ctx, bot_id: int):
+    async def delete(self, ctx, bot_id: int) -> bool:
+        """ Deletes an announcement with check if bot id matches the announcement bot id. """
         announcement_bot = await self.get_bot_object(ctx)
         if announcement_bot.id == bot_id:
             await ctx.bot.pool.execute(

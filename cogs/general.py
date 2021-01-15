@@ -1,6 +1,6 @@
 from textwrap import dedent as wrap
 from utils.pages import MainMenu, LeaderboardPage, AnnouncementPage
-from utils import announcement as announcement_file
+from utils import announcements as announce_file
 
 import asyncio
 import discord
@@ -9,6 +9,7 @@ from discord.ext import commands, flags
 class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.announcements = announce_file.Announcement
 
     @commands.group(aliases=['boa', 'botannounce'], invoke_without_command=True)
     async def botannouncement(self, ctx):
@@ -62,23 +63,23 @@ class General(commands.Cog):
                 f"{ctx.author.name}, announcements may not be greater than 2,000 characters, or less than 50."
                 f" **{len(announcement)} currently**")
 
-        inserted = await announcement_file.Announcement.insert(
+        inserted = await self.announcements.insert(
             ctx, announcement, bot.id, arguments['pinned'])
         if isinstance(inserted, str):
             return await ctx.send(f"{ctx.author.name}, something went wrong... {inserted}")
 
         # Sending the announcement in chat because we can...
-        announcement: announcement_file.Announcement = inserted
+        announcement_object: announce_file.Announcement = inserted
         announcement_content: str = inserted.content
-        creator: announcement_file.AnnouncementCreator = await inserted.get_creator_object(ctx)
-        bot: announcement_file.AnnouncementBot = await inserted.get_bot_object(ctx)
+        creator: announce_file.AnnouncementCreator = await inserted.get_creator_object(ctx)
+        bot: announce_file.AnnouncementBot = await inserted.get_bot_object(ctx)
 
         if len(announcement_content) >= 1700:
             announcement = announcement[:1700]
             more_characters = f"{2000 - 1700} [more characters](https://blist.xyz/bot/{bot.id}/announcements)"
             announcement += f"... **{more_characters}...**"
 
-        menu = MainMenu(AnnouncementPage(entries=list([(announcement, announcement_content, creator, bot)]),
+        menu = MainMenu(AnnouncementPage(entries=list([(announcement_object, announcement_content, creator, bot)]),
                                          per_page=1), clear_reactions_after=True)
         bot_site = f"https://blist.xyz/bot/{bot.id}/announcements"
         await ctx.send(f"Successfully announced that for {bot}, see it here: <{bot_site}>.")
@@ -106,13 +107,12 @@ class General(commands.Cog):
         **--all**/-a - Get all announcements for bot.
         **--oldest**/-old - Sort bot announcements on oldest, works with `-all`. Defaults to newest.
         """
-        announcement_object = announcement_file.Announcement
         if arguments['bot']:
             limit = 1 if not arguments['all'] else None
-            fetched_announcements = await announcement_object.fetch_bot_announcements(
+            fetched_announcements = await self.announcements.fetch_bot_announcements(
                 ctx, bot_id=arguments['bot'].id, limit=limit, oldest=arguments['oldest'])
         elif arguments['id']:
-            fetched_announcements = [await announcement_object.fetch_from_unique_id(ctx, arguments['id'])]
+            fetched_announcements = [await self.announcements.fetch_from_unique_id(ctx, arguments['id'])]
         else:
             return await ctx.send(f"{ctx.author.name}, please provide either `--bot` or `--id` not nothing.")
 
@@ -127,10 +127,10 @@ class General(commands.Cog):
         all_bot_announcements = []
 
         for x in fetched_announcements:
-            announcement: announcement_object = x
+            announcement: announce_file.Announcement = x
             announcement_content: str = x.content
-            creator: announcement_file.AnnouncementCreator = await x.get_creator_object(ctx)
-            bot: announcement_file.AnnouncementBot = await x.get_bot_object(ctx)
+            creator: announce_file.AnnouncementCreator = await x.get_creator_object(ctx)
+            bot: announce_file.AnnouncementBot = await x.get_bot_object(ctx)
 
             if len(announcement_content) >= 1700:
                 announcement = announcement[:1700]
@@ -164,8 +164,7 @@ class General(commands.Cog):
         if ctx.author.id not in bot_owners:
             return await ctx.send(f"{ctx.author.name}, you are not the owner of {bot}!")
 
-        announcement_object = announcement_file.Announcement
-        the_announcement = await announcement_object.fetch_from_unique_id(announcement_id)
+        the_announcement = await self.announcements.fetch_from_unique_id(ctx, announcement_id)
         if not the_announcement:
             return await ctx.send(f"{ctx.author.name}, i can't find any announcement that matches the announcement id.")
         else:

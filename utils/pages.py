@@ -1,4 +1,5 @@
 # subclass menu to add numbers button.
+import asyncio
 import discord
 from discord.ext import menus
 
