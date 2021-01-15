@@ -13,15 +13,15 @@ class General(commands.Cog):
 
     @commands.group(aliases=['boa', 'botannounce'], invoke_without_command=True)
     async def botannouncement(self, ctx):
-        if not ctx.invoked_subcommand:
-            return await ctx.send_help(ctx.invoked_subcommand)
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(str(ctx.command))
 
     @flags.add_flag("-pin", "--pinned", action='store_true', default=False)
     @flags.add_flag("announcement", nargs="+", type=str)
-    @botannouncement.command(cls=flags.FlagCommand, name='create', aliases=['make'])
+    @botannouncement.command(cls=flags.FlagCommand, name='create', aliases=['make'], brief="See [p]help botannouncement create")
     async def botannouncement_create(self, ctx, bot: discord.Member, **arguments):
         """
-        Announce something for you bot! you have to be the owner or co-owners.
+        Announce something for your bot! you have to be the owner or co-owners.
 
         Announcements may not be greater than 2,000 characters, or less than 50.
 
@@ -30,8 +30,9 @@ class General(commands.Cog):
         Announcement can also be `file` to read from a .txt file.
         You can also pin the announcement using the optional `--pinned` argument, defaults to False.
         """
-        if not bot.bot:
-            return await ctx.send("That is not a bot!")
+        check_listed = await announce_file.check_bot_on_site(ctx, bot.id)
+        if not check_listed or not bot.bot:
+            return await ctx.send("That is not a bot or it's not listed on the site!")
 
         owners_query = await self.bot.pool.fetchrow(
             "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id)
@@ -65,6 +66,7 @@ class General(commands.Cog):
 
         inserted = await self.announcements.insert(
             ctx, announcement, bot.id, arguments['pinned'])
+
         if isinstance(inserted, str):
             return await ctx.send(f"{ctx.author.name}, something went wrong... {inserted}")
 
@@ -82,7 +84,7 @@ class General(commands.Cog):
         menu = MainMenu(AnnouncementPage(entries=list([(announcement_object, announcement_content, creator, bot)]),
                                          per_page=1), clear_reactions_after=True)
         bot_site = f"https://blist.xyz/bot/{bot.id}/announcements"
-        await ctx.send(f"Successfully announced that for {bot}, see it here: <{bot_site}>.")
+        await ctx.send(f"Successfully announced that for {bot}, see it here: <{bot_site}>")
         await menu.start(ctx)
         return
 
@@ -90,7 +92,7 @@ class General(commands.Cog):
     @flags.add_flag("-b", "--bot", type=discord.Member, default=None)
     @flags.add_flag("-old", "--oldest", action='store_true', default=False)
     @flags.add_flag("-a", "--all", action='store_true', default=False)
-    @botannouncement.command(cls=flags.FlagCommand, name='view', aliases=['show'])
+    @botannouncement.command(cls=flags.FlagCommand, name='view', aliases=['show'], brief="See [p]help botannouncement view")
     async def botannouncement_view(self, ctx, **arguments):
         """
         Get announcements for a bot or a specific announcement via the unique id, this can be found on the bottom of the announcement card.
@@ -108,13 +110,19 @@ class General(commands.Cog):
         **--oldest**/-old - Sort bot announcements on oldest, works with `-all`. Defaults to newest.
         """
         if arguments['bot']:
+            bot_arg = arguments['bot']
+            check_listed = await announce_file.check_bot_on_site(ctx, bot_arg.id)
+            if not check_listed or not bot_arg.bot:
+                return await ctx.send("That is not a bot or it's not listed on the site!")
             limit = 1 if not arguments['all'] else None
             fetched_announcements = await self.announcements.fetch_bot_announcements(
-                ctx, bot_id=arguments['bot'].id, limit=limit, oldest=arguments['oldest'])
+                ctx, bot_id=bot_arg.id, limit=limit, oldest=arguments['oldest'])
         elif arguments['id']:
-            fetched_announcements = [await self.announcements.fetch_from_unique_id(ctx, arguments['id'])]
+            fetched_announcements = await self.announcements.fetch_from_unique_id(ctx, arguments['id'])
+            if fetched_announcements:
+                fetched_announcements = [fetched_announcements]
         else:
-            return await ctx.send(f"{ctx.author.name}, please provide either `--bot` or `--id` not nothing.")
+            return await ctx.send(f"{ctx.author.name}, please provide either `--bot` or `--id` not nothing. See {ctx.prefix}help {ctx.command.qualified_name}")
 
         if isinstance(fetched_announcements, str):
             return await ctx.send(
@@ -143,7 +151,7 @@ class General(commands.Cog):
         await menu.start(ctx)
         return
 
-    @botannouncement.command(cls=flags.FlagCommand, name='delete', aliases=['remove'])
+    @botannouncement.command(cls=flags.FlagCommand, name='delete', aliases=['remove'], brief="See [p]help botannouncement delete")
     async def botannouncement_delete(self, ctx, bot: discord.Member, announcement_id: int):
         """
         Delete an announcement from your bot page via the unique id, this can be found on the bottom of the announcement card.
@@ -151,8 +159,9 @@ class General(commands.Cog):
 
         **Example:** `b!botannouncement delete your_bot announcement_id`.
         """
-        if not bot.bot:
-            return await ctx.send("That is not a bot!")
+        check_listed = await announce_file.check_bot_on_site(ctx, bot.id)
+        if not check_listed or not bot.bot:
+            return await ctx.send("That is not a bot or it's not listed on the site!")
 
         owners_query = await self.bot.pool.fetchrow(
             "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id)
@@ -166,12 +175,12 @@ class General(commands.Cog):
 
         the_announcement = await self.announcements.fetch_from_unique_id(ctx, announcement_id)
         if not the_announcement:
-            return await ctx.send(f"{ctx.author.name}, i can't find any announcement that matches the announcement id.")
+            return await ctx.send(f"{ctx.author.name}, i couldn't find any announcement matching the announcement id.")
         else:
             pass
 
         msg = await ctx.send(f"**{ctx.author.name}**, do you really want delete that announcement "
-                             f"with ID: {announcement_id}for {bot} ? React with ✅ or ❌ in 30 seconds.")
+                             f"with ID: {announcement_id} for {bot} ? React with ✅ or ❌ in 30 seconds.")
         await msg.add_reaction("\U00002705")
         await msg.add_reaction("\U0000274c")
 
@@ -200,8 +209,8 @@ class General(commands.Cog):
 
         delete_announcement = await the_announcement.delete(ctx, bot.id)
         if not delete_announcement:
-            return await ctx.send(f"{ctx.author.name}, that announcement id doesn't match that bot.")
-        await ctx.send(f"Successfully delete announcement with ID: {announcement_id} for {bot}.")
+            return await ctx.send(f"{ctx.author.name}, that announcement id didn't match that bot.")
+        await ctx.send(f"Successfully deleted announcement with ID: {announcement_id} for {bot}.")
         return
 
     @commands.command()

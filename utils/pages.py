@@ -57,10 +57,10 @@ class AnnouncementPage(menus.ListPageSource):
         announcement, announcement_content, creator, bot = entry
         announcement_id = announcement.id or "-"
         em = discord.Embed(
-            title=f"{len(self.entries)} Announcements for {str(bot)}",
+            title=f"[{len(self.entries)}] {'Announcements' if len(self.entries) >= 2 else 'Announcement'} for {str(bot)}",
             color=discord.Color.blurple(),
             url=f"https://blist.xyz/bot/{bot.id}/announcements",
-            description=f"{announcement.time.strftime('%b. %d, %Y, %I:%M %p')}\n\n{announcement_content}\n\n"
+            description=f"{announcement.created_at.strftime('%b. %d, %Y, %I:%M %p')}\n\n{announcement_content}\n\n"
                         f"**Pinned?**: {announcement.is_pinned}\n**ID**: {announcement_id}"
         )
         em.set_thumbnail(url=str(bot.avatar_url))
