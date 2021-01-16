@@ -121,7 +121,8 @@ New Message
 
         if message.guild == self.bot.main_guild:
             ignored_cats = [716445624517656729]
-            if message.channel.category and message.channel.category_id in ignored_cats:
+            ignored_chans = [716717997510885477, 793522769999953970]
+            if message.channel.category and message.channel.category_id in ignored_cats or ignored_chans:
                 return 
             user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE userid = $1", message.author.id)
             if user:
