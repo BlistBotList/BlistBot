@@ -369,7 +369,7 @@ New Message
                     for x in messages:
                         content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
                         all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
-                        approved_by = messages[-1]
+                    approved_by = messages[-1]  # approve command
                     await channel.delete()
 
                 file.writelines(all_messages)
