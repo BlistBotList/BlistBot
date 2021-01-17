@@ -1,6 +1,7 @@
 import datetime
 import random
 import re
+import os
 from operator import ne
 from textwrap import dedent as wrap
 
@@ -14,6 +15,7 @@ utc=pytz.UTC
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.test_categories = {}
         self.check_join.start()  # pylint: disable=no-member
         self.change_status.start()
         self.update_statuses.start()
@@ -238,6 +240,10 @@ New Message
                 channel = await category.create_text_channel(name="Testing")
                 await category.create_text_channel(name="Testing-NSFW", nsfw=True)
                 await category.create_voice_channel(name="Voice Testing", bitrate=member.guild.bitrate_limit)
+                try:
+                    self.test_categories[member.id] = category.id
+                except Exception:
+                    pass
 
                 bot = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
 
@@ -350,18 +356,37 @@ New Message
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if member.guild == self.bot.verification_guild and member.bot:
-            file = open(member.name.replace(" ", "_") + ".txt", "w")
-            file = open(member.name.replace(" ", "_") + ".txt", "r+")
-            category = discord.utils.get(
-                member.guild.categories, name=member.name)
-            for channel in category.channels:
-                if channel.type != discord.ChannelType.voice:
-                    messages = await channel.history().flatten()
-                    for message in messages[::-1]:
-                        content = message.content if message.content != "" else "embed"
-                        file.write(f"{message.author.name}: {content}" + "\n-------\n")
-                await channel.delete()
-            await category.delete()
+            get_category_id = self.test_categories.get(member.id, None)
+            admin_logs = self.bot.main_guild.get_channel(797186257061937152)
+            if get_category_id:
+                file_name = f'{member.name.replace(" ", "_")}.txt'
+                file = open(file_name, "w")
+                all_messages = []
+                category = member.guild.get_channel(get_category_id)
+                approved_by = None
+                for channel in category.text_channels:
+                    messages = await channel.history(limit=None, after=channel.created_at).flatten()
+                    for x in messages:
+                        content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
+                        all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
+                    approved_by = messages[-1]  # approve command
+                    await channel.delete()
+
+                file.writelines(all_messages)
+                file.close()
+                await admin_logs.send(
+                    content = f"**Bot**: {str(member)} ({member.id})\n"
+                              f"**Reviewed by**: {str(approved_by.author)} ({approved_by.id})\n\n"
+                              f"**Total Messages**: {len(all_messages)}",
+                    file = discord.File(file_name, file.name))
+
+                del self.test_categories[member.id]
+                await category.delete()
+                if os.path.exists(file_name):
+                    try:
+                        os.remove(file_name)
+                    except Exception:
+                        pass
 
         muted = await self.bot.mod_pool.fetchval("SELECT userid FROM mutes WHERE userid = $1", member.id)
         if muted is None:
