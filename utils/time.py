@@ -4,6 +4,19 @@ import parsedatetime as pdt
 from discord.ext import commands
 
 
+def time_took(dt: datetime.datetime):
+    now = datetime.datetime.utcnow()
+    delta = now - dt
+    hours, remainder = divmod(int(delta.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    days, hours = divmod(hours, 24)
+    if days:
+        fmt = '{d} days, {h} hours, {m} minutes, and {s} seconds'
+    else:
+        fmt = '{h} hours, {m} minutes, and {s} seconds'
+
+    return fmt.format(d = days, h = hours, m = minutes, s = seconds)
+
 class HumanTime:
     calendar = pdt.Calendar(version=pdt.VERSION_CONTEXT_STYLE)
 

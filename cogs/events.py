@@ -8,6 +8,7 @@ from textwrap import dedent as wrap
 import config
 import discord
 from discord.ext import commands, tasks, flags
+from utils.time import time_took
 import pytz
 
 utc=pytz.UTC
@@ -130,9 +131,9 @@ New Message
             if user:
                 user = user[0]
                 leveling_user = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
-                leveling_user = leveling_user[0]
-                if leveling_user["blacklisted"]:
+                if not leveling_user[0] or leveling_user["blacklisted"]:
                     return
+                leveling_user = leveling_user[0]
                 now = datetime.datetime.utcnow().replace(tzinfo=utc)
                 one_minute = now + datetime.timedelta(seconds=60)
                 xp = random.randint(5, 10)
@@ -356,28 +357,38 @@ New Message
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if member.guild == self.bot.verification_guild and member.bot:
-            get_category_id = self.test_categories.get(member.id, None)
+            second_try = discord.utils.get(member.guild.categories, name=member.name)
+            second_try = second_try.id if second_try else None
+            get_category_id = self.test_categories.get(member.id, second_try)
             admin_logs = self.bot.main_guild.get_channel(797186257061937152)
             if get_category_id:
                 file_name = f'{member.name.replace(" ", "_")}.txt'
                 file = open(file_name, "w")
                 all_messages = []
                 category = member.guild.get_channel(get_category_id)
-                approved_by = None
+                reviewed_by = None
                 for channel in category.text_channels:
-                    messages = await channel.history(limit=None, after=channel.created_at).flatten()
+                    messages = await channel.history(limit=None, after=category.created_at).flatten()
                     for x in messages:
                         content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
                         all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
-                    approved_by = messages[-1]  # approve command
+                    # getting the last approve/deny command by reversing the list.
+                    reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], messages[::-1])
                     await channel.delete()
 
                 file.writelines(all_messages)
                 file.close()
+                reviewed_by = f"{str(reviewed_by.author)} ({reviewed_by.id})" if reviewed_by else "Not Found"
+                # this might not be that accurate.
+                invited_by = (await member.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
+                                                            before = category.created_at).flatten())
+                invited_by = f"{str(invited_by[0].author)} ({invited_by[0].id})" if invited_by else "Not Found"
                 await admin_logs.send(
                     content = f"**Bot**: {str(member)} ({member.id})\n"
-                              f"**Reviewed by**: {str(approved_by.author)} ({approved_by.id})\n\n"
-                              f"**Total Messages**: {len(all_messages)}",
+                              f"**Invited by**: {invited_by}\n\n"
+                              f"**Reviewed by**: {reviewed_by}\n\n"
+                              f"**Total Messages**: {len(all_messages)}\n"
+                              f"**Time Took**: {time_took(category.created_at)}",
                     file = discord.File(file_name, file.name))
 
                 del self.test_categories[member.id]
