@@ -368,7 +368,7 @@ New Message
                 category = member.guild.get_channel(get_category_id)
                 reviewed_by = None
                 for channel in category.text_channels:
-                    messages = await channel.history(limit=None, after=category.created_at).flatten()
+                    messages = await channel.history(limit=None, after=channel.created_at).flatten()
                     for x in messages:
                         content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
                         all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
