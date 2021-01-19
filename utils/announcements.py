@@ -1,9 +1,5 @@
 from datetime import datetime
 import asyncpg
-from typing import List, Union
-
-import discord
-from discord.ext import commands
 from markdownify import markdownify as md
 
 
@@ -24,8 +20,7 @@ async def _get_unique_id(ctx, table_type: str, bot_user_id: int) -> asyncpg.Reco
         "BOT": "SELECT unique_id FROM main_site_bot WHERE id = $1",
         "USER": "SELECT unique_id FROM main_site_user WHERE userid = $1"
     }
-    fetched = await ctx.bot.pool.fetchrow(queries[table_type], int(bot_user_id))
-    return fetched['unique_id']
+    return await ctx.bot.pool.fetchval(queries[table_type], int(bot_user_id))
 
 
 async def _from_unique_id(ctx, table_type: str, unique_id: int) -> asyncpg.Record:

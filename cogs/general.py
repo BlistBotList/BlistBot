@@ -405,51 +405,39 @@ class General(commands.Cog):
             await ctx.send(f"{b['name']} is #{queue.index(b) + 1} in the queue")
 
     @commands.command(aliases=["user", "member", "memberinfo", "ui", "whois"])
-    async def userinfo(self, ctx, *, member: discord.Member = None):
+    async def userinfo(self, ctx, *, member: discord.Member=None):
         """Shows information on a user"""
         member = member or ctx.author
-        user = await self.bot.pool.fetchval("SELECT unique_id FROM main_site_user WHERE userid = $1", member.id)
-        leveling = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", user)
-        if leveling:
-            em = discord.Embed(
-                title=str(member),
-                url=f"https://blist.xyz/user/{member.id}/",
-                color=discord.Colour.blurple(),
-                description=wrap(
-                    f"""
-                    >>> `Name:` {member.name} - #{member.discriminator}
-                    `ID:` {member.id}
-                    `Bot:` {member.bot}
-                    `Status:` {str(member.status).title()}
-                    `Highest Role:` {member.top_role.mention}
-                    `Created Account:` {member.created_at.strftime("%c")}
-                    `Joined This Server:` {member.joined_at.strftime("%c")}
-                    `XP:` {leveling[0]["xp"]:,d}
-                    `Level:` {leveling[0]["level"]:,d}
-                    """
-                )
+        em = discord.Embed(
+            title=f"{member.name} - #{member.discriminator}",
+            url=f"https://blist.xyz/user/{member.id}/",
+            color=discord.Colour.blurple(),
+            description=wrap(
+                f"""
+                >>> `ID:` {member.id}
+                `Bot:` {member.bot}
+                `Status:` {str(member.status).title()}
+                `Highest Role:` {member.top_role.mention}
+                `Created Account:` {member.created_at.strftime("%c")}
+                `Joined This Server:` {member.joined_at.strftime("%c")}
+                """
             )
-            em.set_thumbnail(url=member.avatar_url)
-            await ctx.send(embed=em)
-        else:
-            em = discord.Embed(
-                title=str(member),
-                url=f"https://blist.xyz/user/{member.id}/",
-                color=discord.Colour.blurple(),
-                description=wrap(
-                    f"""
-                    >>> `Name:` {member.name} - #{member.discriminator}
-                    `ID:` {member.id}
-                    `Bot:` {member.bot}
-                    `Status:` {str(member.status).title()}
-                    `Highest Role:` {member.top_role.mention}
-                    `Created Account:` {member.created_at.strftime("%c")}
-                    `Joined This Server:` {member.joined_at.strftime("%c")}
-                    """
-                )
-            )
-            em.set_thumbnail(url=member.avatar_url)
-            await ctx.send(embed=em)
+        )
+        unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
+        level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
+        if level_user:
+            full_leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC")
+            place = full_leaderboard.index(level_user) + 1
+            em.add_field(name="Leveling:",
+                         value=wrap(
+                             f""">>> `Place:` {place}
+                             `Level:` {level_user['level']:,d}
+                             `XP:` {level_user['xp']:,d}
+                             `Blacklisted:` {'Yes' if level_user['blacklisted'] else 'No'}
+                             """)
+                         )
+        em.set_thumbnail(url=member.avatar_url)
+        await ctx.send(embed=em)
 
 
 def setup(bot):
