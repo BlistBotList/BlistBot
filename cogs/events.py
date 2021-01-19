@@ -384,22 +384,23 @@ New Message
                 all_messages = []
                 category = member.guild.get_channel(get_category_id)
                 reviewed_by = None
-                for channel in category.text_channels:
-                    messages = await channel.history(limit=None, after=channel.created_at).flatten()
-                    for x in messages:
-                        content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
-                        all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
-                    # getting the last approve/deny command by reversing the list.
-                    reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], messages[::-1])
+                for channel in category.channels:
+                    if channel.type != discord.ChannelType.voice:
+                        messages = await channel.history(limit=None, after=channel.created_at).flatten()
+                        for x in messages:
+                            content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
+                            all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
+                        # getting the last approve/deny command by reversing the list.
+                        reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], list(messages[::-1]))
                     await channel.delete()
 
                 file.writelines(all_messages)
                 file.close()
                 reviewed_by = f"{str(reviewed_by.author)} ({reviewed_by.id})" if reviewed_by else "Not Found"
                 # this might not be that accurate.
-                invited_by = (await member.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
-                                                            before = category.created_at).flatten())
-                invited_by = f"{str(invited_by[0].author)} ({invited_by[0].id})" if invited_by else "Not Found"
+                invited_by = await member.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
+                                                           before = category.created_at).flatten()
+                invited_by = f"{str(invited_by[0].user)} ({invited_by[0].user.id})" if invited_by else "Not Found"
                 await admin_logs.send(
                     content = f"**Bot**: {str(member)} ({member.id})\n"
                               f"**Invited by**: {invited_by}\n\n"
@@ -408,8 +409,8 @@ New Message
                               f"**Time Took**: {time_took(category.created_at)}",
                     file = discord.File(file_name, file.name))
 
-                del self.test_categories[member.id]
                 await category.delete()
+                del self.test_categories[member.id]
                 if os.path.exists(file_name):
                     try:
                         os.remove(file_name)
