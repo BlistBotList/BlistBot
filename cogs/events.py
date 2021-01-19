@@ -2,6 +2,7 @@ import datetime
 import random
 import re
 import os
+import sys
 from operator import ne
 from textwrap import dedent as wrap
 
@@ -16,10 +17,15 @@ utc=pytz.UTC
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.old_on_error = bot.on_error
+        bot.on_error = self.new_on_error
         self.test_categories = {}
         self.check_join.start()  # pylint: disable=no-member
         self.change_status.start()
         self.update_statuses.start()
+
+    def cog_unload(self):
+        self.bot.on_error = self.old_on_error
 
     async def update_staff_embed(self, guild: discord.Guild):
         web_mods_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Website Moderator')
@@ -55,6 +61,17 @@ class Events(commands.Cog):
         hook = discord.Webhook.partial(
             id=web_id, token=token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
         return hook
+
+    async def new_on_error(self, event, *args, **kwargs):
+        error = sys.exc_info()
+        if not error[1]:
+            return
+        em = discord.Embed(
+            title='Bot Error:',
+            description=f'**Event**: {event}\n```py\n{error[1]}\n\n{error}```',
+            color=discord.Color.blurple()
+        )
+        await self.error_webhook.send(embed=em)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -367,22 +384,23 @@ New Message
                 all_messages = []
                 category = member.guild.get_channel(get_category_id)
                 reviewed_by = None
-                for channel in category.text_channels:
-                    messages = await channel.history(limit=None, after=channel.created_at).flatten()
-                    for x in messages:
-                        content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
-                        all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
-                    # getting the last approve/deny command by reversing the list.
-                    reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], messages[::-1])
+                for channel in category.channels:
+                    if channel.type != discord.ChannelType.voice:
+                        messages = await channel.history(limit=None, after=channel.created_at).flatten()
+                        for x in messages:
+                            content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
+                            all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
+                        # getting the last approve/deny command by reversing the list.
+                        reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], list(messages[::-1]))
                     await channel.delete()
 
                 file.writelines(all_messages)
                 file.close()
                 reviewed_by = f"{str(reviewed_by.author)} ({reviewed_by.id})" if reviewed_by else "Not Found"
                 # this might not be that accurate.
-                invited_by = (await member.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
-                                                            before = category.created_at).flatten())
-                invited_by = f"{str(invited_by[0].author)} ({invited_by[0].id})" if invited_by else "Not Found"
+                invited_by = await member.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
+                                                           before = category.created_at).flatten()
+                invited_by = f"{str(invited_by[0].user)} ({invited_by[0].user.id})" if invited_by else "Not Found"
                 await admin_logs.send(
                     content = f"**Bot**: {str(member)} ({member.id})\n"
                               f"**Invited by**: {invited_by}\n\n"
@@ -391,8 +409,8 @@ New Message
                               f"**Time Took**: {time_took(category.created_at)}",
                     file = discord.File(file_name, file.name))
 
-                del self.test_categories[member.id]
                 await category.delete()
+                del self.test_categories[member.id]
                 if os.path.exists(file_name):
                     try:
                         os.remove(file_name)
