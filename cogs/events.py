@@ -2,6 +2,7 @@ import datetime
 import random
 import re
 import os
+import sys
 from operator import ne
 from textwrap import dedent as wrap
 
@@ -16,10 +17,15 @@ utc=pytz.UTC
 class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.old_on_error = bot.on_error
+        bot.on_error = self.new_on_error
         self.test_categories = {}
         self.check_join.start()  # pylint: disable=no-member
         self.change_status.start()
         self.update_statuses.start()
+
+    def cog_unload(self):
+        self.bot.on_error = self.old_on_error
 
     async def update_staff_embed(self, guild: discord.Guild):
         web_mods_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Website Moderator')
@@ -55,6 +61,17 @@ class Events(commands.Cog):
         hook = discord.Webhook.partial(
             id=web_id, token=token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
         return hook
+
+    async def new_on_error(self, event, *args, **kwargs):
+        error = sys.exc_info()
+        if not error[1]:
+            return
+        em = discord.Embed(
+            title='Bot Error:',
+            description=f'**Event**: {event}\n```py\n{error[1]}\n\n{error}```',
+            color=discord.Color.blurple()
+        )
+        await self.error_webhook.send(embed=em)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
