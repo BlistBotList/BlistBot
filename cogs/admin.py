@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import importlib
 import os
 import re
 from textwrap import dedent as wrap
@@ -15,6 +16,20 @@ from utils import checks
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.has_permissions(administrator=True)
+    @commands.command()
+    async def reloadutils(self, ctx, name: str):
+        """ Reloads a utils module. """
+        name_maker = f"utils/{name}.py"
+        try:
+            module_name = importlib.import_module(f"utils.{name}")
+            importlib.reload(module_name)
+        except ModuleNotFoundError:
+            return await ctx.send(f"Couldn't find module named **{name_maker}**")
+        except Exception as e:
+            return await ctx.send(f"Module **{name_maker}** returned error and was not reloaded...\n{e}")
+        await ctx.send(f"Reloaded module **{name_maker}**", delete_after = 5)
 
     @commands.has_permissions(administrator=True)
     @commands.command()

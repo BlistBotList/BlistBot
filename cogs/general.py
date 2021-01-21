@@ -1,6 +1,7 @@
+from io import BytesIO
 from textwrap import dedent as wrap
 from utils.pages import MainMenu, LeaderboardPage, AnnouncementPage
-from utils import announcements as announce_file
+from utils import announcements as announce_file, rank_card
 
 import asyncio
 import discord
@@ -10,6 +11,20 @@ class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.announcements = announce_file.Announcement
+
+    @commands.command()
+    async def rank(self, ctx, member: discord.Member = None):
+        member = member or ctx.author
+        unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
+        result = await self.bot.pool.fetch("SELECT level, xp FROM main_site_leveling WHERE user_id = $1", unique_id)
+        if result:
+            profile_bytes = await member.avatar_url_as(size=128, format="png").read()
+
+            buffer = rank_card.Rank().draw(str(member), result[0][0], result[0][1], BytesIO(profile_bytes))
+
+            await ctx.send(file=discord.File(fp=buffer, filename='rank_card.png'))
+        else:
+            await ctx.send(f'{member.mention}, you don\'t received xp yet.')
 
     @commands.group(aliases=['boa', 'botannounce'], invoke_without_command=True)
     async def botannouncement(self, ctx):
