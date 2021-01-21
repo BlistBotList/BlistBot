@@ -17,10 +17,20 @@ class General(commands.Cog):
         member = member or ctx.author
         unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
         result = await self.bot.pool.fetch("SELECT level, xp FROM main_site_leveling WHERE user_id = $1", unique_id)
+        level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
+        full_leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC")
+        place = full_leaderboard.index(level_user) + 1
+        bug_hunter_role = self.bot.main_guild.get_role(716722789234638860)
+        donator_role = self.bot.main_guild.get_role(716724716299091980)
+        developer_role = self.bot.main_guild.get_role(716684805286133840)
         if result:
             profile_bytes = await member.avatar_url_as(size=128, format="png").read()
-
-            buffer = rank_card.Rank().draw(str(member), result[0][0], result[0][1], BytesIO(profile_bytes))
+            rank_inst = rank_card.Rank(
+                bug_hunter = bool(bug_hunter_role in member.roles),
+                donator = bool(donator_role in member.roles),
+                developer = bool(developer_role in member.roles)
+            )
+            buffer = await rank_inst.draw(ctx, str(member), result[0][0], place, result[0][1], BytesIO(profile_bytes))
 
             await ctx.send(file=discord.File(fp=buffer, filename='rank_card.png'))
         else:
