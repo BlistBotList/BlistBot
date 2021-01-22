@@ -61,6 +61,7 @@ class General(commands.Cog):
         img = discord.File(card, 'rank_card.png')
         await ctx.send(file=img)
 
+    @commands.has_role(716724716299091980)
     @flags.add_flag("-bg", "--background", type=str, default=None)
     @flags.add_flag("-xp", "--xp_bar", type=str, default=None)
     @flags.add_flag("-border", "--border_colour", "--border_color", dest="border_color", type=str, default=None)
