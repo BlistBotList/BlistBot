@@ -56,8 +56,9 @@ class AnnouncementPage(menus.ListPageSource):
     async def format_page(self, menu, entry):
         announcement, announcement_content, creator, bot = entry
         announcement_id = announcement.id or "-"
+        total = f"[{len(self.entries)}] " if len(self.entries) >= 2 else ""
         em = discord.Embed(
-            title=f"[{len(self.entries)}] {'Announcements' if len(self.entries) >= 2 else 'Announcement'} for {str(bot)}",
+            title=f"{total}{'Announcements' if len(self.entries) >= 2 else 'Announcement'} for {str(bot)}",
             color=discord.Color.blurple(),
             url=f"https://blist.xyz/bot/{bot.id}/announcements",
             description=f"{announcement.created_at.strftime('%b. %d, %Y, %I:%M %p')}\n\n{announcement_content}\n\n"

@@ -8,3 +8,4 @@ tweepy
 discord-flags
 git+https://github.com/Rapptz/discord.py@master
 git+https://github.com/Rapptz/discord-ext-menus@master
+Pillow
