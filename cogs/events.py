@@ -387,11 +387,12 @@ New Message
                 for channel in category.channels:
                     if channel.type != discord.ChannelType.voice:
                         messages = await channel.history(limit=None, after=channel.created_at).flatten()
+                        # getting the last approve/deny command by reversing the list.
                         reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], list(messages[::-1]))
                         for x in messages:
                             content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
                             all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
-                        # getting the last approve/deny command by reversing the list.
+
                     await channel.delete()
 
                 file.writelines(all_messages)
