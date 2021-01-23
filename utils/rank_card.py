@@ -49,9 +49,8 @@ class Rank:
 
     @async_executor()
     def get_card(self, xp: int, level: int, position: int, avatar_bytes, badges: dict, custom: dict) -> BytesIO:
-        avatar = Image.open(avatar_bytes)
+        avatar = Image.open(avatar_bytes).convert("RGBA")
         needed_xp = 50 + level * 50
-        #im = Image.new('RGBA', (600, 150), (44, 44, 44, 255))
 
         border_color = str(self.user.color)
         if custom.get('border_color', None):
@@ -63,9 +62,9 @@ class Rank:
         if custom.get('background', None):
             bg = custom['background']
             if isinstance(bg, BytesIO):  # url
-                im = Image.open(bg)
+                im = Image.open(bg).convert("RGBA")
                 im = im.resize((600, 150))
-            else:  # hex
+            else:  # rgb
                 im = Image.new('RGBA', (600, 150), bg)
         else:
             im = Image.new('RGBA', (600, 150), (44, 44, 44, 255))
@@ -89,7 +88,7 @@ class Rank:
         im_draw = ImageDraw.Draw(im)
         pos_font = ImageFont.truetype(self.position_font_name, fontsize)
         im_draw.text((159, 15), str(self.user), font=font, fill=text_color)
-        im_draw.text((380, 15), f"| #{position}", font=pos_font, fill=text_color)
+        im_draw.text((343, 15), f"| #{position}", font=pos_font, fill=text_color)
         im_draw.text((159, 85), f"{xp} / {needed_xp}", font=self.xp_level_font, fill=text_color)
         im_draw.text((311, 85), f"Level: {level}", font=self.xp_level_font, fill=text_color)
 

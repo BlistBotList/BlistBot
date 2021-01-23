@@ -15,12 +15,18 @@ class General(commands.Cog):
         self.announcements = announce_file.Announcement
 
     @commands.command()
-    async def rank(self, ctx, member: discord.Member = None):
+    async def rank(self, ctx, *, member: discord.Member = None):
         member = member or ctx.author
         unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
         level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
-        if not level_user or level_user['blacklisted'] or member.bot:
-            return await ctx.send(f"{member.name} hasn't received any XP yet or is blacklisted from doing so. Or is a bot.")
+        if member.bot:
+            return await ctx.send("That is a bot...")
+        member_name = "You are" if member.id == ctx.author.id else f"{member.name} is"
+        if not level_user:
+            return await ctx.send(f"{member_name.replace('is', 'has', 1).replace('are', 'have', 1)} "
+                                  f"not received any XP yet or it has no been saved yet. ")
+        if level_user['blacklisted']:
+            return await ctx.send(f"{member_name} blacklisted from the leveling system. aka won't receive anymore XP.")
 
         full_leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC")
         place = full_leaderboard.index(level_user) + 1
@@ -40,7 +46,7 @@ class General(commands.Cog):
                 try:
                     custom['background'] = BytesIO(await (await self.bot.session.get(background)).read())
                 except Exception:
-                    custom['background'] = "#000000"
+                    custom['background'] = (44, 44, 44, 255)
 
         avatar_bytes = BytesIO(await member.avatar_url_as(format="png", size=128).read())
         dev_badge = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/nxPRRls.png")).read())
