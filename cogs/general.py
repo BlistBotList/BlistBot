@@ -111,7 +111,9 @@ class General(commands.Cog):
                 if removing:
                     success_text.append(f"- Removed your custom background")
                 else:
-                    success_text.append(f"- Set your Background to: {set_background[1]}")
+                    bg = set_background[1]
+                    bg = f"<{bg}>" if bg.startswith("https://") or bg.startswith("http://") else bg
+                    success_text.append(f"- Set your Background to: {bg}")
             else:
                 failed_text.append(f"Something went wrong while {'saving' if not removing else 'removing'} "
                                    f"your background: {set_background[1]}")
