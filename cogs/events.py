@@ -150,10 +150,10 @@ New Message
             if user:
                 user = user[0]
                 leveling_user = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
-                if not leveling_user or leveling_user[0]["blacklisted"]:
+                leveling_user = leveling_user[0]
+                if leveling_user["blacklisted"]:
                     return
 
-                leveling_user = leveling_user[0]
                 now = datetime.datetime.utcnow().replace(tzinfo=utc)
                 one_minute = now + datetime.timedelta(seconds=60)
                 xp = random.randint(5, 10)
