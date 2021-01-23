@@ -150,17 +150,20 @@ New Message
             if user:
                 user = user[0]
                 leveling_user = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
-                leveling_user = leveling_user[0]
-                if leveling_user["blacklisted"]:
+
+                if leveling_user and leveling_user[0]["blacklisted"]:
                     return
+                else:
+                    pass
 
                 now = datetime.datetime.utcnow().replace(tzinfo=utc)
                 one_minute = now + datetime.timedelta(seconds=60)
                 xp = random.randint(5, 10)
 
-                if leveling_user["last_time"] is None:
+                if not leveling_user or leveling_user[0]["last_time"] is None:
                     return await self.bot.pool.execute("INSERT INTO main_site_leveling (xp, level, user_id, last_time, blacklisted) VALUES ($1, 1, $2, $3, False)", xp, user["unique_id"], one_minute.replace(tzinfo=utc))
                 
+                leveling_user = leveling_user[0]
                 if leveling_user["last_time"].replace(tzinfo=utc) is not None and leveling_user["last_time"].replace(tzinfo=utc) > now:
                     return
                 else:
