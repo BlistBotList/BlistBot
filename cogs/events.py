@@ -161,7 +161,7 @@ New Message
                 xp = random.randint(5, 10)
 
                 if not leveling_user or leveling_user[0]["last_time"] is None:
-                    return await self.bot.pool.execute("INSERT INTO main_site_leveling (xp, level, user_id, last_time, blacklisted) VALUES ($1, 1, $2, $3, False)", xp, user["unique_id"], one_minute.replace(tzinfo=utc))
+                    return await self.bot.pool.execute("INSERT INTO main_site_leveling (xp, level, user_id, last_time, blacklisted, xp_bar_color, border_color, background_color) VALUES ($1, 1, $2, $3, False, $4, $5, $6)", xp, user["unique_id"], one_minute.replace(tzinfo=utc), "", "", "")
                 
                 leveling_user = leveling_user[0]
                 if leveling_user["last_time"].replace(tzinfo=utc) is not None and leveling_user["last_time"].replace(tzinfo=utc) > now:
