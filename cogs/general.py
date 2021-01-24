@@ -24,7 +24,7 @@ class General(commands.Cog):
         member_name = "You are" if member.id == ctx.author.id else f"{member.name} is"
         if not level_user:
             return await ctx.send(f"{member_name.replace('is', 'has', 1).replace('are', 'have', 1)} "
-                                  f"not received any XP yet or it has no been saved yet. ")
+                                  f"not gained any XP, or it has not been saved yet. ")
         if level_user['blacklisted']:
             return await ctx.send(f"{member_name} blacklisted from the leveling system. aka won't receive anymore XP.")
 
