@@ -125,7 +125,7 @@ class Admin(commands.Cog):
                                 f"{country} is not a valid country or something else happened.")
 
         join_list = "\n".join(success_text)
-        await self.bot.pool.execute("UPDATE main_site_user SET staff = True WHERE userid = $1", member.id)
+        await self.bot.pool.execute("UPDATE main_site_user SET staff = True WHERE id = $1", member.id)
         await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", web_mod_role.name, member.id)
         await self.bot.get_cog("Events").update_staff_embed(self.bot.main_guild)
         await ctx.send(f"Successfully hired {member} ({member.id}).\n\n{join_list}")
@@ -285,7 +285,7 @@ class Admin(commands.Cog):
         levels = ["bug_hunter", "developer", "administrator", "staff"]
         if level.lower() not in levels:
             await ctx.send(f"That's not a valid option, valid options are {', '.join(levels)}")
-        await self.bot.pool.execute(f"UPDATE main_site_user SET {level} = True WHERE userid = $1", member.id)
+        await self.bot.pool.execute(f"UPDATE main_site_user SET {level} = True WHERE id = $1", member.id)
         await ctx.send(f"Added {member} as {level}")
 
     @commands.has_permissions(administrator=True)
@@ -294,7 +294,7 @@ class Admin(commands.Cog):
         levels = ["bug_hunter", "developer", "administrator", "staff"]
         if level.lower() not in levels:
             await ctx.send(f"That's not a valid option, valid options are {', '.join(levels)}")
-        await self.bot.pool.execute(f"UPDATE main_site_user SET {level} = False WHERE userid = $1", member.id)
+        await self.bot.pool.execute(f"UPDATE main_site_user SET {level} = False WHERE id = $1", member.id)
         await ctx.send(f"Removed {member} from {level}")
 
     @checks.main_guild_only()
@@ -324,7 +324,7 @@ class Admin(commands.Cog):
         em = discord.Embed(description=f"``{bot}`` by ``{owner}`` was certified",
                            color=discord.Color.blurple())
 
-        await self.bot.pool.execute("UPDATE main_site_user SET certified_developer = True WHERE userid = $1", owner.id)
+        await self.bot.pool.execute("UPDATE main_site_user SET certified_developer = True WHERE id = $1", owner.id)
         await self.bot.get_channel(716446098859884625).send(embed=em)
         certified_role = ctx.guild.get_role(716684142766456832)
         certified_dev_role = ctx.guild.get_role(716724317207003206)
@@ -438,14 +438,14 @@ class Admin(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def blacklist(self, ctx, userid: int, *, reason=None):
-        user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE userid = $1", userid)
+        user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE id = $1", userid)
         # headers = {
         #    "X-Auth-Key": config.cloudflare_token,
         #    "X-Auth-Email": config.cloudflare_email, "Content-Type": "application/json"}
         try:
             user = user[0]
             if user["blacklisted"] is True:
-                await self.bot.pool.execute("UPDATE main_site_user SET blacklisted = False WHERE userid = $1", userid)
+                await self.bot.pool.execute("UPDATE main_site_user SET blacklisted = False WHERE id = $1", userid)
                 await ctx.send(f"Un-Blacklisted {userid}")
                 #json = {"cascade": "none"}
                 # async with self.bot.session.delete(
@@ -453,7 +453,7 @@ class Admin(commands.Cog):
                 #    headers=headers, json=json) as x:
                 #    await ctx.send(f'{await x.json()}')
             else:
-                await self.bot.pool.execute("UPDATE main_site_user SET blacklisted = True WHERE userid = $1", userid)
+                await self.bot.pool.execute("UPDATE main_site_user SET blacklisted = True WHERE id = $1", userid)
                 await ctx.send(f"Blacklisted {userid}")
                 # json = {"mode": "block", "configuration": {
                 #    "target": "ip", "value": user["ip"]}, "notes": reason}
@@ -468,7 +468,7 @@ class Admin(commands.Cog):
     @commands.has_role(716713266683969626)
     @commands.command()
     async def xpblacklist(self, ctx, user: discord.Member):
-        db_user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE userid = $1", user.id)
+        db_user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE id = $1", user.id)
         try:
             db_user = db_user[0]
             leveling_user = await self.bot.pool.fetch(f"SELECT * FROM main_site_leveling WHERE user_id = $1", db_user["unique_id"])

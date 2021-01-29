@@ -146,7 +146,7 @@ New Message
                 return 
             if message.channel.id in ignored_chans:
                 return 
-            user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE userid = $1", message.author.id)
+            user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE id = $1", message.author.id)
             if user:
                 user = user[0]
                 leveling_user = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
@@ -321,7 +321,7 @@ New Message
 
         premium = self.bot.main_guild.get_role(716724716299091980)
         if premium not in before.roles and premium in after.roles:
-            await self.bot.pool.execute("UPDATE main_site_user SET premium = True WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET premium = True WHERE id = $1", before.id)
             bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", before.id)
             servers = await self.bot.pool.fetch("SELECT * FROM main_site_server WHERE main_owner = $1", before.id)
             for bot in bots:
@@ -329,7 +329,7 @@ New Message
             for server in servers:
                 await self.bot.pool.execute("UPDATE main_site_server SET premium = True WHERE id = $1", server["id"])
         if premium in before.roles and premium not in after.roles:
-            await self.bot.pool.execute("UPDATE main_site_user SET premium = False WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET premium = False WHERE id = $1", before.id)
             bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", before.id)
             servers = await self.bot.pool.fetch("SELECT * FROM main_site_server WHERE main_owner = $1", before.id)
             for bot in bots:
@@ -340,27 +340,27 @@ New Message
         staff = self.bot.main_guild.get_role(716713561233031239)
         if staff not in before.roles and staff in after.roles:
             await self.bot.mod_pool.execute("INSERT INTO staff VALUES($1, $2)", before.id, datetime.datetime.utcnow())
-            await self.bot.pool.execute("UPDATE main_site_user SET staff = True WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET staff = True WHERE id = $1", before.id)
         if staff in before.roles and staff not in after.roles:
             await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", before.id)
-            await self.bot.pool.execute("UPDATE main_site_user SET staff = False WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET staff = False WHERE id = $1", before.id)
 
         bug_hunter = self.bot.main_guild.get_role(716722789234638860)
         if bug_hunter not in before.roles and bug_hunter in after.roles:
-            await self.bot.pool.execute("UPDATE main_site_user SET bug_hunter = True WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET bug_hunter = True WHERE id = $1", before.id)
         if bug_hunter in before.roles and bug_hunter not in after.roles:
-            await self.bot.pool.execute("UPDATE main_site_user SET bug_hunter = False WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET bug_hunter = False WHERE id = $1", before.id)
 
         admin1 = self.bot.main_guild.get_role(716713266683969626)
         admin2 = self.bot.main_guild.get_role(716713238955556965)
         if admin1 not in before.roles and admin1 in after.roles:
-            await self.bot.pool.execute("UPDATE main_site_user SET administrator = True WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET administrator = True WHERE id = $1", before.id)
         if admin1 in before.roles and admin1 not in after.roles:
-            await self.bot.pool.execute("UPDATE main_site_user SET administrator = False WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET administrator = False WHERE id = $1", before.id)
         if admin2 not in before.roles and admin2 in after.roles:
-            await self.bot.pool.execute("UPDATE main_site_user SET administrator = True WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET administrator = True WHERE id = $1", before.id)
         if admin2 in before.roles and admin2 not in after.roles:
-            await self.bot.pool.execute("UPDATE main_site_user SET administrator = False WHERE userid = $1", before.id)
+            await self.bot.pool.execute("UPDATE main_site_user SET administrator = False WHERE id = $1", before.id)
 
         if before.bot:
             staff_bot = self.bot.main_guild.get_role(777575976124547072)

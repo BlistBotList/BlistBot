@@ -73,7 +73,7 @@ class Staff(commands.Cog):
             await ctx.send(f"{ctx.author.mention}, The owner of this bot has left the main server, deny it!")
             return
 
-        await self.bot.pool.execute("UPDATE main_site_user SET developer = True WHERE userid = $1", bots)
+        await self.bot.pool.execute("UPDATE main_site_user SET developer = True WHERE id = $1", bots)
         await self.bot.pool.execute("UPDATE main_site_bot SET approved = True WHERE id = $1", bot.id)
         await self.bot.mod_pool.execute("UPDATE staff SET approved = approved + 1 WHERE userid = $1", ctx.author.id)
 
@@ -185,7 +185,7 @@ class Staff(commands.Cog):
         if not has_other_bots and member:
             dev_role = ctx.guild.get_role(716684805286133840)
             await member.remove_roles(dev_role)
-            await self.bot.pool.execute("UPDATE main_site_user SET developer = False WHERE userid = $1",
+            await self.bot.pool.execute("UPDATE main_site_user SET developer = False WHERE id = $1",
                                         bots['main_owner'])
 
         if bot_user is not None:
