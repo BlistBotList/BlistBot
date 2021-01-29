@@ -629,8 +629,7 @@ class Admin(commands.Cog):
 **How did I get here?**
 When logging in on the website, you grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server."
 \n**How do I level up / get XP?**
-XP is earned by talking in all channel except the bots category in this server. It is awarded once per minute, with a random value of 1-10. Leveling up is determined from multiplying your level by 50. I.e. a person of level 5 needs 250 XP.
-To check your xp and level, do the b!rank command or b!leaderboard for all.
+XP is earned by talking in all channels except the "bots" category in this server. It is awarded once per minute, with a random value of 1-10. Levelling up is determined from multiplying your current level by 50. I.e. a person of level 5 needs 250 XP. To check your XP and level, run the b!rank command or b!leaderboard for all.
 \n**How do I add a bot?**
 To add a bot, head over the https://blist.xyz/bot/add/.
 \n**How long does the queue take?**
