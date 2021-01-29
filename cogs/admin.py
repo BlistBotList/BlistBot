@@ -679,12 +679,12 @@ We try to get every bot done as fast as we can. Please take into consideration w
         for bot in bots:
             bot_object = ctx.guild.get_member(bot['id'])
             if bot_object:
-                await self.pool.execute("UPDATE main_site_bot SET avatar_url = $1 WHERE id = $2", str(bot_object.avatar_url), bot_object.id)
+                await self.bot.pool.execute("UPDATE main_site_bot SET avatar_url = $1 WHERE id = $2", str(bot_object.avatar_url), bot_object.id)
 
         for user in users:
             user_object = ctx.guild.get_member(user['id'])
             if user_object:
-                await self.pool.execute("UPDATE main_site_user SET avatar_url = $1 WHERE id = $2", str(user_object.avatar_url), user_object.id)
+                await self.bot.pool.execute("UPDATE main_site_user SET avatar_url = $1 WHERE id = $2", str(user_object.avatar_url), user_object.id)
 
 
         await ctx.send("Done")
