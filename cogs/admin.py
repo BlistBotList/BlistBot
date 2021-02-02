@@ -663,10 +663,21 @@ We try to get every bot done as fast as we can. Please take into consideration w
         for bot in top_bots:
             embed.add_field(
                 name=bot['name'], value=f"Votes: {bot['monthly_votes']}", inline=False)
-        await ctx.send(content=message or "", embed=embed)
+        await ctx.send(embed=embed)
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot")
         for bot in bots:
             await self.bot.pool.execute("UPDATE main_site_bot SET monthly_votes = 0 WHERE id = $1", bot["id"])
+
+        top_servers = await self.bot.pool.fetch("SELECT * FROM main_site_server ORDER BY monthly_votes DESC LIMIT 5")
+        embed = discord.Embed(title=f"{datetime.datetime.utcnow().strftime('%B')} top 5 voted servers!",
+                                color=discord.Color.blurple())
+        for server in top_servers:
+            embed.add_field(
+                name=server['name'], value=f"Votes: {server['monthly_votes']}", inline=False)
+        servers = await self.bot.pool.fetch("SELECT * FROM main_site_server")
+        for server in servers:
+            await self.bot.pool.execute("UPDATE main_site_server SET monthly_votes = 0 WHERE id = $1", server["id"])
+        await ctx.send(content=message or "", embed=embed)
         await ctx.send("Monthly votes reset!")
 
     @commands.has_permissions(administrator=True)
