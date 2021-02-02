@@ -622,15 +622,20 @@ class Admin(commands.Cog):
         server_roles_embed1.title = "Blist Server Roles"
         server_roles_embed2 = server_roles_embeds[1]
 
+        server_bot_link = "https://discord.com/oauth2/authorize?client_id=791415200175751171&scope=bot"
         faq_embed = discord.Embed(
             title="FAQ's", color=discord.Color.blurple(),
-            description="""
+            description=f"""
 **How did I get here?**
 When logging in on the website, you grant us the ability to join guilds for you. Whenever you go to add a bot, you get added to the server."
+\n**How do I level up / get XP?**
+XP is earned by talking in all channels except the "bots" category in this server. It is awarded once per minute, with a random value of 1-10. Levelling up is determined from multiplying your current level by 50. I.e. a person of level 5 needs 250 XP. To check your XP and level, run the b!rank command or b!leaderboard for all.
 \n**How do I add a bot?**
 To add a bot, head over the https://blist.xyz/bot/add/.
 \n**How long does the queue take?**
 We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
+\n**How do I add my server?**
+Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go to your profile at [/user/me](https://blist.xyz/user/me), scroll, then click your server. Fill out the corresponding fields and click publish. Tada, your server is now on our list.
             """
         )
 
