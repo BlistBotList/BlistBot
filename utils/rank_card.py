@@ -43,12 +43,15 @@ class Rank:
         self.xp_level_font = ImageFont.truetype("calibri.ttf", 18)
         self.bug_hunter = kwargs.get("bug_hunter", False)
         self.developer = kwargs.get("developer", False)
+        self.is_staff = kwargs.get("is_staff", False)
         self.donator = kwargs.get("donator", False)
+        self.is_boosting = kwargs.get("is_boosting", False)
         self.ctx = ctx
         self.user = member
 
     @async_executor()
-    def get_card(self, xp: int, level: int, position: int, avatar_bytes, badges: dict, custom: dict) -> BytesIO:
+    def get_card(self, xp: int, level: int, position: int, avatar_bytes,
+                 badges_black: dict, badges_white: dict, custom: dict) -> BytesIO:
         avatar = Image.open(avatar_bytes).convert("RGBA")
         needed_xp = 50 + level * 50
 
@@ -98,20 +101,36 @@ class Rank:
         im.paste(avatar, (15, 15), avatar)
 
         badge_x_pos, badge_y_pos = 385, 100
+        badge_size = (28, 28)
+        if self.is_boosting:
+            badge_x_pos += 7
+            badges = badges_black if text_color == 'black' else badges_white
+            donator_badge = Image.open(badges['boosting']).convert("RGBA")
+            donator_badge = donator_badge.resize(badge_size)
+            im.paste(donator_badge, (badge_x_pos, badge_y_pos), donator_badge)
+        if self.is_staff:
+            badge_x_pos += 30 if self.is_boosting else 8
+            badges = badges_black if text_color == 'black' else badges_white
+            staff_badge = Image.open(badges['staff']).convert("RGBA")
+            staff_badge = staff_badge.resize(badge_size)
+            im.paste(staff_badge, (badge_x_pos, badge_y_pos), staff_badge)
         if self.developer:
-            badge_x_pos += 10
-            dev_badge = Image.open(badges['developer'])
-            dev_badge = dev_badge.resize((30, 30))
+            badge_x_pos += 30 if self.is_staff else 8
+            badges = badges_black if text_color == 'black' else badges_white
+            dev_badge = Image.open(badges['developer']).convert("RGBA")
+            dev_badge = dev_badge.resize(badge_size)
             im.paste(dev_badge, (badge_x_pos, badge_y_pos), dev_badge)
         if self.donator:
-            badge_x_pos += 30
-            donator_badge = Image.open(badges['donator'])
-            donator_badge = donator_badge.resize((30, 30))
+            badge_x_pos += 30 if self.developer else 8
+            badges = badges_black if text_color == 'black' else badges_white
+            donator_badge = Image.open(badges['donator']).convert("RGBA")
+            donator_badge = donator_badge.resize(badge_size)
             im.paste(donator_badge, (badge_x_pos, badge_y_pos), donator_badge)
         if self.bug_hunter:
-            badge_x_pos += 30
-            bug_hunter_badge = Image.open(badges['bug_hunter'])
-            bug_hunter_badge = bug_hunter_badge.resize((30, 30))
+            badge_x_pos += 30 if self.donator else 8
+            badges = badges_black if text_color == 'black' else badges_white
+            bug_hunter_badge = Image.open(badges['bug_hunter']).convert("RGBA")
+            bug_hunter_badge = bug_hunter_badge.resize(badge_size)
             im.paste(bug_hunter_badge, (badge_x_pos, badge_y_pos), bug_hunter_badge)
 
         buffer = BytesIO()
