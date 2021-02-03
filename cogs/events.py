@@ -379,6 +379,22 @@ New Message
                 return
             await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].name, before.id)
             await self.update_staff_embed(self.bot.main_guild)
+            if not before.bot:
+                rank_user = self.bot.verification_guild.get_member(before.id)
+                if not rank_user:
+                    return
+
+                before_rank = before.top_role.name
+                before_role = discord.utils.get(self.bot.verification_guild.roles, name = str(before_rank))
+                if before_role and before_role in rank_user:
+                    await rank_user.remove_roles(before_role)
+
+                after_rank = after.top_role.name
+                after_role = discord.utils.get(self.bot.verification_guild.roles, name = str(after_rank))
+                if after_role and after_role not in rank_user:
+                    await rank_user.add_roles(after_role)
+
+
         # else:
         #    new_roles = list(set_difference1)
         #    await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].id, before.id)
@@ -399,8 +415,7 @@ New Message
                 for channel in category.channels:
                     if channel.type != discord.ChannelType.voice:
                         messages = await channel.history(limit=None, after=channel.created_at).flatten()
-                        # getting the last approve/deny command by reversing the list.
-                        reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], list(messages[::-1]))
+                        reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], messages)
                         for x in messages:
                             content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
                             all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
