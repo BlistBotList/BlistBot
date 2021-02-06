@@ -386,12 +386,12 @@ New Message
 
                 before_rank = before.top_role.name
                 before_role = discord.utils.get(self.bot.verification_guild.roles, name = str(before_rank))
-                if before_role and before_role in rank_user:
+                if before_role and before_role in rank_user.roles:
                     await rank_user.remove_roles(before_role)
 
                 after_rank = after.top_role.name
                 after_role = discord.utils.get(self.bot.verification_guild.roles, name = str(after_rank))
-                if after_role and after_role not in rank_user:
+                if after_role and after_role not in rank_user.roles:
                     await rank_user.add_roles(after_role)
 
 
