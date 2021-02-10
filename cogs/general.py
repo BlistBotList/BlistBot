@@ -442,10 +442,10 @@ class General(commands.Cog):
                 trophy = ":medal:"
 
             if args['all']:
-                for_menu.append((f"{trophy} #{place} - {user['name']}#{user['discriminator']}",
+                for_menu.append((f"{trophy} #{place} - {user['username']}#{user['discriminator']}",
                                  f"Level: {leader['level']} | XP: {leader['xp']}"))
 
-            embed.add_field(name=f"{trophy} #{place} - {user['name']}#{user['discriminator']}",
+            embed.add_field(name=f"{trophy} #{place} - {user['username']}#{user['discriminator']}",
                             value=f"Level: {leader['level']} | XP: {leader['xp']}", inline=False)
 
         if args['all']:
@@ -465,7 +465,7 @@ class General(commands.Cog):
         for x in bots:
             place += 1
             embed.add_field(
-                name=f"**{place}.** ``{x['name']}: {x['total_votes']}``", value="** **", inline=False)
+                name=f"**{place}.** ``{x['username']}: {x['total_votes']}``", value="** **", inline=False)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["bot"])
@@ -543,7 +543,7 @@ class General(commands.Cog):
             bot = self.bot.main_guild.get_member(x['id'])
             listed_bots.append(
                 f"""
-                [**{x['name']}**](https://blist.xyz/bot/{bot.id}/) ({bot.mention})
+                [**{x['username']}**](https://blist.xyz/bot/{bot.id}/) ({bot.mention})
                 > `Added:` {x['joined'].strftime('%A, %b %d, %X')}
                 > `Certified:` {x['certified']}
                 > `Prefix:` {x['prefix']}
@@ -568,7 +568,7 @@ class General(commands.Cog):
         queue = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = False AND denied = False")
 
         for b in bots:
-            await ctx.send(f"{b['name']} is #{queue.index(b) + 1} in the queue")
+            await ctx.send(f"{b['username']} is #{queue.index(b) + 1} in the queue")
 
     @commands.command(aliases=["user", "member", "memberinfo", "ui", "whois"])
     async def userinfo(self, ctx, *, member: discord.Member=None):

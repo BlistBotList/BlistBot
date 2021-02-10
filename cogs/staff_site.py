@@ -25,7 +25,7 @@ class Staff(commands.Cog):
         for x in bots:
             invite = str(
                 discord.utils.oauth_url(x['id'], guild=self.bot.verification_guild)) + "&disable_guild_select=true"
-            listed_bots.append(f"{x['name']} [Invite]({invite})")
+            listed_bots.append(f"{x['username']} [Invite]({invite})")
 
         embed = discord.Embed(
             title="Queue",
@@ -45,7 +45,7 @@ class Staff(commands.Cog):
 
         listed_bots = []
         for x in bots:
-            listed_bots.append(f"{x['name']} | Added: {x['joined']}")
+            listed_bots.append(f"{x['username']} | Added: {x['joined']}")
 
         embed = discord.Embed(
             title="Certification Queue",
@@ -167,11 +167,11 @@ class Staff(commands.Cog):
         await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", bot_user.id if bot_user else bot)
 
         embed = discord.Embed(
-            description=f"Deleted {bots['name']}", color=discord.Color.red())
+            description=f"Deleted {bots['username']}", color=discord.Color.red())
         await ctx.send(embed=embed)
 
         em = discord.Embed(
-            description=f"``{bots['name']}#{bots['discriminator']}`` by ``{ctx.guild.get_member(bots['main_owner']) or bots['main_owner']}`` was deleted by ``{ctx.author}`` for: \n```{reason}```",
+            description=f"``{bots['username']}#{bots['discriminator']}`` by ``{ctx.guild.get_member(bots['main_owner']) or bots['main_owner']}`` was deleted by ``{ctx.author}`` for: \n```{reason}```",
             color=discord.Color.red())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 

@@ -667,7 +667,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
                               color=discord.Color.blurple())
         for bot in top_bots:
             embed.add_field(
-                name=bot['name'], value=f"Votes: {bot['monthly_votes']}", inline=False)
+                name=bot['username'], value=f"Votes: {bot['monthly_votes']}", inline=False)
         await ctx.send(embed=embed)
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot")
         for bot in bots:
@@ -678,7 +678,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
                                 color=discord.Color.blurple())
         for server in top_servers:
             embed.add_field(
-                name=server['name'], value=f"Votes: {server['monthly_votes']}", inline=False)
+                name=server['username'], value=f"Votes: {server['monthly_votes']}", inline=False)
         servers = await self.bot.pool.fetch("SELECT * FROM main_site_server")
         for server in servers:
             await self.bot.pool.execute("UPDATE main_site_server SET monthly_votes = 0 WHERE id = $1", server["id"])

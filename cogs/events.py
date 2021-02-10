@@ -453,7 +453,7 @@ New Message
                             await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", user["id"])
                             return
                         bots = " \n".join(
-                            [f"{user['name']} (<@{user['id']}>)"])
+                            [f"{user['username']} (<@{user['id']}>)"])
                         listed_bots = f"{len(x)} bot listed:" if len(
                             x) == 1 else f"{len(x)} bots listed:"
                         embed = discord.Embed(
@@ -476,7 +476,7 @@ New Message
                     color=discord.Color.red()
                 )
                 embed.add_field(
-                    name=bot['name'],
+                    name=bot['username'],
                     value=str(
                         discord.utils.oauth_url(bot['id'], guild=self.bot.main_guild)) + "&disable_guild_select=true"
                 )
