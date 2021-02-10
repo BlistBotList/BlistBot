@@ -16,6 +16,7 @@ class General(commands.Cog):
 
     @commands.command()
     async def rank(self, ctx, *, member: discord.Member = None):
+        """ See you rank! badges are from from Flaticon.com """
         member = member or ctx.author
         unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
         level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
@@ -30,9 +31,7 @@ class General(commands.Cog):
 
         full_leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC")
         place = full_leaderboard.index(level_user) + 1
-        bug_hunter_role = self.bot.main_guild.get_role(716722789234638860)
-        donator_role = self.bot.main_guild.get_role(716724716299091980)
-        developer_role = self.bot.main_guild.get_role(716684805286133840)
+
         custom = {}
         if level_user['xp_bar_color'] != "":
             custom['xp_color'] = str(level_user['xp_bar_color'])
@@ -49,20 +48,34 @@ class General(commands.Cog):
                     custom['background'] = (44, 44, 44, 255)
 
         avatar_bytes = BytesIO(await member.avatar_url_as(format="png", size=128).read())
-        dev_badge = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/nxPRRls.png")).read())
-        bug_hunter_badge = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/9pi4RtH.png")).read())
-        donator_badge = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/wpd4mRq.png")).read())
+
+        staff_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/FGHODzE.png")).read())
+        dev_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/7JtOzav.png")).read())
+        bug_hunter_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/gFPFm1g.png")).read())
+        donator_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/4Is1fSC.png")).read())
+        boosting_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/RmK5Twi.png")).read())
+
+        staff_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/KUMkFE7.png")).read())
+        dev_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/2TA4C8g.png")).read())
+        bug_hunter_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/jClxGTJ.png")).read())
+        donator_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/v5bEiYM.png")).read())
+        boosting_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/RmK5Twi.png")).read())
 
         rank_instance = rank_card.Rank(
-            bug_hunter = bool(bug_hunter_role in member.roles),
-            donator = bool(donator_role in member.roles),
-            developer = bool(developer_role in member.roles),
+            bug_hunter = bool(716722789234638860 in [x.id for x in member.roles]),
+            donator = bool(716724716299091980 in [x.id for x in member.roles]),
+            developer = bool(716684805286133840 in [x.id for x in member.roles]),
+            is_staff = bool([x for x in [x for x in self.bot.staff_roles] if x in [x.id for x in member.roles]]),
+            is_boosting = bool(780121170196037663 in [x.id for x in member.roles]),
             ctx = ctx,
             member = member,
         )
         card = await rank_instance.get_card(
             xp=level_user['xp'], position=place, level=level_user['level'], avatar_bytes=avatar_bytes, custom=custom,
-            badges={'developer': dev_badge, 'bug_hunter': bug_hunter_badge, 'donator': donator_badge},
+            badges_black={'developer': dev_badge_black, 'bug_hunter': bug_hunter_badge_black,
+                          'donator': donator_badge_black, 'staff': staff_badge_black, 'boosting': boosting_badge_black},
+            badges_white={'developer': dev_badge_white, 'bug_hunter': bug_hunter_badge_white,
+                          'donator': donator_badge_white, 'staff': staff_badge_white, 'boosting': boosting_badge_white}
         )
         img = discord.File(card, 'rank_card.png')
         await ctx.send(file=img)
@@ -82,6 +95,7 @@ class General(commands.Cog):
         **--xp_bar**/-xp | Provide a HEX value to be set as your xp bar's color.
         **--border_color**/-border | Provide a HEX value to be set as your xp border color.
         You can also pass `"remove"` as value to reset them to default. Example: `b!crank -bg "remove"`
+        You can also pass `"random"` as value to have it set to a random HEX value Example: `b!crank -xp "random"`
 
         **Example**: `b!crank --background "https://i.adiscorduser.com/4ZZdxmR.png" (or "#ffffff") -xp "#666666" --border_color "#123456"`
         """
@@ -101,6 +115,9 @@ class General(commands.Cog):
             if background.lower() == "remove":
                 removing = True
                 set_background = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BACKGROUND")
+            elif background.lower() == "random":
+                set_background = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BACKGROUND",
+                                                                                           str(discord.Color.random()))
             else:
                 if not "https://" or "http://" in background:
                     if not re.search("^#(?:[0-9a-fA-F]{3}){1,2}$", str(background)):
@@ -124,6 +141,9 @@ class General(commands.Cog):
             if xp_bar.lower() == "remove":
                 removing = True
                 set_xp_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("XP_BAR_COLOUR")
+            elif xp_bar.lower() == "random":
+                set_xp_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("XP_BAR_COLOUR",
+                                                                                           str(discord.Color.random()))
             else:
                 if not re.search("^#(?:[0-9a-fA-F]{3}){1,2}$", str(xp_bar)):
                     return await ctx.send(f"(xp_bar) {ctx.author.name}, that does not look like a valid HEX value (#123456)")
@@ -143,6 +163,9 @@ class General(commands.Cog):
             if border_color.lower() == "remove":
                 removing = True
                 set_border_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BORDER_COLOUR")
+            elif border_color.lower() == "random":
+                set_border_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BORDER_COLOUR",
+                                                                                           str(discord.Color.random()))
             else:
                 if not re.search("^#(?:[0-9a-fA-F]{3}){1,2}$", str(border_color)):
                     return await ctx.send(f"(border_color) {ctx.author.name}, that does not look like a valid HEX value (#123456)")

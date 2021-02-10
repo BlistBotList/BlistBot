@@ -525,7 +525,8 @@ class Admin(commands.Cog):
             "May not randomly respond to messages or commands not invoked without the specified prefix.",
             "Bots cannot have NSFW avatars.",
             "Must have a clean description, not junk filled.",
-            "Bot owner must be in/remain in server for the bot to be listed"
+            "Bot owner must be in/remain in server for the bot to be listed",
+            "Bot must have an error handler and display the correct error messages, missing permissions etc"
         ]
 
         assignable_roles_channel = ctx.guild.get_channel(
