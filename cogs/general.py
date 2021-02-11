@@ -523,7 +523,7 @@ class General(commands.Cog):
                 All-Time Votes: ``{b['total_votes']}``
                 Certified: ``{b['certified']}``
                 Server Count: ``{b['server_count']}``
-                Added: ``{b['joined'].strftime('%D')}``
+                Added: ``{b['joined'].strftime('%F')}``
                 """
             ),
             color=discord.Color.blurple()
