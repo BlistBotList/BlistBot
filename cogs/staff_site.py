@@ -155,7 +155,7 @@ class Staff(commands.Cog):
             return
 
         bots = await self.bot.pool.fetchrow(
-            "SELECT main_owner, name, certified, discriminator FROM main_site_bot WHERE approved = True AND id = $1", bot_user.id if bot_user else bot)
+            "SELECT main_owner, username, certified, discriminator FROM main_site_bot WHERE approved = True AND id = $1", bot_user.id if bot_user else bot)
         if not bots:
             await ctx.send("This bot is not on the list")
             return
