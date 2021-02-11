@@ -241,7 +241,7 @@ class Staff(commands.Cog):
             color=discord.Color.blurple(),
             description=wrap(
                 f"""
-                >>> Staff Since: ``{query['joinedat'].strftime("%D")}``
+                >>> Staff Since: ``{query['joinedat'].strftime("%F")}``
                 Bots Approved: ``{query['approved']}``
                 Bots Denied: ``{query['denied']}``
                 Country: ``{query['country_code'] or 'Not Specified'}``
