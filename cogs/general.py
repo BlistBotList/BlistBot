@@ -523,7 +523,7 @@ class General(commands.Cog):
                 All-Time Votes: ``{b['total_votes']}``
                 Certified: ``{b['certified']}``
                 Server Count: ``{b['server_count']}``
-                Added: ``{b['joined'].strftime('%F')}``
+                Added: ``{b['added'].strftime('%F')}``
                 """
             ),
             color=discord.Color.blurple()
@@ -567,7 +567,7 @@ class General(commands.Cog):
             listed_bots.append(
                 f"""
                 [**{x['username']}**](https://blist.xyz/bot/{bot.id}/) ({bot.mention})
-                > `Added:` {x['joined'].strftime('%A, %b %d, %X')}
+                > `Added:` {x['added'].strftime('%A, %b %d, %X')}
                 > `Certified:` {x['certified']}
                 > `Prefix:` {x['prefix']}
                 """

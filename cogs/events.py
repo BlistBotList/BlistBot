@@ -279,7 +279,7 @@ New Message
                         >>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
                         Prefix: ``{bot[0]['prefix']}``
                         Tags: ``{', '.join(list(bot[0]['tags']))}``
-                        Added: ``{bot[0]['joined'].strftime('%F')}``
+                        Added: ``{bot[0]['added'].strftime('%F')}``
                         """
                     )
                 )

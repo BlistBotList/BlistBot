@@ -45,7 +45,7 @@ class Staff(commands.Cog):
 
         listed_bots = []
         for x in bots:
-            listed_bots.append(f"{x['username']} | Added: {x['joined']}")
+            listed_bots.append(f"{x['username']} | Added: {x['added']}")
 
         embed = discord.Embed(
             title="Certification Queue",
