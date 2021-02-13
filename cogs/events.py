@@ -3,8 +3,8 @@ import random
 import re
 import os
 import sys
-from operator import ne
 from textwrap import dedent as wrap
+from io import StringIO
 
 import config
 import discord
@@ -400,68 +400,60 @@ New Message
         #    await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].id, before.id)
 
     @commands.Cog.listener()
-    async def on_member_remove(self, member):
-        if member.guild == self.bot.verification_guild and member.bot:
-            second_try = discord.utils.get(member.guild.categories, name=member.name)
-            second_try = second_try.id if second_try else None
-            get_category_id = self.test_categories.get(member.id, second_try)
-            admin_logs = self.bot.main_guild.get_channel(797186257061937152)
-            if get_category_id:
-                file_name = f'{member.name.replace(" ", "_")}.txt'
-                file = open(file_name, "w")
-                all_messages = []
-                category = member.guild.get_channel(get_category_id)
-                reviewed_by = None
-                for channel in category.channels:
-                    if channel.type != discord.ChannelType.voice:
-                        messages = await channel.history(limit=None, after=channel.created_at).flatten()
-                        reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"], messages)
-                        for x in messages:
-                            content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
-                            all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
+    async def on_bot_conclusion(self, bot, reviewer):
+        second_try = discord.utils.get(bot.guild.categories, name=bot.name)
+        second_try = second_try.id if second_try else None
+        get_category_id = self.test_categories.get(bot.id, second_try)
+        admin_logs = self.bot.main_guild.get_channel(797186257061937152)
+        if get_category_id:
+            all_messages = []
+            category = bot.guild.get_channel(get_category_id)
+            for channel in category.channels:
+                if channel.type != discord.ChannelType.voice:
+                    messages = await channel.history(limit=None, after=channel.created_at).flatten()
+                    for x in messages:
+                        content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
+                        all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
 
-                    await channel.delete()
+                await channel.delete()
 
-                file.writelines(all_messages)
-                file.close()
-                reviewed_by = f"{str(reviewed_by.author)} ({reviewed_by.id})" if reviewed_by else "Not Found"
-                # this might not be that accurate.
-                invited_by = await member.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
-                                                           before = category.created_at).flatten()
-                invited_by = f"{str(invited_by[0].user)} ({invited_by[0].user.id})" if invited_by else "Not Found"
-                await admin_logs.send(
-                    content = f"**Bot**: {str(member)} ({member.id})\n"
-                              f"**Invited by**: {invited_by}\n\n"
-                              f"**Reviewed by**: {reviewed_by}\n\n"
-                              f"**Total Messages**: {len(all_messages)}\n"
-                              f"**Time Took**: {time_took(category.created_at)}",
-                    file = discord.File(file_name, file.name))
+            file_buffer = StringIO().writelines(all_messages)
+            reviewed_by = f"{str(reviewer)} ({reviewer.id})" if reviewer else "Not Found"
+            # this might not be that accurate.
+            invited_by = await bot.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
+                                                        before = category.created_at).flatten()
+            invited_by = f"{str(invited_by[0].user)} ({invited_by[0].user.id})" if invited_by else "Not Found"
+            await admin_logs.send(
+                content = f"**Bot**: {str(bot)} ({bot.id})\n"
+                            f"**Invited by**: {invited_by}\n\n"
+                            f"**Reviewed by**: {reviewed_by}\n\n"
+                            f"**Total Messages**: {len(all_messages)}\n"
+                            f"**Time Took**: {time_took(category.created_at)}",
+                # you'll want to check for valid filenames, but
+                # i'm not doing that here because it's not my job
+                # see https://stackoverflow.com/a/295466/6450354
+                file = discord.File(file_buffer, filename=bot.name.replace(' ', '_') + ".txt"))
 
-                await category.delete()
-                del self.test_categories[member.id]
-                if os.path.exists(file_name):
-                    try:
-                        os.remove(file_name)
-                    except Exception:
-                        pass
+            await category.delete()
+            del self.test_categories[bot.id]
 
-        muted = await self.bot.mod_pool.fetchval("SELECT userid FROM mutes WHERE userid = $1", member.id)
+        muted = await self.bot.mod_pool.fetchval("SELECT userid FROM mutes WHERE userid = $1", bot.id)
         if muted is None:
             return
         elif muted:
-            await member.guild.ban(discord.Object(id=member.id), reason="Left whilst muted")
+            await bot.guild.ban(discord.Object(id=bot.id), reason="Left whilst muted")
 
-        if member.guild == self.bot.main_guild:
-            if member.bot:
-                x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
+        if bot.guild == self.bot.main_guild:
+            if bot.bot:
+                x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", bot.id)
                 if x:
                     embed = discord.Embed(
-                        description=f"{member} ({member.id}) has left the server and is listed on the site! Use `b!delete` to delete the bot",
+                        description=f"{bot} ({bot.id}) has left the server and is listed on the site! Use `b!delete` to delete the bot",
                         color=discord.Color.red())
                     await self.bot.get_channel(716727091818790952).send(embed=embed)
                     return
-            if not member.bot:
-                x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", member.id)
+            if not bot.bot:
+                x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", bot.id)
                 if x:
                     for user in x:
                         if user["denied"]:
@@ -472,7 +464,7 @@ New Message
                         listed_bots = f"{len(x)} bot listed:" if len(
                             x) == 1 else f"{len(x)} bots listed:"
                         embed = discord.Embed(
-                            description=f"{member} ({member.id}) left the server and has {listed_bots}\n\n{bots} \n\nUse the `b!delete` command to delete the bot",
+                            description=f"{bot} ({bot.id}) left the server and has {listed_bots}\n\n{bots} \n\nUse the `b!delete` command to delete the bot",
                             color=discord.Color.red())
                         await self.bot.get_channel(716727091818790952).send(embed=embed)
 

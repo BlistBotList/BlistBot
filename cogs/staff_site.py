@@ -106,6 +106,7 @@ class Staff(commands.Cog):
             pass
 
         await bot.kick()
+        self.bot.dispatch("bot_conclusion", bot, ctx.author)
         bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot")
         await self.bot.change_presence(activity=discord.Game(name=f"Watching {bots} bots"))
 
@@ -139,6 +140,7 @@ class Staff(commands.Cog):
             color=discord.Color.red())
         await self.bot.get_channel(716446098859884625).send(embed=em)
         await bot.kick(reason="Bot Denied")
+        self.bot.dispatch("bot_conclusion", bot, ctx.author)
 
     @checks.main_guild_only()
     @commands.has_permissions(kick_members=True)
