@@ -27,8 +27,8 @@ async def _get_unique_id(ctx, table_type: str, bot_user_id: int) -> typing.Optio
 
 async def _from_unique_id(ctx, table_type: str, unique_id: int) -> typing.Union[Bot, Author, None]:
     queries = {
-        "BOT": "SELECT name, discriminator, id, avatar_hash FROM main_site_bot WHERE unique_id = $1",
-        "USER": "SELECT name, id, avatar_hash, discriminator FROM main_site_user WHERE unique_id = $1"
+        "BOT": "SELECT username, discriminator, id, avatar_hash FROM main_site_bot WHERE unique_id = $1",
+        "USER": "SELECT username, id, avatar_hash, discriminator FROM main_site_user WHERE unique_id = $1"
     }
     fetched = await ctx.bot.pool.fetchrow(queries[table_type], int(unique_id))
     if table_type == "BOT":
@@ -40,7 +40,7 @@ async def _from_unique_id(ctx, table_type: str, unique_id: int) -> typing.Union[
 
 class Author:
     def __init__(self, data: dict) -> None:
-        self.name: str = data.get('name', None)
+        self.name: str = data.get('username', None)
         self.id: int = data.get('id', None)
         self.discriminator: int = data.get('discriminator', None)
         self.avatar_url: str = get_avatar(self.id, data.get('avatar_hash', None))
@@ -53,7 +53,7 @@ class Author:
 
 class Bot:
     def __init__(self, data: dict) -> None:
-        self.name: str = data.get('name', None)
+        self.name: str = data.get('username', None)
         self.id: int = data.get('id', None)
         self.discriminator: int = data.get('discriminator', None)
         self.avatar_url: str = get_avatar(self.id, data.get('avatar_hash', None))
