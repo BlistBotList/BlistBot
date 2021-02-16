@@ -3,8 +3,8 @@ import random
 import re
 import os
 import sys
+from operator import ne
 from textwrap import dedent as wrap
-from io import StringIO
 
 import config
 import discord
@@ -12,7 +12,8 @@ from discord.ext import commands, tasks, flags
 from utils.time import time_took
 import pytz
 
-utc=pytz.UTC
+utc = pytz.UTC
+
 
 class Events(commands.Cog):
     def __init__(self, bot):
@@ -28,38 +29,46 @@ class Events(commands.Cog):
         self.bot.on_error = self.old_on_error
 
     async def update_staff_embed(self, guild: discord.Guild):
-        web_mods_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Website Moderator')
-        senior_web_mod_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Website Moderator')
-        admins_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Administrator')
-        senior_admins_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1", 'Senior Administrator')
+        web_mods_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1",
+                                                       'Website Moderator')
+        senior_web_mod_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1",
+                                                             'Senior Website Moderator')
+        admins_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1",
+                                                     'Administrator')
+        senior_admins_query = await self.bot.mod_pool.fetch("SELECT userid, country_code FROM staff WHERE rank = $1",
+                                                            'Senior Administrator')
         senior_administrators = [
-            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_admins_query]
+            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in
+            senior_admins_query]
         administrators = [
-            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in admins_query]
+            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in
+            admins_query]
         senior_website_moderators = [
-            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in senior_web_mod_query]
+            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in
+            senior_web_mod_query]
         website_moderators = [
-            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in web_mods_query]
+            f"{guild.get_member(user['userid']).mention} :flag_{str(user['country_code']).lower()}:" for user in
+            web_mods_query]
 
-        embed = discord.Embed(color=discord.Color.blurple(), title="Staff")
-        embed.add_field(name="> Senior Administrators",
-                        value="\n".join(senior_administrators) or "None", inline=False)
-        embed.add_field(name="> Administrators",
-                        value="\n".join(administrators) or "None", inline=False)
-        embed.add_field(name="> Senior Website Moderators", value="\n".join(
-            senior_website_moderators) or "None", inline=False)
-        embed.add_field(name="> Website Moderators",
-                        value="\n".join(website_moderators) or "None", inline=False)
+        embed = discord.Embed(color = discord.Color.blurple(), title = "Staff")
+        embed.add_field(name = "> Senior Administrators",
+                        value = "\n".join(senior_administrators) or "None", inline = False)
+        embed.add_field(name = "> Administrators",
+                        value = "\n".join(administrators) or "None", inline = False)
+        embed.add_field(name = "> Senior Website Moderators", value = "\n".join(
+            senior_website_moderators) or "None", inline = False)
+        embed.add_field(name = "> Website Moderators",
+                        value = "\n".join(website_moderators) or "None", inline = False)
         channel = guild.get_channel(716823743644696586)
         message = await channel.fetch_message(723641541486182410)
-        await message.edit(embed=embed)
+        await message.edit(embed = embed)
 
     @property
     def error_webhook(self):
         token = config.error_webhook_token
         web_id = config.error_webhook_id
         hook = discord.Webhook.partial(
-            id=web_id, token=token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
+            id = web_id, token = token, adapter = discord.AsyncWebhookAdapter(self.bot.session))
         return hook
 
     async def new_on_error(self, event, *args, **kwargs):
@@ -67,11 +76,11 @@ class Events(commands.Cog):
         if not error[1]:
             return
         em = discord.Embed(
-            title='Bot Error:',
-            description=f'**Event**: {event}\n```py\n{error[1]}\n\n{error}```',
-            color=discord.Color.blurple()
+            title = 'Bot Error:',
+            description = f'**Event**: {event}\n```py\n{error[1]}\n\n{error}```',
+            color = discord.Color.blurple()
         )
-        await self.error_webhook.send(embed=em)
+        await self.error_webhook.send(embed = em)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -105,21 +114,22 @@ class Events(commands.Cog):
                 if not efd:
                     err = str(error)
 
-            em = discord.Embed(description=str(err), color=discord.Color.red())
+            em = discord.Embed(description = str(err), color = discord.Color.red())
             try:
-                await ctx.send(embed=em)
+                await ctx.send(embed = em)
                 return
             except discord.Forbidden:
                 pass
 
         # when error is not handled above
         em = discord.Embed(
-            title='Bot Error:',
-            description=f'```py\n{error}\n```',
-            color=discord.Color.blurple()
+            title = 'Bot Error:',
+            description = f'```py\n{error}\n```',
+            color = discord.Color.blurple()
         )
-        await ctx.send(embed=discord.Embed(description=f"Something went wrong... {type(error).__name__}", color=discord.Color.red()))
-        await self.error_webhook.send(embed=em)
+        await ctx.send(embed = discord.Embed(description = f"Something went wrong... {type(error).__name__}",
+                                             color = discord.Color.red()))
+        await self.error_webhook.send(embed = em)
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -127,15 +137,16 @@ class Events(commands.Cog):
             if message.author == self.bot.user:
                 return
             channel = self.bot.main_guild.get_channel(716727091818790952)
-            embed = discord.Embed(color=discord.Color.blurple(), description=f"""
+            embed = discord.Embed(color = discord.Color.blurple(), description = f"""
 New Message
 
 >>> **Author:** `{message.author} ({message.author.id})`
 **Message:** ```{message.content}```
 """)
-            await channel.send(embed=embed)
+            await channel.send(embed = embed)
         if message.channel.id == 743127622053003364:
-            if message.attachments or re.findall(r"<(?P<animated>a?):(?P<name>[a-zA-Z0-9_]{2,32}):(?P<id>[0-9]{18,22})>", message.content):
+            if message.attachments or re.findall(
+                    r"<(?P<animated>a?):(?P<name>[a-zA-Z0-9_]{2,32}):(?P<id>[0-9]{18,22})>", message.content):
                 await message.add_reaction("✔")
                 await message.add_reaction("❌")
 
@@ -143,32 +154,38 @@ New Message
             ignored_cats = [716445624517656729]
             ignored_chans = [716717997510885477, 793522769999953970]
             if message.channel.category.id in ignored_cats:
-                return 
+                return
             if message.channel.id in ignored_chans:
-                return 
+                return
             user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE id = $1", message.author.id)
             if user:
                 user = user[0]
-                leveling_user = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1", user["unique_id"])
+                leveling_user = await self.bot.pool.fetch("SELECT * FROM main_site_leveling WHERE user_id = $1",
+                                                          user["unique_id"])
 
                 if leveling_user and leveling_user[0]["blacklisted"]:
                     return
                 else:
                     pass
 
-                now = datetime.datetime.utcnow().replace(tzinfo=utc)
-                one_minute = now + datetime.timedelta(seconds=60)
+                now = datetime.datetime.utcnow().replace(tzinfo = utc)
+                one_minute = now + datetime.timedelta(seconds = 60)
                 xp = random.randint(5, 10)
 
                 if not leveling_user or leveling_user[0]["last_time"] is None:
-                    return await self.bot.pool.execute("INSERT INTO main_site_leveling (xp, level, user_id, last_time, blacklisted, xp_bar_color, border_color, background_color) VALUES ($1, 1, $2, $3, False, $4, $5, $6)", xp, user["unique_id"], one_minute.replace(tzinfo=utc), "", "", "")
-                
+                    return await self.bot.pool.execute(
+                        "INSERT INTO main_site_leveling (xp, level, user_id, last_time, blacklisted, xp_bar_color, border_color, background_color) VALUES ($1, 1, $2, $3, False, $4, $5, $6)",
+                        xp, user["unique_id"], one_minute.replace(tzinfo = utc), "", "", "")
+
                 leveling_user = leveling_user[0]
-                if leveling_user["last_time"].replace(tzinfo=utc) is not None and leveling_user["last_time"].replace(tzinfo=utc) > now:
+                if leveling_user["last_time"].replace(tzinfo = utc) is not None and leveling_user["last_time"].replace(
+                        tzinfo = utc) > now:
                     return
                 else:
-                    await self.bot.pool.execute("UPDATE main_site_leveling SET last_time = $1 WHERE user_id = $2", one_minute.replace(tzinfo=utc), user["unique_id"])
-                    await self.bot.pool.execute("UPDATE main_site_leveling SET xp = xp + $1 WHERE user_id = $2", xp, user["unique_id"])
+                    await self.bot.pool.execute("UPDATE main_site_leveling SET last_time = $1 WHERE user_id = $2",
+                                                one_minute.replace(tzinfo = utc), user["unique_id"])
+                    await self.bot.pool.execute("UPDATE main_site_leveling SET xp = xp + $1 WHERE user_id = $2", xp,
+                                                user["unique_id"])
                     await self.lvl_up(user, message)
 
     async def lvl_up(self, db_user, message):
@@ -176,8 +193,10 @@ New Message
         xp = user[0]["xp"]
         lvl = user[0]["level"]
         if xp >= lvl * 50:
-            await self.bot.pool.execute("UPDATE main_site_leveling SET level = level + 1, xp = $1 WHERE user_id = $2", 0, db_user["unique_id"])
-            await message.channel.send(f"Congrats {message.author}, you are now **Level {user[0]['level'] + 1}** :tada:")
+            await self.bot.pool.execute("UPDATE main_site_leveling SET level = level + 1, xp = $1 WHERE user_id = $2",
+                                        0, db_user["unique_id"])
+            await message.channel.send(
+                f"Congrats {message.author}, you are now **Level {user[0]['level'] + 1}** :tada:")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -185,27 +204,27 @@ New Message
             # Updates
             if payload.emoji.id == 780103995879325696:
                 role = self.bot.main_guild.get_role(716723291011678319)
-                await payload.member.add_roles(role, reason="Assignable Roles")
+                await payload.member.add_roles(role, reason = "Assignable Roles")
             # NSFW Channel
             if payload.emoji.name == "🔞":
                 role = self.bot.main_guild.get_role(716723357336338482)
-                await payload.member.add_roles(role, reason="Assignable Roles")
+                await payload.member.add_roles(role, reason = "Assignable Roles")
             # Giveaways
             if payload.emoji.id == 780103641519358013:
                 role = self.bot.main_guild.get_role(779891942464421928)
-                await payload.member.add_roles(role, reason="Assignable Roles")
+                await payload.member.add_roles(role, reason = "Assignable Roles")
             # Polls
             if payload.emoji.id == 780103746432139274:
                 role = self.bot.main_guild.get_role(750771398636601354)
-                await payload.member.add_roles(role, reason="Assignable Roles")
+                await payload.member.add_roles(role, reason = "Assignable Roles")
             # Announcements
             if payload.emoji.id == 780103872668237835:
                 role = self.bot.main_guild.get_role(716723257663029372)
-                await payload.member.add_roles(role, reason="Assignable Roles")
+                await payload.member.add_roles(role, reason = "Assignable Roles")
             # Leaks
             if payload.emoji.id == 784923587785916487:
                 role = self.bot.main_guild.get_role(784924059065516052)
-                await payload.member.add_roles(role, reason="Assignable Roles")
+                await payload.member.add_roles(role, reason = "Assignable Roles")
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -214,27 +233,27 @@ New Message
             # Updates
             if payload.emoji.id == 780103995879325696:
                 role = self.bot.main_guild.get_role(716723291011678319)
-                await payload.member.remove_roles(role, reason="Assignable Roles")
+                await payload.member.remove_roles(role, reason = "Assignable Roles")
             # NSFW Channel
             if payload.emoji.name == "🔞":
                 role = self.bot.main_guild.get_role(716723357336338482)
-                await payload.member.remove_roles(role, reason="Assignable Roles")
+                await payload.member.remove_roles(role, reason = "Assignable Roles")
             # Giveaways
             if payload.emoji.id == 780103641519358013:
                 role = self.bot.main_guild.get_role(779891942464421928)
-                await payload.member.remove_roles(role, reason="Assignable Roles")
+                await payload.member.remove_roles(role, reason = "Assignable Roles")
             # Polls
             if payload.emoji.id == 780103746432139274:
                 role = self.bot.main_guild.get_role(750771398636601354)
-                await payload.member.remove_roles(role, reason="Assignable Roles")
+                await payload.member.remove_roles(role, reason = "Assignable Roles")
             # Announcements
             if payload.emoji.id == 780103872668237835:
                 role = self.bot.main_guild.get_role(716723257663029372)
-                await payload.member.remove_roles(role, reason="Assignable Roles")
+                await payload.member.remove_roles(role, reason = "Assignable Roles")
             # Leaks
             if payload.emoji.id == 784923587785916487:
                 role = self.bot.main_guild.get_role(784924059065516052)
-                await payload.member.remove_roles(role, reason="Assignable Roles")
+                await payload.member.remove_roles(role, reason = "Assignable Roles")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -256,14 +275,14 @@ New Message
                 bot_role = self.bot.verification_guild.get_role(763187834219003934)
                 await member.add_roles(bot_role)
                 overwrites = {
-                    member.guild.get_role(763177553636098082): discord.PermissionOverwrite(manage_channels=True),
-                    member.guild.get_role(763187834219003934): discord.PermissionOverwrite(read_messages=False),
-                    member: discord.PermissionOverwrite(read_messages=True),
+                    member.guild.get_role(763177553636098082): discord.PermissionOverwrite(manage_channels = True),
+                    member.guild.get_role(763187834219003934): discord.PermissionOverwrite(read_messages = False),
+                    member: discord.PermissionOverwrite(read_messages = True),
                 }
-                category = await member.guild.create_category(name=member.name, overwrites=overwrites)
-                channel = await category.create_text_channel(name="Testing")
-                await category.create_text_channel(name="Testing-NSFW", nsfw=True)
-                await category.create_voice_channel(name="Voice Testing", bitrate=member.guild.bitrate_limit)
+                category = await member.guild.create_category(name = member.name, overwrites = overwrites)
+                channel = await category.create_text_channel(name = "Testing")
+                await category.create_text_channel(name = "Testing-NSFW", nsfw = True)
+                await category.create_voice_channel(name = "Voice Testing", bitrate = member.guild.bitrate_limit)
                 try:
                     self.test_categories[member.id] = category.id
                 except Exception:
@@ -272,9 +291,9 @@ New Message
                 bot = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
 
                 embed = discord.Embed(
-                    title=str(member),
-                    color=discord.Color.blurple(),
-                    description=wrap(
+                    title = str(member),
+                    color = discord.Color.blurple(),
+                    description = wrap(
                         f"""
                         >>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
                         Prefix: ``{bot[0]['prefix']}``
@@ -284,8 +303,8 @@ New Message
                     )
                 )
                 embed.add_field(
-                    name="**Links**",
-                    value=wrap(
+                    name = "**Links**",
+                    value = wrap(
                         f"""
                         >>> Privacy Policy: {bot[0]['privacy_policy_url'] or 'None'}
                         Website: {bot[0]['website'] or 'None'}
@@ -294,11 +313,11 @@ New Message
                         """
                     )
                 )
-                embed.add_field(name="Short Description",
-                                value=bot[0]['short_description'], inline=False)
-                embed.add_field(name="Notes", value=bot[0]['notes'] or 'None', inline=False)
-                embed.set_thumbnail(url=member.avatar_url)
-                message = await channel.send(embed=embed)
+                embed.add_field(name = "Short Description",
+                                value = bot[0]['short_description'], inline = False)
+                embed.add_field(name = "Notes", value = bot[0]['notes'] or 'None', inline = False)
+                embed.set_thumbnail(url = member.avatar_url)
+                message = await channel.send(embed = embed)
                 await message.pin()
 
             if not member.bot:
@@ -369,15 +388,16 @@ New Message
             if staff_bot in before.roles and staff_bot not in after.roles:
                 await self.bot.pool.execute("UPDATE main_site_bot SET staff = False WHERE id = $1", before.id)
 
-        #staff_roles = [716713266683969626, 716713238955556965,
-                       #716713498360545352, 716713293330514041]
+        # staff_roles = [716713266683969626, 716713238955556965,
+        # 716713498360545352, 716713293330514041]
         set_difference1 = set(before.roles) - set(after.roles)
         set_difference2 = set(after.roles) - set(before.roles)
         if list(set_difference2) != []:
             new_roles = list(set_difference2)
             if new_roles[0].id not in self.bot.staff_roles:
                 return
-            await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].name, before.id)
+            await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].name,
+                                            before.id)
             await self.update_staff_embed(self.bot.main_guild)
             if not before.bot:
                 rank_user = self.bot.verification_guild.get_member(before.id)
@@ -394,66 +414,75 @@ New Message
                 if after_role and after_role not in rank_user.roles:
                     await rank_user.add_roles(after_role)
 
-
         # else:
         #    new_roles = list(set_difference1)
         #    await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", new_roles[0].id, before.id)
 
     @commands.Cog.listener()
-    async def on_bot_conclusion(self, bot, reviewer):
-        second_try = discord.utils.get(bot.guild.categories, name=bot.name)
-        second_try = second_try.id if second_try else None
-        get_category_id = self.test_categories.get(bot.id, second_try)
-        admin_logs = self.bot.main_guild.get_channel(797186257061937152)
-        if get_category_id:
-            all_messages = []
-            category = bot.guild.get_channel(get_category_id)
-            for channel in category.channels:
-                if channel.type != discord.ChannelType.voice:
-                    messages = await channel.history(limit=None, after=channel.created_at).flatten()
-                    for x in messages:
-                        content = str(x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
-                        all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
+    async def on_member_remove(self, member):
+        if member.guild == self.bot.verification_guild and member.bot:
+            second_try = discord.utils.get(member.guild.categories, name = member.name)
+            second_try = second_try.id if second_try else None
+            get_category_id = self.test_categories.get(member.id, second_try)
+            admin_logs = self.bot.main_guild.get_channel(797186257061937152)
+            if get_category_id:
+                file_name = f'{member.name.replace(" ", "_")}.txt'
+                file = open(file_name, "w")
+                all_messages = []
+                category = member.guild.get_channel(get_category_id)
+                reviewed_by = None
+                for channel in category.channels:
+                    if channel.type != discord.ChannelType.voice:
+                        messages = await channel.history(limit = None, after = channel.created_at).flatten()
+                        reviewed_by = discord.utils.find(lambda m: m.content.lower() in ["b!approve", "b!deny"],
+                                                         messages)
+                        for x in messages:
+                            content = str(
+                                x.content) if not x.embeds else f"EMBED: {str(x.embeds[0].to_dict())}" if not x.content else f"CONTENT: {str(x.content)}\nEMBED: {str(x.embeds[0].to_dict())}" if x.content and x.embeds else "None"
+                            all_messages.append(f"[#{x.channel.name} | {x.author.name}]: {content}" + "\n-------\n")
 
-                await channel.delete()
+                    await channel.delete()
 
-            file_buffer = StringIO().writelines(all_messages)
-            reviewed_by = f"{str(reviewer)} ({reviewer.id})" if reviewer else "Not Found"
-            # this might not be that accurate.
-            invited_by = await bot.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
-                                                        before = category.created_at).flatten()
-            invited_by = f"{str(invited_by[0].user)} ({invited_by[0].user.id})" if invited_by else "Not Found"
-            await admin_logs.send(
-                content = f"**Bot**: {str(bot)} ({bot.id})\n"
-                            f"**Invited by**: {invited_by}\n\n"
-                            f"**Reviewed by**: {reviewed_by}\n\n"
-                            f"**Total Messages**: {len(all_messages)}\n"
-                            f"**Time Took**: {time_took(category.created_at)}",
-                # you'll want to check for valid filenames, but
-                # i'm not doing that here because it's not my job
-                # see https://stackoverflow.com/a/295466/6450354
-                file = discord.File(file_buffer, filename=bot.name.replace(' ', '_') + ".txt"))
+                file.writelines(all_messages)
+                file.close()
+                reviewed_by = f"{str(reviewed_by.author)} ({reviewed_by.id})" if reviewed_by else "Not Found"
+                # this might not be that accurate.
+                invited_by = await member.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
+                                                           before = category.created_at).flatten()
+                invited_by = f"{str(invited_by[0].user)} ({invited_by[0].user.id})" if invited_by else "Not Found"
+                await admin_logs.send(
+                    content = f"**Bot**: {str(member)} ({member.id})\n"
+                              f"**Invited by**: {invited_by}\n\n"
+                              f"**Reviewed by**: {reviewed_by}\n\n"
+                              f"**Total Messages**: {len(all_messages)}\n"
+                              f"**Time Took**: {time_took(category.created_at)}",
+                    file = discord.File(file_name, file.name))
 
-            await category.delete()
-            del self.test_categories[bot.id]
+                await category.delete()
+                del self.test_categories[member.id]
+                if os.path.exists(file_name):
+                    try:
+                        os.remove(file_name)
+                    except Exception:
+                        pass
 
-        muted = await self.bot.mod_pool.fetchval("SELECT userid FROM mutes WHERE userid = $1", bot.id)
+        muted = await self.bot.mod_pool.fetchval("SELECT userid FROM mutes WHERE userid = $1", member.id)
         if muted is None:
             return
         elif muted:
-            await bot.guild.ban(discord.Object(id=bot.id), reason="Left whilst muted")
+            await member.guild.ban(discord.Object(id = member.id), reason = "Left whilst muted")
 
-        if bot.guild == self.bot.main_guild:
-            if bot.bot:
-                x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", bot.id)
+        if member.guild == self.bot.main_guild:
+            if member.bot:
+                x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
                 if x:
                     embed = discord.Embed(
-                        description=f"{bot} ({bot.id}) has left the server and is listed on the site! Use `b!delete` to delete the bot",
-                        color=discord.Color.red())
-                    await self.bot.get_channel(716727091818790952).send(embed=embed)
+                        description = f"{member} ({member.id}) has left the server and is listed on the site! Use `b!delete` to delete the bot",
+                        color = discord.Color.red())
+                    await self.bot.get_channel(716727091818790952).send(embed = embed)
                     return
-            if not bot.bot:
-                x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", bot.id)
+            if not member.bot:
+                x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", member.id)
                 if x:
                     for user in x:
                         if user["denied"]:
@@ -464,11 +493,11 @@ New Message
                         listed_bots = f"{len(x)} bot listed:" if len(
                             x) == 1 else f"{len(x)} bots listed:"
                         embed = discord.Embed(
-                            description=f"{bot} ({bot.id}) left the server and has {listed_bots}\n\n{bots} \n\nUse the `b!delete` command to delete the bot",
-                            color=discord.Color.red())
-                        await self.bot.get_channel(716727091818790952).send(embed=embed)
+                            description = f"{member} ({member.id}) left the server and has {listed_bots}\n\n{bots} \n\nUse the `b!delete` command to delete the bot",
+                            color = discord.Color.red())
+                        await self.bot.get_channel(716727091818790952).send(embed = embed)
 
-    @tasks.loop(minutes=30)
+    @tasks.loop(minutes = 30)
     async def check_join(self):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")
         channel = self.bot.main_guild.get_channel(716727091818790952)
@@ -478,28 +507,29 @@ New Message
             b = self.bot.main_guild.get_member(bot['id'])
             if not b:
                 embed = discord.Embed(
-                    title="Bot Has Not Joined!!",
-                    description="The following bot has not joined the Support Server after getting approved...",
-                    color=discord.Color.red()
+                    title = "Bot Has Not Joined!!",
+                    description = "The following bot has not joined the Support Server after getting approved...",
+                    color = discord.Color.red()
                 )
                 embed.add_field(
-                    name=bot['username'],
-                    value=str(
-                        discord.utils.oauth_url(bot['id'], guild=self.bot.main_guild)) + "&disable_guild_select=true"
+                    name = bot['username'],
+                    value = str(
+                        discord.utils.oauth_url(bot['id'], guild = self.bot.main_guild)) + "&disable_guild_select=true"
                 )
-                await channel.send(embed=embed)
+                await channel.send(embed = embed)
 
     # Minutes = 60 is better than Hours = 1!! This is for you @A Discord User @Soheab_
-    @tasks.loop(minutes=60)
+    @tasks.loop(minutes = 60)
     async def update_statuses(self):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")
         for bot in bots:
             member_instance = self.bot.main_guild.get_member(bot["id"])
             if member_instance is None:
                 break
-            await self.bot.pool.execute("UPDATE main_site_bot SET status = $1 WHERE id = $2", str(member_instance.status), bot["id"])
+            await self.bot.pool.execute("UPDATE main_site_bot SET status = $1 WHERE id = $2",
+                                        str(member_instance.status), bot["id"])
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes = 1)
     async def change_status(self):
         approved_bots = await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
@@ -511,7 +541,7 @@ New Message
             f"with {approved_bots} approved bots",
             f"with {users} total users"
         ]
-        await self.bot.change_presence(activity=discord.Game(name=random.choice(options)))
+        await self.bot.change_presence(activity = discord.Game(name = random.choice(options)))
 
 
 def setup(bot):
