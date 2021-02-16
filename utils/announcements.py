@@ -5,11 +5,11 @@ import typing
 from markdownify import markdownify as md
 
 
-def get_avatar(user_id: int, av_hash: str) -> str:
-    av_format = "png"
-    if av_hash.startswith("a_"):
-        av_format = "gif"
-    return f"https://cdn.discordapp.com/avatars/{user_id}/{av_hash}.{av_format}?size=1024"
+#def get_avatar(user_id: int, av_hash: str) -> str:
+    #av_format = "png"
+    #if av_hash.startswith("a_"):
+        #av_format = "gif"
+    #return f"https://cdn.discordapp.com/avatars/{user_id}/{av_hash}.{av_format}?size=1024"
 
 async def is_bot_on_site(ctx, bot_id: int) -> bool:
     check_bot = await ctx.bot.pool.fetchrow("SELECT * FROM main_site_bot WHERE id = $1", bot_id)
@@ -27,8 +27,8 @@ async def _get_unique_id(ctx, table_type: str, bot_user_id: int) -> typing.Optio
 
 async def _from_unique_id(ctx, table_type: str, unique_id: int) -> typing.Union[Bot, Author, None]:
     queries = {
-        "BOT": "SELECT username, discriminator, id, avatar_hash FROM main_site_bot WHERE unique_id = $1",
-        "USER": "SELECT username, id, avatar_hash, discriminator FROM main_site_user WHERE unique_id = $1"
+        "BOT": "SELECT username, discriminator, id, avatar FROM main_site_bot WHERE unique_id = $1",
+        "USER": "SELECT username, id, avatar, discriminator FROM main_site_user WHERE unique_id = $1"
     }
     fetched = await ctx.bot.pool.fetchrow(queries[table_type], int(unique_id))
     if table_type == "BOT":
@@ -43,7 +43,7 @@ class Author:
         self.name: str = data.get('username', None)
         self.id: int = data.get('id', None)
         self.discriminator: int = data.get('discriminator', None)
-        self.avatar_url: str = get_avatar(self.id, data.get('avatar_hash', None))
+        self.avatar_url: str = data.get('avatar', None)
 
     def __str__(self) -> str:
         return f"{self.name}#{self.discriminator}"
@@ -56,7 +56,7 @@ class Bot:
         self.name: str = data.get('username', None)
         self.id: int = data.get('id', None)
         self.discriminator: int = data.get('discriminator', None)
-        self.avatar_url: str = get_avatar(self.id, data.get('avatar_hash', None))
+        self.avatar_url: str = data.get('avatar', None)
 
     def __str__(self) -> str:
         return f"{self.name}#{self.discriminator}"
