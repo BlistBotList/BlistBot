@@ -4,6 +4,7 @@ from typing import Union
 import discord
 import googletrans
 from discord.ext import commands, flags
+
 from utils import checks
 
 
@@ -61,23 +62,18 @@ class Staff(commands.Cog):
             await ctx.send("This is not a bot.")
             return
 
-        bots = await self.bot.pool.fetchrow(
-            "SELECT main_owner, referred_by FROM main_site_bot WHERE approved = False AND denied = False AND id = $1", bot.id)
+        bots = await self.bot.pool.fetchval(
+            "SELECT main_owner FROM main_site_bot WHERE approved = False AND denied = False AND id = $1", bot.id)
         if not bots:
             await ctx.send("This bot is not awaiting approval")
             return
 
-        owner = self.bot.main_guild.get_member(bots["main_owner"])
+        owner = self.bot.main_guild.get_member(bots)
         if not owner:
             await ctx.send(f"{ctx.author.mention}, The owner of this bot has left the main server, deny it!")
             return
 
-        if bots["referred_by"] != "":
-            user_id = await self.bot.pool.fetchval("SELECT id FROM main_site_user WHERE referrer_code  = $1", bots["referred_by"])
-            if user_id:
-                await self.bot.pool.execute("UPDATE main_site_user SET referrals = referrals + 1 WHERE id = $1", user_id)
-
-        await self.bot.pool.execute("UPDATE main_site_user SET developer = True WHERE id = $1", bots["main_owner"])
+        await self.bot.pool.execute("UPDATE main_site_user SET developer = True WHERE id = $1", bots)
         await self.bot.pool.execute("UPDATE main_site_bot SET approved = True WHERE id = $1", bot.id)
         await self.bot.mod_pool.execute("UPDATE staff SET approved = approved + 1 WHERE userid = $1", ctx.author.id)
 
@@ -91,8 +87,9 @@ class Staff(commands.Cog):
             color=discord.Color.blurple()
         )
         await self.bot.verification_guild.get_channel(763183376311517215).send(content=ctx.author.mention, embed=embed)
+
         em = discord.Embed(
-            description=f"``{bot}`` by ``{self.bot.main_guild.get_member(bots['main_owner'])}`` was approved by ``{ctx.author}``",
+            description=f"``{bot}`` by ``{self.bot.main_guild.get_member(bots)}`` was approved by ``{ctx.author}``",
             color=discord.Color.blurple())
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
