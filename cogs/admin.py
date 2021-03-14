@@ -8,7 +8,7 @@ from textwrap import dedent as wrap
 import config
 import country_converter as coco
 import discord
-from discord.ext import commands
+from discord.ext import commands, flags
 
 from utils import checks
 
@@ -712,6 +712,91 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
         self.bot.twitter_api.update_status(
             f"{message} \n\n- {ctx.author.name}")
         await ctx.send("Done")
+
+    @flags.add_flag("-t", "--total", action='store_true', default=False)
+    @flags.add_flag("-m", "--monthly", action='store_true', default=False)
+    @flags.add_flag("-b", "--both", action='store_true', default=True)
+    @flags.add_flag("-l", "--list", type=str, default='bot')
+    @commands.has_role(716713266683969626)
+    @commands.command(aliases=["changevote"], cls=flags.FlagCommand)
+    async def changevotes(self, ctx, server_bot_id: int, remove_or_add: str, the_number: int, **arguments):
+        """
+        Change a bot or server's vote counts. You can choose from `--monthly`, `--total` or `--both`.
+
+        **Arguments**:
+
+        \u2022 server_bot_id - Can be a server id or bot id that is on the list.
+            Make sure to use `--list "server"` if its a server id. Defaults to bot.
+        \u2022 remove_or_add - Choose from add, + or remove, -.
+        \u2022 the_number - Amount of votes to add or remove.
+
+        **Flags**:
+
+        \u2022 **--monthly**/-m - For if you want to remove `the_number` from bot or server's monthly votes. Defaults to False.
+        \u2022 **--total**/-t - For if you want to remove `the_number` from bot or server's total votes. Defaults to False.
+        \u2022 **--both**/-b - For if you want to remove `the_number` from bot or server's total and monthly votes. Defaults to True.
+
+        - This will take the current monthly or total votes or both and + or - to them.
+        - There is no confirmation.
+        - This can only be used with the Senior Administrator role.
+        """
+        list_type = arguments['list']
+        VALID_LIST_TYPES = ['bot', 'server']
+        VALID_WHAT = ["add", "remove", "+", "-"]
+        if remove_or_add not in VALID_WHAT:
+            return await ctx.send(f"remove_or_add can only be the following: {', '.join(VALID_WHAT)}")
+
+        if list_type not in VALID_LIST_TYPES:
+            return await ctx.send("--list_type can only be either bot or server. Defaults to bot.")
+
+        what_dict = {
+            "add": "+",
+            "+": "+",
+            "remove": "-",
+            "-": "-"
+        }
+        query = {
+            "both": "UPDATE main_site_{table} SET total_votes = total_votes {remove_add} {the_count}, "
+                    "monthly_votes = monthly_votes {remove_add} {the_count} WHERE id = {the_id}",
+            "monthly": "UPDATE main_site_{table} SET monthly_votes = monthly_votes {remove_add} {the_count} WHERE id = {the_id}",
+            "total": "UPDATE main_site_{table} SET total_votes = total_votes {remove_add} {the_count} WHERE id = {the_id}",
+        }
+
+        try:
+            if arguments['monthly']:
+                the_query = query["monthly"].format(
+                    table = str(list_type).lower(),
+                    remove_add = what_dict[str(remove_or_add)],
+                    the_count = int(the_number),
+                    the_id = int(server_bot_id)
+                )
+                await self.bot.pool.execute(the_query)
+                return await ctx.send(f"{what_dict[str(remove_or_add)]} {the_number} to monthly_votes for {server_bot_id}")
+
+            elif arguments['total']:
+                the_query = query["total"].format(
+                    table = str(list_type).lower(),
+                    remove_add = what_dict[str(remove_or_add)],
+                    the_count = int(the_number),
+                    the_id = int(server_bot_id)
+                )
+                await self.bot.pool.execute(the_query)
+                return await ctx.send(f"{what_dict[str(remove_or_add)]} {the_number} to total_votes for {server_bot_id}")
+
+            elif arguments['both']:
+                the_query = query["both"].format(
+                    table = str(list_type).lower(),
+                    remove_add = what_dict[str(remove_or_add)],
+                    the_count = int(the_number),
+                    the_id = int(server_bot_id)
+                )
+                await self.bot.pool.execute(the_query)
+                return await ctx.send(f"{what_dict[str(remove_or_add)]} {the_number} to monthly_votes and total_votes for {server_bot_id}")
+
+            else:
+                return await ctx.send("You need specify --both, --monthly or --total.")
+        except Exception as err:
+            await ctx.send(f"Something went wrong...\n{err}")
 
 
 def setup(bot):
