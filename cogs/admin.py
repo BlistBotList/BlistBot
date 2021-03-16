@@ -798,6 +798,178 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
         except Exception as err:
             await ctx.send(f"Something went wrong...\n{err}")
 
+    @commands.group(invoke_without_command=True)
+    @commands.has_guild_permissions(administrator=True)
+    async def suggestion(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
+    @commands.has_permissions(administrator=True)
+    @suggestion.command()
+    async def consider(self, ctx, suggestion: int, *, reason=None):
+        fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
+        user = self.bot.get_user(fetch['userid'])
+        ch = self.bot.get_channel(716737367192502312)
+        m = await ch.fetch_message(fetch['message'])
+        embed = discord.Embed(
+            title=f"#{fetch['id']} Suggestion | Considered",
+            color=discord.Color.gold(),
+            description=f"{fetch['suggestion']}\n\n>>> {reason or 'No reason provided'}"
+        )
+        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        await self.bot.pool.execute("UPDATE suggestions SET considered = True WHERE id = $1", suggestion)
+        await ctx.message.delete()
+        await m.edit(embed=embed)
+        try:
+            em = discord.Embed(
+                title="Suggestion Considered!",
+                description=f"{fetch['suggestion']}\n\n**Considered by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
+                color=discord.Color.gold()
+            )
+            em.set_thumbnail(url=self.bot.user.avatar_url)
+            await user.send(embed=em)
+        except discord.Forbidden:
+            pass
+
+    @commands.has_permissions(administrator=True)
+    @suggestion.command()
+    async def approve(self, ctx, suggestion: int, *, reaso=None):
+        fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
+        user = self.bot.get_user(fetch['userid'])
+        ch = self.bot.get_channel(716737367192502312)
+        m = await ch.fetch_message(fetch['message'])
+        embed = discord.Embed(
+            title=f"#{fetch['id']} Suggestion | Approved",
+            color=discord.Color.green(),
+            description=f"{fetch['suggestion']}\n\n**Approved by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
+        )
+        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        await self.bot.pool.execute("UPDATE suggestions SET approved = True WHERE id = $1", suggestion)
+        await ctx.message.delete()
+        await m.edit(embed=embed)
+        try:
+            em = discord.Embed(
+                title="Suggestion Approved!",
+                description=f"{fetch['suggestion']}\n\n**Approved by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
+                color=discord.Color.green()
+            )
+            em.set_thumbnail(url=self.bot.user.avatar_url)
+            await user.send(embed=em)
+        except Exception:
+            pass
+
+    @commands.has_permissions(administrator=True)
+    @suggestion.command()
+    async def implemented(self, ctx, suggestion: int, *, reason=None):
+        fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
+        user = self.bot.get_user(fetch['userid'])
+        ch = self.bot.get_channel(716737367192502312)
+        m = await ch.fetch_message(fetch['message'])
+        embed = discord.Embed(
+            title=f"#{fetch['id']} Suggestion | Implemented",
+            color=discord.Color.blue(),
+            description=f"{fetch['suggestion']}\n\n**Implemented by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
+        )
+        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        await self.bot.pool.execute("UPDATE suggestions SET implemented = True WHERE id = $1", suggestion)
+        await ctx.message.delete()
+        await m.edit(embed=embed)
+        try:
+            em = discord.Embed(
+                title="Suggestion Implemented!",
+                description=f"{fetch['suggestion']}\n\n**Implemented by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
+                color=discord.Color.blue()
+            )
+            em.set_thumbnail(url=self.bot.user.avatar_url)
+            await user.send(embed=em)
+        except Exception:
+            pass
+    
+    @commands.has_permissions(administrator=True)
+    @suggestion.command()
+    async def deny(self, ctx, suggestion: int, *, reason=None):
+        fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
+        user = self.bot.get_user(fetch['userid'])
+        ch = self.bot.get_channel(716737367192502312)
+        m = await ch.fetch_message(fetch['message'])
+        embed = discord.Embed(
+            title=f"#{fetch['id']} Suggestion | Denied",
+            color=discord.Color.red(),
+            description=f"{fetch['suggestion']}\n\n**Denied by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
+        )
+        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        await self.bot.pool.execute("UPDATE suggestions SET denied = True WHERE id = $1", suggestion)
+        await ctx.message.delete()
+        await m.edit(embed=embed)
+        try:
+            em = discord.Embed(
+                title="Suggestion Denied!",
+                description=f"{fetch['suggestion']}\n\n**Denied by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
+                color=discord.Color.red()
+            )
+            em.set_thumbnail(url=self.bot.user.avatar_url)
+            await user.send(embed=em)
+        except Exception:
+            pass
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def strike(self, ctx, staffmember: discord.Member, strikes:int, *, reason):
+        fetch = await self.bot.mod_pool.fetchrow("SELECT * FROM staff WHERE userid = $1", staffmember.id)
+
+        if not fetch:
+            return await ctx.send("That user isn't staff!")
+
+        if staffmember.top_role.position >= ctx.author.top_role.position:
+            return await ctx.send("You can't strike users with more power than you")
+
+        if staffmember == ctx.author:
+            return await ctx.send("You can't strike yourself")
+
+
+        await self.bot.mod_pool.execute("UPDATE staff SET strikes = strikes + $2 WHERE userid = $1", staffmember.id, strikes)
+        await ctx.send(f"Awarded {strikes} {'strikes' if strikes != 1 else 'strike'} **{staffmember}**")
+        adminlog = ctx.guild.get_channel(797186257061937152)
+        e = discord.Embed(
+            title="Staff Member Striked",
+            color=discord.Color.blurple(),
+            description=wrap(f"""
+            **Staff Member:** {ctx.author.mention} 
+            **Offender:** {staffmember.mention}
+            **Reason:** `{reason}`
+            **Number of strikes:** `{strikes}`
+            """), timestamp=datetime.datetime.utcnow())
+        await adminlog.send(embed=e)
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def removestrike(self, ctx, staffmember: discord.Member, strikes:int, *, reason):
+        fetch = await self.bot.mod_pool.fetchrow("SELECT * FROM staff WHERE userid = $1", staffmember.id)
+
+        if not fetch:
+            return await ctx.send("That user isn't staff!")
+
+        if staffmember.top_role.position >= ctx.author.top_role.position:
+            return await ctx.send("You can't remove strikes from users with more power than you")
+
+        if staffmember == ctx.author:
+            return await ctx.send("You can't remove a strike from yourself")
+
+        await self.bot.mod_pool.execute("UPDATE staff SET strikes = strikes - $2 WHERE userid = $1", staffmember.id, strikes)
+        await ctx.send(f"Removed {strikes} {'strikes' if strikes != 1 else 'strike'} from **{staffmember}**")
+        adminlog = ctx.guild.get_channel(797186257061937152)
+        e = discord.Embed(
+            title="Staff Member Removed Strikes",
+            color=discord.Color.blurple(),
+            description=wrap(f"""
+            **Staff Member:** {ctx.author.mention} 
+            **Offender:** {staffmember.mention}
+            **Reason:** `{reason}`
+            **Number of strikes:** `{strikes}`
+            """), timestamp=datetime.datetime.utcnow())
+        await adminlog.send(embed=e)
+
+
 
 def setup(bot):
     bot.add_cog(Admin(bot))

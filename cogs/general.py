@@ -596,19 +596,33 @@ class General(commands.Cog):
     @commands.command(aliases=["user", "member", "memberinfo", "ui", "whois"])
     async def userinfo(self, ctx, *, member: discord.Member=None):
         """Shows information on a user"""
+
         member = member or ctx.author
+
+        statusdict = {
+            "online": f"{f'<:onlinemobile:821342595392864287>' if member.is_on_mobile() else f'<:online:821342595422224404>'}",
+            "idle": f"{f'<:idlemobile:821342595485007903>' if member.is_on_mobile() else f'<:idle:821342595229417506>'}",
+            "dnd": f"{f'<:dndmobile:821342595061907457>' if member.is_on_mobile() else f'<:dnd:821342595439263774>'}",
+            "offline": "<:offline:821342595317104652>"
+        }
+
+        userstatus = f'{statusdict[str(member.status)]}'
+
+        signedup = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE id = $1", member.id)
+
         em = discord.Embed(
-            title=f"{member.name} - #{member.discriminator}",
+            title=f"{member.name}#{member.discriminator} {'<:bot:821343560934490162>' if member.bot else ''}",
             url=f"https://blist.xyz/user/{member.id}/",
             color=discord.Colour.blurple(),
             description=wrap(
                 f"""
                 >>> `ID:` {member.id}
                 `Bot:` {member.bot}
-                `Status:` {str(member.status).title()}
+                `Status:` {userstatus}
                 `Highest Role:` {member.top_role.mention}
                 `Created Account:` {member.created_at.strftime("%c")}
                 `Joined This Server:` {member.joined_at.strftime("%c")}
+                `Signed up to Blist:` {'True' if signedup else 'False'}
                 """
             )
         )
@@ -627,6 +641,23 @@ class General(commands.Cog):
                          )
         em.set_thumbnail(url=member.avatar_url)
         await ctx.send(embed=em)
+
+    @commands.command()
+    @commands.guild_only()
+    async def suggest(self, ctx, *, suggestion):
+        ch = self.bot.get_channel(716737367192502312)
+        id = await self.bot.pool.fetchval("SELECT COUNT(*) FROM suggestions")
+        embed = discord.Embed(
+            title=f"#{id+1} | Suggestion",
+            color=discord.Color.blurple(),
+            description=f">>> {suggestion}"
+        )
+        embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
+        m = await ch.send(embed=embed)
+        await m.add_reaction("⬆")
+        await m.add_reaction("⬇")
+        await self.bot.pool.execute("INSERT INTO suggestions VALUES($1, $2, $3, $4, $5, $6, $7, $8)", ctx.author.id, suggestion, m.id, False, False, False, False, id+1)
+        await ctx.send(f"Submitted your suggestion! You will recieve a DM with the outcome!")
 
 
 def setup(bot):

@@ -249,6 +249,7 @@ class Staff(commands.Cog):
                 Bots Denied: ``{query['denied']}``
                 Country: ``{query['country_code'] or 'Not Specified'}``
                 Rank: ``{query['rank'] or 'Not Specified'}``
+                Strikes: ``{query['strikes']}`` {'⚠' if query['strikes'] >= 5 else ""}
                 """
             )
         )
