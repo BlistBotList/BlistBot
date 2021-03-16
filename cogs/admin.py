@@ -833,7 +833,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
 
     @commands.has_permissions(administrator=True)
     @suggestion.command()
-    async def approve(self, ctx, suggestion: int, *, reaso=None):
+    async def approve(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
         user = self.bot.get_user(fetch['userid'])
         ch = self.bot.get_channel(716737367192502312)
