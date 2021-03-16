@@ -7,6 +7,7 @@ from utils import announcements as announce_file, rank_card
 
 import asyncio
 import discord
+import datetime
 from discord.ext import commands, flags
 
 class General(commands.Cog):
@@ -650,13 +651,14 @@ class General(commands.Cog):
         embed = discord.Embed(
             title=f"#{id+1} | Suggestion",
             color=discord.Color.blurple(),
-            description=f">>> {suggestion}"
+            description=f">>> {suggestion}",
+            timestamp=datetime.datetime.utcnow()
         )
         embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
         m = await ch.send(embed=embed)
         await m.add_reaction("⬆")
         await m.add_reaction("⬇")
-        await self.bot.pool.execute("INSERT INTO suggestions VALUES($1, $2, $3, $4, $5, $6, $7, $8)", ctx.author.id, suggestion, m.id, False, False, False, False, id+1)
+        await self.bot.pool.execute("INSERT INTO suggestions VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", ctx.author.id, suggestion, m.id, False, False, False, False, id+1, datetime.datetime.utcnow())
         await ctx.send(f"Submitted your suggestion! You will recieve a DM with the outcome!")
 
 
