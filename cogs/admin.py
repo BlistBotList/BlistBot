@@ -940,6 +940,9 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
             **Number of strikes:** `{strikes}`
             """), timestamp=datetime.datetime.utcnow())
         await adminlog.send(embed=e)
+        e = discord.Embed(title="Strike Received", description=f"**Reason:** `{reason}`\n**Strikes Awarded:** `{strikes}`", color=discord.Color.blurple())
+        e.set_footer(text="blist.xyz", icon_url=ctx.guild.icon_url)
+        await staffmember.send(embed=e)
 
     @commands.command()
     @commands.has_permissions(administrator=True)
