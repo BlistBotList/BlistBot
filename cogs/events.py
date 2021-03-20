@@ -356,14 +356,6 @@ New Message
             for server in servers:
                 await self.bot.pool.execute("UPDATE main_site_server SET premium = False WHERE id = $1", server["id"])
 
-        staff = self.bot.main_guild.get_role(716713561233031239)
-        if staff not in before.roles and staff in after.roles:
-            await self.bot.mod_pool.execute("INSERT INTO staff VALUES($1, $2)", before.id, datetime.datetime.utcnow())
-            await self.bot.pool.execute("UPDATE main_site_user SET staff = True WHERE id = $1", before.id)
-        if staff in before.roles and staff not in after.roles:
-            await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", before.id)
-            await self.bot.pool.execute("UPDATE main_site_user SET staff = False WHERE id = $1", before.id)
-
         bug_hunter = self.bot.main_guild.get_role(716722789234638860)
         if bug_hunter not in before.roles and bug_hunter in after.roles:
             await self.bot.pool.execute("UPDATE main_site_user SET bug_hunter = True WHERE id = $1", before.id)
