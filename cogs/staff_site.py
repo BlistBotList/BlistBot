@@ -142,7 +142,7 @@ class Staff(commands.Cog):
         )
         verify_server_denied_embed.set_footer(text = f"There are {queued_bots} bot(s) in the queue.")
         verify_server_denied_embed.set_author(name = ctx.author.name, icon_url = ctx.author.avatar_url)
-        await self.bot.verification_guild.get_channel(763183376311517215).send(content=ctx.author.mention, embed=verify_server_denied_embed)
+        await self.bot.verification_guild.get_channel(763183376311517215).send(embed=verify_server_denied_embed)
 
         await self.bot.pool.execute("UPDATE main_site_bot SET denied = True WHERE id = $1", bot.id)
         embed = discord.Embed(
