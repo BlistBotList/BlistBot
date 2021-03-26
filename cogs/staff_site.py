@@ -271,6 +271,10 @@ class Staff(commands.Cog):
     @checks.verification_guild_only()
     @commands.command()
     async def hold(self, ctx, message: typing.Optional[discord.Message] = None, *, reason: str):
+        """ Waiting on a bot owner to fix their bot? Use this!
+        You can also include the message url of the message to the owner like so, `b!hold URLHERE reason here`
+        Or use the command with only a reason, `b!hold reason here`
+        """
         em = discord.Embed(
             title = str(reason),
             colour = discord.Color.blurple(),
@@ -297,6 +301,7 @@ class Staff(commands.Cog):
     @checks.verification_guild_only()
     @commands.command()
     async def unlock(self, ctx):
+        """Unlock the channel to start reviewing a bot again."""
         em = discord.Embed(
             title = "Unlocked the channel, you can continue.",
             colour = discord.Color.blurple()
