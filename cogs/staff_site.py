@@ -3,6 +3,7 @@ from typing import Union
 
 import discord
 import googletrans
+import typing
 from discord.ext import commands, flags
 from utils import checks
 
@@ -20,11 +21,18 @@ class Staff(commands.Cog):
             await ctx.send("There are no bots in the queue")
             return
 
+        test_categories = (self.bot.get_cog("Events")).test_categories
         listed_bots = []
         for x in bots:
-            invite = str(
-                discord.utils.oauth_url(x['id'], guild=self.bot.verification_guild)) + "&disable_guild_select=true"
-            listed_bots.append(f"{x['username']} [Invite]({invite})")
+            if x['id'] in test_categories.keys():
+                testing_category = self.bot.verification_guild.get_channel(test_categories[x['id']])
+                testing_channel = discord.utils.get(testing_category.text_channels, name = "testing")
+                being_tested = f"(being tested in {testing_category.name} | {testing_channel.mention})"
+                listed_bots.append(f"~~{x['username']}~~ {being_tested}")
+            else:
+                invite = str(
+                    discord.utils.oauth_url(x['id'], guild=self.bot.verification_guild)) + "&disable_guild_select=true"
+                listed_bots.append(f"{x['username']} [Invite]({invite})")
 
         embed = discord.Embed(
             title="Queue",
@@ -255,6 +263,56 @@ class Staff(commands.Cog):
         )
         embed.set_author(name=member, icon_url=str(member.avatar_url))
         await ctx.send(embed=embed)
+
+    @commands.has_permissions(kick_members = True)
+    @checks.verification_guild_only()
+    @commands.command()
+    async def hold(self, ctx, message: typing.Optional[discord.Message] = None, *, reason: str):
+        """ Waiting on a bot owner to fix their bot? Use this!
+        You can also include the message url of the message to the owner like so, `b!hold URLHERE reason here`
+        Or use the command with only a reason, `b!hold reason here`
+        """
+        em = discord.Embed(
+            title = str(reason),
+            colour = discord.Color.blurple(),
+            timestamp = ctx.message.created_at
+        )
+        em.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        if message:
+            em.description = f"[message link]({message.jump_url})"
+
+        others = discord.PermissionOverwrite(send_messages = False)
+        author = discord.PermissionOverwrite(send_messages = True)
+        await ctx.channel.category.set_permissions(ctx.guild.get_role(763177553636098082), overwrite = others,
+                                                   reason = f"hold review for {reason}")
+        await ctx.channel.category.set_permissions(ctx.guild.default_role, overwrite = others,
+                                                   reason = f"hold review for {reason}")
+        await ctx.channel.category.set_permissions(ctx.author, overwrite = author,
+                                                   reason = f"hold review for {reason}")
+
+        msg = await ctx.send(embed=em)
+        await ctx.message.delete()
+        await msg.pin()
+
+    @commands.has_permissions(kick_members = True)
+    @checks.verification_guild_only()
+    @commands.command()
+    async def unlock(self, ctx):
+        """Unlock the channel to start reviewing a bot again."""
+        em = discord.Embed(
+            title = "Unlocked the channel, you can continue.",
+            colour = discord.Color.blurple()
+        )
+        em.set_author(name = ctx.author.name, icon_url = ctx.author.avatar_url)
+
+        others = discord.PermissionOverwrite(send_messages = True)
+        author = discord.PermissionOverwrite(send_messages = None)
+        await ctx.channel.category.set_permissions(ctx.guild.get_role(763177553636098082), overwrite = others, reason = "unlocked")
+        await ctx.channel.category.set_permissions(ctx.guild.default_role, overwrite = others, reason = "unlocked")
+        await ctx.channel.category.set_permissions(ctx.author, overwrite = author, reason = "unlocked")
+
+        await ctx.send(embed=em)
+        await ctx.message.delete()
 
 
 def setup(bot):
