@@ -23,7 +23,6 @@ class Staff(commands.Cog):
 
         test_categories = (self.bot.get_cog("Events")).test_categories
         listed_bots = []
-        being_tested = None
         for x in bots:
             if x['id'] in test_categories.keys():
                 testing_category = self.bot.verification_guild.get_channel(test_categories[x['id']])
