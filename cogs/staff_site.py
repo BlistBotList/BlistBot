@@ -21,11 +21,19 @@ class Staff(commands.Cog):
             await ctx.send("There are no bots in the queue")
             return
 
+        test_categories = (self.bot.get_cog("Events")).test_categories
         listed_bots = []
+        being_tested = None
         for x in bots:
-            invite = str(
-                discord.utils.oauth_url(x['id'], guild=self.bot.verification_guild)) + "&disable_guild_select=true"
-            listed_bots.append(f"{x['username']} [Invite]({invite})")
+            if x['id'] in test_categories.keys():
+                testing_category = self.bot.verification_guild.get_channel(test_categories[x['id']])
+                testing_channel = discord.utils.get(testing_category.text_channels, name = "testing")
+                being_tested = f"(being tested in {testing_category.name} | {testing_channel.mention})"
+                listed_bots.append(f"~~{x['username']}~~ {being_tested}")
+            else:
+                invite = str(
+                    discord.utils.oauth_url(x['id'], guild=self.bot.verification_guild)) + "&disable_guild_select=true"
+                listed_bots.append(f"{x['username']} [Invite]({invite})")
 
         embed = discord.Embed(
             title="Queue",
@@ -133,16 +141,6 @@ class Staff(commands.Cog):
             await owner.send(f"Your bot `{bot}` was denied!")
         except (discord.Forbidden, AttributeError):
             pass
-
-        queued_bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
-        verify_server_denied_embed = discord.Embed(
-            title = f"Denied {bot.name}",
-            description = f"**Reason**: {reason}",
-            color = discord.Color.blurple()
-        )
-        verify_server_denied_embed.set_footer(text = f"There are {queued_bots} bot(s) in the queue.")
-        verify_server_denied_embed.set_author(name = ctx.author.name, icon_url = ctx.author.avatar_url)
-        await self.bot.verification_guild.get_channel(763183376311517215).send(embed=verify_server_denied_embed)
 
         await self.bot.pool.execute("UPDATE main_site_bot SET denied = True WHERE id = $1", bot.id)
         embed = discord.Embed(
