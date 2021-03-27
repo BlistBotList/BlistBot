@@ -486,7 +486,7 @@ New Message
                             for x in testing_category.text_channels:
                                 try:
                                     await x.send(f"The owner of the bot ({user['username']} (<@{user['id']}>)) "
-                                                 f"being tested here has left the main server, deny it!")
+                                                 "being tested here has left the main server, deny it!")
                                 except:
                                     pass
 
