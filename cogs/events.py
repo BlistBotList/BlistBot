@@ -479,6 +479,17 @@ New Message
                             color = discord.Color.red())
                         await self.bot.get_channel(716727091818790952).send(embed = embed)
 
+                        if user['id'] in self.test_categories.keys():
+                            testing_category = self.bot.verification_guild.get_channel(self.test_categories[user['id']])
+                            if not testing_category:
+                                return
+                            for x in testing_category.text_channels:
+                                try:
+                                    await x.send(f"The owner of the bot ({user['username']} (<@{user['id']}>)) "
+                                                 f"being tested here has left the main server, deny it!")
+                                except:
+                                    pass
+
     @tasks.loop(minutes = 30)
     async def check_join(self):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")

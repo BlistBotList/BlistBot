@@ -77,10 +77,10 @@ class Admin(commands.Cog):
                 if staff_bot_role not in bot.roles:
                     await bot.add_roles(staff_bot_role)
                     success_text.append(
-                        f"✅ **Added staff bot role to: {bot} ({bot.id}).**")
+                        f"✅ **Added staff bot role to:** {bot} ({bot.id}).")
                 else:
                     success_text.append(
-                        f"❌ **{member}'s bot: {bot} ({bot.id}) already has the staff bot role.**")
+                        f"❌ **{member}'s bot:** {bot} ({bot.id}) already has the staff bot role.")
         else:
             success_text.append(
                 f"❌ **{member} doesn't have any bots listed on the site.**")
@@ -95,12 +95,12 @@ class Admin(commands.Cog):
                             f" See more in {staff_chat_channel.mention}\n\nSincerely,\n{ctx.author.name}, on behalf of Blist"
                         )
                     )
-                    success_text.append(f"✅ **Send {member} a invite to the verification server. "
-                                        f"The invite is valid for 30 minutes and can only be used once.**")
+                    success_text.append(f"✅ **Sent {member} an invite to the verification server.** "
+                                        f"The invite is valid for 30 minutes and can only be used once.")
                 except Exception:
                     success_text.append(f"❌ **Couldn't DM {member} a invite to the verification server. DM's closed?** "
                                         f"**Here is the invite i generated for them:** <{generated_invite.url}>, "
-                                        f"**it's valid for 30 minutes and can only be used once.**")
+                                        f"it's valid for 30 minutes and can only be used once.")
             else:
                 success_text.append(f"❌ **{member} is not online, "
                                     f"therefore i didn't send them a invite to the verification server.**")
