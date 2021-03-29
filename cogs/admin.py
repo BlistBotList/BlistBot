@@ -807,7 +807,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
     @commands.has_permissions(administrator=True)
     @suggestion.command()
     async def consider(self, ctx, suggestion: int, *, reason=None):
-        fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
+        fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
         user = self.bot.get_user(fetch['userid'])
         ch = self.bot.get_channel(716737367192502312)
         m = await ch.fetch_message(fetch['message'])
@@ -817,7 +817,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
             description=f"{fetch['suggestion']}\n\n>>> {reason or 'No reason provided'}"
         )
         embed.set_author(name=str(user), icon_url=user.avatar_url)
-        await self.bot.pool.execute("UPDATE suggestions SET considered = True WHERE id = $1", suggestion)
+        await self.bot.pool.execute("UPDATE main_site_suggestion SET considered = True WHERE id = $1", suggestion)
         await ctx.message.delete()
         await m.edit(embed=embed)
         try:
@@ -834,7 +834,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
     @commands.has_permissions(administrator=True)
     @suggestion.command()
     async def approve(self, ctx, suggestion: int, *, reason=None):
-        fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
+        fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
         user = self.bot.get_user(fetch['userid'])
         ch = self.bot.get_channel(716737367192502312)
         m = await ch.fetch_message(fetch['message'])
@@ -844,7 +844,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
             description=f"{fetch['suggestion']}\n\n**Approved by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
         )
         embed.set_author(name=str(user), icon_url=user.avatar_url)
-        await self.bot.pool.execute("UPDATE suggestions SET approved = True WHERE id = $1", suggestion)
+        await self.bot.pool.execute("UPDATE main_site_suggestion SET approved = True WHERE id = $1", suggestion)
         await ctx.message.delete()
         await m.edit(embed=embed)
         try:
@@ -861,7 +861,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
     @commands.has_permissions(administrator=True)
     @suggestion.command()
     async def implemented(self, ctx, suggestion: int, *, reason=None):
-        fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
+        fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
         user = self.bot.get_user(fetch['userid'])
         ch = self.bot.get_channel(716737367192502312)
         m = await ch.fetch_message(fetch['message'])
@@ -871,7 +871,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
             description=f"{fetch['suggestion']}\n\n**Implemented by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
         )
         embed.set_author(name=str(user), icon_url=user.avatar_url)
-        await self.bot.pool.execute("UPDATE suggestions SET implemented = True WHERE id = $1", suggestion)
+        await self.bot.pool.execute("UPDATE main_site_suggestion SET implemented = True WHERE id = $1", suggestion)
         await ctx.message.delete()
         await m.edit(embed=embed)
         try:
@@ -888,7 +888,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
     @commands.has_permissions(administrator=True)
     @suggestion.command()
     async def deny(self, ctx, suggestion: int, *, reason=None):
-        fetch = await self.bot.pool.fetchrow("SELECT * FROM suggestions WHERE id = $1", suggestion)
+        fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
         user = self.bot.get_user(fetch['userid'])
         ch = self.bot.get_channel(716737367192502312)
         m = await ch.fetch_message(fetch['message'])
@@ -898,7 +898,7 @@ Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go t
             description=f"{fetch['suggestion']}\n\n**Denied by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
         )
         embed.set_author(name=str(user), icon_url=user.avatar_url)
-        await self.bot.pool.execute("UPDATE suggestions SET denied = True WHERE id = $1", suggestion)
+        await self.bot.pool.execute("UPDATE main_site_suggestion SET denied = True WHERE id = $1", suggestion)
         await ctx.message.delete()
         await m.edit(embed=embed)
         try:

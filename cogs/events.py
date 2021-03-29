@@ -221,10 +221,6 @@ New Message
             if payload.emoji.id == 780103872668237835:
                 role = self.bot.main_guild.get_role(716723257663029372)
                 await payload.member.add_roles(role, reason = "Assignable Roles")
-            # Leaks
-            if payload.emoji.id == 784923587785916487:
-                role = self.bot.main_guild.get_role(784924059065516052)
-                await payload.member.add_roles(role, reason = "Assignable Roles")
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -249,10 +245,6 @@ New Message
             # Announcements
             if payload.emoji.id == 780103872668237835:
                 role = self.bot.main_guild.get_role(716723257663029372)
-                await payload.member.remove_roles(role, reason = "Assignable Roles")
-            # Leaks
-            if payload.emoji.id == 784923587785916487:
-                role = self.bot.main_guild.get_role(784924059065516052)
                 await payload.member.remove_roles(role, reason = "Assignable Roles")
 
     @commands.Cog.listener()

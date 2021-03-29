@@ -647,7 +647,7 @@ class General(commands.Cog):
     @commands.guild_only()
     async def suggest(self, ctx, *, suggestion):
         ch = self.bot.get_channel(716737367192502312)
-        id = await self.bot.pool.fetchval("SELECT COUNT(*) FROM suggestions")
+        id = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_suggestion")
         embed = discord.Embed(
             title=f"#{id+1} | Suggestion",
             color=discord.Color.blurple(),
@@ -658,7 +658,7 @@ class General(commands.Cog):
         m = await ch.send(embed=embed)
         await m.add_reaction("⬆")
         await m.add_reaction("⬇")
-        await self.bot.pool.execute("INSERT INTO suggestions VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", ctx.author.id, suggestion, m.id, False, False, False, False, id+1, datetime.datetime.utcnow())
+        await self.bot.pool.execute("INSERT INTO main_site_suggestion VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", ctx.author.id, suggestion, m.id, False, False, False, False, id+1, datetime.datetime.utcnow())
         await ctx.send(f"Submitted your suggestion! You will recieve a DM with the outcome!")
 
 
