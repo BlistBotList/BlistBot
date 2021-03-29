@@ -623,7 +623,7 @@ class General(commands.Cog):
                 `Highest Role:` {member.top_role.mention}
                 `Created Account:` {member.created_at.strftime("%c")}
                 `Joined This Server:` {member.joined_at.strftime("%c")}
-                `Signed up to Blist:` {'True' if signedup else 'False'}
+                `Signed up to Blist:` {'Yes' if signedup else 'No'}
                 """
             )
         )
