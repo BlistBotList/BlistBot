@@ -3,6 +3,7 @@ from typing import Union
 
 import discord
 import googletrans
+import asyncio
 import typing
 from discord.ext import commands, flags
 from utils import checks
@@ -122,7 +123,7 @@ class Staff(commands.Cog):
 
     @commands.has_permissions(kick_members=True)
     @commands.command()
-    async def deny(self, ctx, bot: Union[discord.Member, discord.User], *, reason):
+    async def deny(self, ctx, bot: Union[discord.Member, discord.User]):
         if not bot.bot:
             await ctx.send("This user is not a bot")
             return
@@ -132,6 +133,48 @@ class Staff(commands.Cog):
         if not bots:
             await ctx.send("This bot is not awaiting approval")
             return
+
+        def wait_for_check(m):
+            return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+
+        preset_reasons = [
+            "The bot was offline when we tried to test it.",
+            "The bot's description is poor quality. The description must be improved before resubmission.",
+            "The bot has an NSFW avatar.",
+            "The bot has NSFW commands that work in a non-NSFW channel.",
+            "The bot is an unmodified clone of another bot.",
+            "The bot's page contains scripts which causes issues with the integrity of the page.",
+            "The bot violates Discord ToS.",
+            "The bot does not have 5 or more commands, excluding any type of help command.",
+            "The bot sends level up messages which cannot be toggled by a staff member.",
+            "The bot responds to messages and commands sent by another bot.",
+            "The bot violates a rule listed in the main server rules.",
+            "The bot responds to commands without a prefix being used.",
+            "The bot's description is full of spam and junk to achieve the required character minimum.",
+            "The bot owner left the main server whilst we were testing the bot.",
+            "The bot does not have proper or complete error handling.",
+            "The bot owner did not respond or complete fixes within the time frame given."
+        ]
+
+        join_preset_reasons = "\n".join([f"**{num}.** {rule}" for num, rule in enumerate(preset_reasons, start=1)])
+        embed = discord.Embed(
+            title=f"Denying {bot.name}",
+            description=join_preset_reasons,
+            color=discord.Color.red()
+        )
+        embed.set_footer(text="You have 20 seconds to provide a valid reason number or type your own reason.")
+        await ctx.send(embed=embed)
+
+        try:
+            msg = await self.bot.wait_for("message", timeout=20.0, check=wait_for_check)
+        except asyncio.TimeoutError:
+            return await ctx.send("You did not provide a reason number or custom reason in time. The command was cancelled.")
+        else:
+            if not msg.content.isdigit():
+                reason = msg.content # custom reason
+
+            if msg.content.isdigit():
+                reason = preset_reasons[int(msg.content)-1]
 
         await self.bot.mod_pool.execute("UPDATE staff SET denied = denied + 1 WHERE userid = $1", ctx.author.id)
 
@@ -148,8 +191,12 @@ class Staff(commands.Cog):
         em = discord.Embed(
             description=f"``{bot}`` by ``{self.bot.main_guild.get_member(bots)}`` was denied by ``{ctx.author}`` for: \n```{reason}```",
             color=discord.Color.red())
-        await self.bot.get_channel(716446098859884625).send(embed=em)
-        await bot.kick(reason="Bot Denied")
+        await self.bot.get_channel(826076038765215827).send(embed=em)
+        try:
+            await bot.kick(reason="Bot Denied")
+        except Exception:
+            await ctx.send("Couldn't kick bot")
+
 
     @checks.main_guild_only()
     @commands.has_permissions(kick_members=True)
