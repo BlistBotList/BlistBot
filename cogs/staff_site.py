@@ -138,20 +138,20 @@ class Staff(commands.Cog):
             return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
 
         preset_reasons = [
-            "The bot was offline when we tried to test it.",
+            "Bot was offline when we tried to test it.",
             "The bot's description is poor quality. The description must be improved before resubmission.",
-            "The bot has an NSFW avatar.",
-            "The bot has NSFW commands that work in a non-NSFW channel.",
+            "The avatar of the bot is considered NSFW.",
+            "NSFW commands that the bot has work in non-NSFW channels.",
             "The bot is an unmodified clone of another bot.",
             "The bot's page contains scripts which causes issues with the integrity of the page.",
             "The bot violates Discord ToS.",
             "The bot does not have 5 or more commands, excluding any type of help command.",
-            "The bot sends level up messages which cannot be toggled by a staff member.",
-            "The bot responds to messages and commands sent by another bot.",
+            "Bot sends level up messages which cannot be toggled by a staff member.",
+            "Bot responds to other bots.",
             "The bot violates a rule listed in the main server rules.",
             "The bot responds to commands without a prefix being used.",
             "The bot's description is full of spam and junk to achieve the required character minimum.",
-            "The bot owner left the main server whilst we were testing the bot.",
+            "Bot owner left the main server whilst we were testing the bot.",
             "The bot does not have proper or complete error handling.",
             "The bot owner did not respond or complete fixes within the time frame given."
         ]
@@ -201,7 +201,7 @@ class Staff(commands.Cog):
     @checks.main_guild_only()
     @commands.has_permissions(kick_members=True)
     @commands.command()
-    async def delete(self, ctx, bot: Union[discord.Member, int], *, reason):
+    async def delete(self, ctx, bot: Union[discord.Member, int]):
         bot_user = None
         if isinstance(bot, discord.Member):
             bot_user = bot
@@ -217,6 +217,43 @@ class Staff(commands.Cog):
         if not bots:
             await ctx.send("This bot is not on the list")
             return
+
+        def wait_for_check2(m):
+            return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
+
+        preset_reasons = [
+            "Bot left the main server",
+            "Owner left the main server",
+            "Owner was banned from the main server",
+            "The bot had issues that were not fixed within the timeframe given",
+            "Mass DM advertised",
+            "Bot DM advertised",
+            "Bot was editied and now violates our rules",
+            "Bot sent unwanted spam",
+        ]
+
+        join_preset_reasons = "\n".join([f"**{num}.** {rule}" for num, rule in enumerate(preset_reasons, start=1)])
+        embed = discord.Embed(
+            title=f"Deleting {bot.name}",
+            description=join_preset_reasons,
+            color=discord.Color.red()
+        )
+        embed.set_footer(text="You have 20 seconds to provide a valid reason number or type your own reason.")
+        await ctx.send(embed=embed)
+
+        try:
+            message = await self.bot.wait_for("message", timeout=20.0, check=wait_for_check2)
+        except asyncio.TimeoutError:
+            return await ctx.send("You did not provide a reason number or custom reason in time. The command was cancelled.")
+        else:
+            if not message.content.isdigit():
+                reason = message.content # custom reason
+
+            if message.content.isdigit():
+                reason = preset_reasons[int(message.content)-1]
+
+
+
 
         bot_db = await self.bot.pool.fetchval("SELECT unique_id FROM main_site_bot WHERE id = $1", bot_user.id if bot_user else bot)
         await self.bot.pool.execute("DELETE FROM main_site_vote WHERE bot_id = $1", bot_db)
