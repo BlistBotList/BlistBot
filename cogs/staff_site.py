@@ -191,7 +191,7 @@ class Staff(commands.Cog):
         em = discord.Embed(
             description=f"``{bot}`` by ``{self.bot.main_guild.get_member(bots)}`` was denied by ``{ctx.author}`` for: \n```{reason}```",
             color=discord.Color.red())
-        await self.bot.get_channel(826076038765215827).send(embed=em)
+        await self.bot.get_channel(716446098859884625).send(embed=em)
         try:
             await bot.kick(reason="Bot Denied")
         except Exception:
