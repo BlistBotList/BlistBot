@@ -420,6 +420,7 @@ class Staff(commands.Cog):
             timestamp=ctx.message.created_at
         )
         em.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        em.set_footer(text = "don't forget to use b!unlock, only you can send messages now.")
         if message:
             em.description=f"[message link]({message.jump_url})"
 
