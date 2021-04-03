@@ -4,14 +4,12 @@ import parsedatetime as pdt
 from discord.ext import commands
 
 
-def time_took(dt: datetime.datetime, now_dt: datetime.datetime = None, only_hours = False):
-    now = now_dt or datetime.datetime.utcnow()
+def time_took(dt: datetime.datetime):
+    now = datetime.datetime.utcnow()
     delta = now - dt
     hours, remainder = divmod(int(delta.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
     days, hours = divmod(hours, 24)
-    if only_hours:
-        return hours
     if days:
         fmt = '{d} days, {h} hours, {m} minutes, and {s} seconds'
     else:
