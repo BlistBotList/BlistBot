@@ -24,6 +24,7 @@ class Events(commands.Cog):
         self.check_join.start()  # pylint: disable=no-member
         self.change_status.start()
         self.update_statuses.start()
+        self.check_bot_testing.start()
 
     def cog_unload(self):
         self.bot.on_error = self.old_on_error
@@ -281,36 +282,38 @@ New Message
                     pass
 
                 bot = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE id = $1", member.id)
-
-                embed = discord.Embed(
-                    title = str(member),
-                    color = discord.Color.blurple(),
-                    description = wrap(
-                        f"""
-                        >>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
-                        Prefix: ``{bot[0]['prefix']}``
-                        Tags: ``{', '.join(list(bot[0]['tags']))}``
-                        Added: ``{bot[0]['added'].strftime('%F')}``
-                        """
+                if not bot:
+                    pass
+                else:
+                    embed = discord.Embed(
+                        title = str(member),
+                        color = discord.Color.blurple(),
+                        description = wrap(
+                            f"""
+                            >>> Owner: ``{str(self.bot.main_guild.get_member(bot[0]['main_owner']))}``
+                            Prefix: ``{bot[0]['prefix']}``
+                            Tags: ``{', '.join(list(bot[0]['tags']))}``
+                            Added: ``{bot[0]['added'].strftime('%F')}``
+                            """
+                        )
                     )
-                )
-                embed.add_field(
-                    name = "**Links**",
-                    value = wrap(
-                        f"""
-                        >>> Privacy Policy: {bot[0]['privacy_policy_url'] or 'None'}
-                        Website: {bot[0]['website'] or 'None'}
-                        Invite: {bot[0]['invite_url'] or 'Default'}
-                        Blist Link: https://blist.xyz/bot/{member.id}/
-                        """
+                    embed.add_field(
+                        name = "**Links**",
+                        value = wrap(
+                            f"""
+                            >>> Privacy Policy: {bot[0]['privacy_policy_url'] or 'None'}
+                            Website: {bot[0]['website'] or 'None'}
+                            Invite: {bot[0]['invite_url'] or 'Default'}
+                            Blist Link: https://blist.xyz/bot/{member.id}/
+                            """
+                        )
                     )
-                )
-                embed.add_field(name = "Short Description",
-                                value = bot[0]['short_description'], inline = False)
-                embed.add_field(name = "Notes", value = bot[0]['notes'] or 'None', inline = False)
-                embed.set_thumbnail(url = member.avatar_url)
-                message = await channel.send(embed = embed)
-                await message.pin()
+                    embed.add_field(name = "Short Description",
+                                    value = bot[0]['short_description'], inline = False)
+                    embed.add_field(name = "Notes", value = bot[0]['notes'] or 'None', inline = False)
+                    embed.set_thumbnail(url = member.avatar_url)
+                    message = await channel.send(embed = embed)
+                    await message.pin()
 
             if not member.bot:
                 rank_user = self.bot.main_guild.get_member(member.id)
@@ -443,7 +446,10 @@ New Message
                     file = discord.File(file_name, file.name))
 
                 await category.delete()
-                del self.test_categories[member.id]
+                try:
+                    del self.test_categories[member.id]
+                except KeyError:
+                    pass
                 if os.path.exists(file_name):
                     try:
                         os.remove(file_name)
@@ -489,6 +495,17 @@ New Message
                                                  "being tested here has left the main server, deny it!")
                                 except:
                                     pass
+
+    @commands.Cog.listener("on_ready")
+    async def if_bot_restarted(self):
+        await self.bot.wait_until_ready()
+        test_categories = [x for x in self.bot.verification_guild.categories
+                           if x.id not in [763183878457262083, 734527161289015338]]
+        if test_categories:
+            for cat in test_categories:
+                testing_bot = discord.utils.get(self.bot.verification_guild.members, name = cat.name)
+                if testing_bot:
+                    self.test_categories[testing_bot.id] = cat.id
 
     @tasks.loop(minutes = 30)
     async def check_join(self):
@@ -536,6 +553,40 @@ New Message
         ]
         await self.bot.change_presence(activity = discord.Game(name = random.choice(options)))
 
+    # i agree, @A Trash Coder .
+    @tasks.loop(minutes = 60)
+    async def check_bot_testing(self):
+        queued_bots = await self.bot.pool.fetch("SELECT added, id FROM main_site_bot WHERE approved = False AND denied = False")
+        if not queued_bots:
+            return
+
+        for x in queued_bots:
+            bot_id = x['id']
+            if bot_id in self.test_categories.keys():
+                testing_category = self.bot.verification_guild.get_channel(self.test_categories[bot_id])
+                if not testing_category:
+                    return
+
+                bot_member = self.bot.verification_guild.get_member(bot_id)
+                category_created_at = testing_category.created_at.replace(tzinfo = datetime.timezone.utc)
+                testing_hours = time_took(dt = category_created_at, only_hours = True,
+                                          now_dt = datetime.datetime.utcnow().replace(tzinfo = datetime.timezone.utc))
+
+                if int(testing_hours) >= 2:
+                    ovm = [x for x in testing_category.overwrites if isinstance(x, discord.Member) and not x.bot]
+                    if ovm:  # user overwrites, hold command is used.
+                        return
+                    else:
+                        for channel in testing_category.text_channels:
+                            try:
+                                await channel.send(
+                                    f"Friendly reminder that {bot_member.mention} has been waiting for more than "
+                                    f"{testing_hours} hours without the category being on hold via the `b!hold` "
+                                    "command. Please use that command if you are waiting for a response or any other "
+                                    "reason"
+                                )
+                            except:
+                                pass
 
 def setup(bot):
     bot.add_cog(Events(bot))
