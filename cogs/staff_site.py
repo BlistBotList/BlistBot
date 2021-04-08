@@ -260,8 +260,8 @@ class Staff(commands.Cog):
         bot_user=None
         if isinstance(bot, discord.Member):
             bot_user=bot
-        if isinstance(bot, int):
-            bot_user=self.bot.main_guild.get_member(bot)
+        #if isinstance(bot, int):
+            #bot_user=self.bot.main_guild.get_member(bot)
 
         if bot_user and not bot_user.bot:
             await ctx.send("That is not a bot.")
@@ -290,7 +290,7 @@ class Staff(commands.Cog):
 
         join_preset_reasons="\n".join([f"**{num}.** {rule}" for num, rule in enumerate(preset_reasons, start=1)])
         embed=discord.Embed(
-            title=f"Deleting {bot.name}",
+            title=f"Deleting {bots['username']}",
             description=join_preset_reasons,
             color=discord.Color.red()
         )
