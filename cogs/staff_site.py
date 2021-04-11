@@ -257,22 +257,24 @@ class Staff(commands.Cog):
     @commands.has_permissions(kick_members=True)
     @commands.command()
     async def delete(self, ctx, bot: Union[discord.Member, int]):
-        bot_user=None
         if isinstance(bot, discord.Member):
-            bot_user=bot
-        #if isinstance(bot, int):
-            #bot_user=self.bot.main_guild.get_member(bot)
+            bot_id = bot
+            if not bot.bot:
+                return await ctx.send("That is not a bot.")
+        elif isinstance(bot, int):
+            bot_id = int(bot)
+        else:
+            return await ctx.send("invalid argument.")
 
-        if bot_user and not bot_user.bot:
-            await ctx.send("That is not a bot.")
-            return
+        bot_from_db=await self.bot.pool.fetchrow(
+            "SELECT main_owner, username, id, certified, discriminator, unique_id FROM main_site_bot "
+            "WHERE approved=True AND id=$1", bot_id)
 
-        bots=await self.bot.pool.fetchrow(
-            "SELECT main_owner, username, id, certified, discriminator FROM main_site_bot WHERE approved=True AND id=$1",
-            bot_user.id if bot_user else bot)
-        if not bots:
+        if not bot_from_db:
             await ctx.send("This bot is not on the list")
             return
+
+        # Preset reason --------------------
 
         def wait_for_check(m):
             return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
@@ -288,9 +290,9 @@ class Staff(commands.Cog):
             "Bot sent unwanted spam",
         ]
 
-        join_preset_reasons="\n".join([f"**{num}.** {rule}" for num, rule in enumerate(preset_reasons, start=1)])
+        join_preset_reasons="\n".join([f"**{num}.** {rule}" for num,rule in enumerate(preset_reasons, start=1)])
         embed=discord.Embed(
-            title=f"Deleting {bots['username']}",
+            title=f"Deleting {bot_from_db['username']}",
             description=join_preset_reasons,
             color=discord.Color.red()
         )
@@ -311,38 +313,40 @@ class Staff(commands.Cog):
             else:
                 reason=message.content  # custom reason
 
-        bot_db=await self.bot.pool.fetchval("SELECT unique_id FROM main_site_bot WHERE id=$1",
-                                              bot_user.id if bot_user else bot)
-        await self.bot.pool.execute("DELETE FROM main_site_vote WHERE bot_id=$1", bot_db)
-        await self.bot.pool.execute("DELETE FROM main_site_review WHERE bot_id=$1", bot_db)
-        await self.bot.pool.execute("DELETE FROM main_site_auditlogaction WHERE bot_id=$1", bot_db)
-        await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id=$1", bot_user.id if bot_user else bot)
+        # --------------------
 
-        embed=discord.Embed(
-            description=f"Deleted {bots['username']}", color=discord.Color.red())
-        await ctx.send(embed=embed)
+        await self.bot.pool.execute("DELETE FROM main_site_vote WHERE bot_id=$1", bot_from_db['unique_id'])
+        await self.bot.pool.execute("DELETE FROM main_site_review WHERE bot_id=$1", bot_from_db['unique_id'])
+        await self.bot.pool.execute("DELETE FROM main_site_auditlogaction WHERE bot_id=$1", bot_from_db['unique_id'])
+        await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id=$1", bot_id)
 
-        bot_owner=self.bot.main_guild.get_member(bots['main_owner'])
-        bot_owner=bot_owner if bot_owner else int(bots['main_owner'])
-        bot_member=self.bot.main_guild.get_member(bots['id']) or self.bot.verification_guild.get_member(bots['id'])
-        bot_member=bot_member if bot_member else f"{bots['username']}#{bots['discriminator']} ({bots['id']})"
+        await ctx.send(embed=discord.Embed(
+            description=f"Deleted {bot_from_db['username']}", color=discord.Color.red()))
+
+        bot_owner=self.bot.main_guild.get_member(bot_from_db['main_owner'])
+        bot_owner=bot_owner if bot_owner else int(bot_from_db['main_owner'])
+        # -----------------------
+        bot_member=self.bot.main_guild.get_member(bot_from_db['id'])
+        bot_member=bot_member if bot_member else \
+            f"{bot_from_db['username']}#{bot_from_db['discriminator']} ({bot_from_db['id']})"
+        # -----------------------
         em=bot_log_embed(ctx, (bot_member, bot_owner), reason=str(reason))
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
-        if bot_owner and bots['certified'] is True:
+        if isinstance(bot_owner, discord.Member) and bot_from_db['certified'] is True:
             certified_dev_role=ctx.guild.get_role(716724317207003206)
             await bot_owner.remove_roles(certified_dev_role)
 
-        has_other_bots=await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner=$1",
-                                                   bots['main_owner'])
-        if not has_other_bots and bot_owner:
+        has_other_bots=await self.bot.pool.fetch(
+            "SELECT * FROM main_site_bot WHERE main_owner=$1", bot_from_db['main_owner'])
+        if not has_other_bots and isinstance(bot_owner, discord.Member):
             dev_role=ctx.guild.get_role(716684805286133840)
             await bot_owner.remove_roles(dev_role)
-            await self.bot.pool.execute("UPDATE main_site_user SET developer=False WHERE id=$1",
-                                        bots['main_owner'])
+            await self.bot.pool.execute(
+                "UPDATE main_site_user SET developer=False WHERE id=$1", bot_from_db['main_owner'])
 
-        if bot_user is not None:
-            await bot_user.kick(reason="Bot Deleted")
+        if isinstance(bot_member, discord.Member) and bot_member in ctx.guild.members:
+            await bot_member.kick(reason="Bot Deleted")
 
     @commands.has_permissions(kick_members=True)
     @commands.command()

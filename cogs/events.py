@@ -473,8 +473,13 @@ New Message
                 x = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1", member.id)
                 if x:
                     for user in x:
+                        bot_id = user['id']
+                        bot_unique_id = user['unique_id']
                         if user["denied"]:
-                            await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id = $1", user["id"])
+                            await self.bot.pool.execute("DELETE FROM main_site_vote WHERE bot_id=$1", bot_unique_id)
+                            await self.bot.pool.execute("DELETE FROM main_site_review WHERE bot_id=$1", bot_unique_id)
+                            await self.bot.pool.execute("DELETE FROM main_site_auditlogaction WHERE bot_id=$1", bot_unique_id)
+                            await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id=$1", bot_id)
                             return
                         bots = " \n".join(
                             [f"{user['username']} (<@{user['id']}>)"])

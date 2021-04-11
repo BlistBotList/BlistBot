@@ -507,9 +507,9 @@ class Admin(commands.Cog):
             "No Evading punishments.",
             "No NSFW.",
             "Please use the channels accordingly.",
-            "Posting invites when it is relevant to the conversation(such as asking "
-            "for a bot support server, minecraft server) is completely fine.However, "
-            "advertising your server ( or any advertising in general) is not okay.",
+            "Posting invites when it is relevant to the conversation (such as asking "
+            "for a bot support server, Minecraft server) is completely fine. However, "
+            "advertising your server (or any advertising in general) is not okay.",
             "Don't break Discord ToS"
         ]
         bot_rules_list = [
