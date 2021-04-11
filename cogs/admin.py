@@ -590,6 +590,8 @@ class Admin(commands.Cog):
             value=wrap(
                 """
                 [Site](https://blist.xyz)
+                [Servers](https://blist.xyz/server)
+                [Templates](https://blist.xyz/template)
                 [API](https://blist.xyz/api/)
                 [API Docs](https://docs.blist.xyz/)
                 [Certification Info](https://blist.xyz/certification/)
@@ -600,14 +602,12 @@ class Admin(commands.Cog):
 
         server_roles_list = []
         server_roles_embeds = []
-        roles_paginator = commands.Paginator(
-            prefix="", suffix="", max_size=2048)
+        roles_paginator = commands.Paginator(prefix="", suffix="", max_size=2048)
         guild_role_ids = [x.id for x in ctx.guild.roles]
         ordered_server_roles_list = sorted(server_roles_dict.keys(
         ), key=guild_role_ids.index, reverse=True)  # put in order as in server.
         for role_id in ordered_server_roles_list:
-            server_roles_list.append(
-                f"{ctx.guild.get_role(role_id).mention}: {server_roles_dict[role_id]}")
+            server_roles_list.append(f"{ctx.guild.get_role(role_id).mention}: {server_roles_dict[role_id]}")
 
         join_dict = "\n".join(server_roles_list)
         server_roles_content = [join_dict[i:i + 2000]
@@ -632,12 +632,14 @@ When logging in on the website, you grant us the ability to join guilds for you.
 \n**How do I level up / get XP?**
 XP is earned by talking in all channels except the "bots" category in this server. It is awarded once per minute, with a random value of 1-10. Levelling up is determined from multiplying your current level by 50. I.e. a person of level 5 needs 250 XP. To check your XP and level, run the b!rank command or b!leaderboard for all.
 \n**How do I add a bot?**
-To add a bot, head over the https://blist.xyz/bot/add/.
+To add a bot, head over the https://blist.xyz/add.
 \n**How long does the queue take?**
 We try to get every bot done as fast as we can. Please take into consideration we have irl things to do sometimes.
 \n**How do I add my server?**
 Add our bot using [this]({server_bot_link} '{server_bot_link}') link. Then, go to your profile at [/user/me](https://blist.xyz/user/me), scroll, then click your server. Fill out the corresponding fields and click publish. Tada, your server is now on our list.
-            """
+\n**Does this server have a permanent invite I can use?**
+Yes, [we do](https://discord.com/invite/4Xk9FZP)!
+"""
         )
 
         channel = ctx.guild.get_channel(716717317320605736)
