@@ -65,7 +65,7 @@ class Staff(commands.Cog):
                 too_long=time_took(dt=category_created_at, only_hours=True,
                                      now_dt=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
                 if int(too_long) >= 6:
-                    too_long=f"|| {int(too_long)}+ hours in testing ⚠️"
+                    too_long=f"- {int(too_long)}+ hours in testing ⚠️"
                 else:
                     too_long=""
 
@@ -75,7 +75,7 @@ class Staff(commands.Cog):
                 too_long=time_took(dt=x['added'], only_hours=True,
                                      now_dt=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
                 if int(too_long) >= 2:
-                    too_long=f"|| {int(too_long)}+ hours in queue ⚠️"
+                    too_long=f"- {int(too_long)}+ hours in queue ⚠️"
                 else:
                     too_long=""
                 invite=str(
@@ -258,7 +258,7 @@ class Staff(commands.Cog):
     @commands.command()
     async def delete(self, ctx, bot: Union[discord.Member, int]):
         if isinstance(bot, discord.Member):
-            bot_id = bot
+            bot_id = bot.id
             if not bot.bot:
                 return await ctx.send("That is not a bot.")
         elif isinstance(bot, int):
