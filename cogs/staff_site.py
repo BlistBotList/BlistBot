@@ -312,9 +312,7 @@ class Staff(commands.Cog):
                     return await ctx.send(f"{message.content} is not valid reason number. The command was cancelled.")
             else:
                 reason=message.content  # custom reason
-
         # --------------------
-
         await self.bot.pool.execute("DELETE FROM main_site_vote WHERE bot_id=$1", bot_from_db['unique_id'])
         await self.bot.pool.execute("DELETE FROM main_site_review WHERE bot_id=$1", bot_from_db['unique_id'])
         await self.bot.pool.execute("DELETE FROM main_site_auditlogaction WHERE bot_id=$1", bot_from_db['unique_id'])
@@ -333,19 +331,22 @@ class Staff(commands.Cog):
         em=bot_log_embed(ctx, (bot_member, bot_owner), reason=str(reason))
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
-        if isinstance(bot_owner, discord.Member) and bot_from_db['certified'] is True:
-            certified_dev_role=ctx.guild.get_role(716724317207003206)
-            await bot_owner.remove_roles(certified_dev_role)
-
-        has_other_bots=await self.bot.pool.fetch(
+        has_other_bots = await self.bot.pool.fetch(
             "SELECT * FROM main_site_bot WHERE main_owner=$1", bot_from_db['main_owner'])
-        if not has_other_bots and isinstance(bot_owner, discord.Member):
-            dev_role=ctx.guild.get_role(716684805286133840)
-            await bot_owner.remove_roles(dev_role)
+
+        if isinstance(bot_owner, discord.Member):
+            if bot_from_db['certified'] is True:
+                certified_dev_role=ctx.guild.get_role(716724317207003206)
+                await bot_owner.remove_roles(certified_dev_role)
+            if not has_other_bots:
+                dev_role = ctx.guild.get_role(716684805286133840)
+                await bot_owner.remove_roles(dev_role)
+
+        if not has_other_bots:
             await self.bot.pool.execute(
                 "UPDATE main_site_user SET developer=False WHERE id=$1", bot_from_db['main_owner'])
 
-        if isinstance(bot_member, discord.Member) and bot_member in ctx.guild.members:
+        if isinstance(bot_member, discord.Member):
             await bot_member.kick(reason="Bot Deleted")
 
     @commands.has_permissions(kick_members=True)
