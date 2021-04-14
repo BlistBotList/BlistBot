@@ -3,6 +3,7 @@ import random
 import re
 import os
 import sys
+import traceback
 from operator import ne
 from textwrap import dedent as wrap
 
@@ -61,7 +62,7 @@ class Events(commands.Cog):
         embed.add_field(name = "> Website Moderators",
                         value = "\n".join(website_moderators) or "None", inline = False)
         channel = guild.get_channel(716823743644696586)
-        message = await channel.fetch_message(723641541486182410)
+        message = channel.get_partial_message(723641541486182410)
         await message.edit(embed = embed)
 
     @property

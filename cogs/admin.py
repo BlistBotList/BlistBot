@@ -66,10 +66,10 @@ class Admin(commands.Cog):
         for role in roles_to_add:
             if role not in member.roles:
                 await member.add_roles(role)
-                success_text.append(f"✅ **Added staff role:** {role}.")
+                success_text.append(f"✅ **Added staff role:** {role.name}")
             else:
                 success_text.append(
-                    f"❌ **{member} already has the:** {role} staff role.")
+                    f"❌ **{member} already has the:** {role.name} staff role.")
 
         if user_bots:
             for x in user_bots:
@@ -127,7 +127,7 @@ class Admin(commands.Cog):
         join_list = "\n".join(success_text)
         await self.bot.pool.execute("UPDATE main_site_user SET staff = True WHERE id = $1", member.id)
         await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", web_mod_role.name, member.id)
-        await self.bot.get_cog("Events").update_staff_embed(self.bot.main_guild)
+        await self.bot.get_command("force_update_staff_embed")(ctx)
         await ctx.send(f"Successfully hired {member} ({member.id}).\n\n{join_list}")
 
     @commands.has_permissions(administrator=True)
@@ -171,7 +171,7 @@ class Admin(commands.Cog):
             if str(reaction.emoji) == "\U00002705":
                 await msg.remove_reaction("\U00002705", ctx.guild.me)
                 await msg.remove_reaction("\U0000274c", ctx.guild.me)
-                await msg.edit(content=f"~~{msg.content}~~ You reacted with ✅:")
+                await msg.edit(content=f"~~{msg.content}~~\nYou reacted with ✅:")
                 pass
             if str(reaction.emoji) == "\U0000274c":
                 await msg.remove_reaction("\U00002705", ctx.guild.me)
@@ -180,15 +180,15 @@ class Admin(commands.Cog):
                 return
 
         success_text = []
-        for role_id in self.bot.staff_roles:
-            author_roles = [role.id for role in member.roles]
-            if role_id in author_roles:
-                await member.remove_roles(self.bot.main_guild.get_role(role_id))
-                success_text.append(
-                    f"✅ **Removed staff role:** {self.bot.main_guild.get_role(role_id)}.")
-            else:
-                success_text.append(
-                    f"❌ **{member} didn't have the staff role:** {self.bot.main_guild.get_role(role_id)}.")
+        staff_roles_removed = []
+        for role in member.roles:
+            if role.id in self.bot.staff_roles:
+                staff_roles_removed.append(role.name)
+                await member.remove_roles(role)
+
+        if staff_roles_removed:
+            join_role_names = ", ".join(staff_roles_removed)
+            success_text.append(f"✅ **Removed following staff role(s):** {join_role_names}")
 
         if user_bots:
             for x in user_bots:
@@ -214,6 +214,7 @@ class Admin(commands.Cog):
 
         join_list = "\n".join(success_text)
         await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
+        await self.bot.get_command("force_update_staff_embed")(ctx)
         await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
 
     @commands.has_permissions(administrator=True)
@@ -231,10 +232,10 @@ class Admin(commands.Cog):
                         value="Get pinged when we host polls for our site", inline=False)
         embed.add_field(name="> <:announcementchannel:780103872668237835>",
                         value="Get pinged when we have announcements", inline=False)
-        embed.add_field(name="> <a:Loading:784923587785916487>",
-                        value="Get pinged when we have new leaks", inline=False)
+        #embed.add_field(name="> <a:Loading:784923587785916487>",
+                       # value="Get pinged when we have new leaks", inline=False)
         ch = self.bot.main_guild.get_channel(716733254308462702)
-        msg = await ch.fetch_message(780106851961667614)
+        msg = ch.get_partial_message(780106851961667614)
         await msg.edit(embed=embed)
         await msg.add_reaction(self.bot.get_emoji(780103995879325696))
         await msg.add_reaction("🔞")
