@@ -381,13 +381,68 @@ class Admin(commands.Cog):
 
     @commands.is_owner()
     @commands.command()
-    async def restart(self, ctx):
-        await ctx.send("Restarting")
+    async def restart_bot(self, ctx):
+        await ctx.send("Restarting bot...")
         os.system("systemctl restart blist")
 
     @commands.is_owner()
     @commands.command()
-    async def update(self, ctx):
+    async def restart_site(self, ctx):
+        await ctx.send("Restarting site...")
+        os.system("systemctl restart website")
+
+    @commands.is_owner()
+    @commands.command()
+    async def update_site(self, ctx):
+        """Pulls from a git remote and reloads modified cogs"""
+        await ctx.channel.trigger_typing()
+        cmd = "cd /home/blist/DjangoBlist && git pull"
+        process = await asyncio.create_subprocess_shell(
+            cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+        try:
+            com = await asyncio.wait_for(process.communicate(), timeout=5)
+            com = com[0].decode() + "\n" + com[1].decode()
+        except asyncio.TimeoutError:
+            await ctx.send("The process timed out.")
+
+        reg = r"\S+(\.py)"
+        reg = re.compile(reg)
+        found = [match.group()[:-3].replace("/", ".")
+                 for match in reg.finditer(com)]
+
+        if found:
+            updated = []
+            for file in found:
+                try:
+                    updated.append(file)
+                except Exception as e:
+                    embed = discord.Embed(title=f"There was an issue pulling from GitHub",
+                                          description=f"\n```{e}```\n", color=discord.Color.red())
+                    await ctx.send(embed=embed)
+                    return
+
+            if not updated:
+                embed = discord.Embed(
+                    title=f"No files were updated.", color=discord.Color.red())
+                await ctx.send(embed=embed)
+            else:
+                embed = discord.Embed(
+                    title=f"Updated Files: " +
+                    ", ".join([f"`{text}`" for text in updated]),
+                    color=discord.Color.blurple())
+                await ctx.send(embed=embed)
+        else:
+            embed = discord.Embed(
+                title=f"No files were updated.", color=discord.Color.red())
+            await ctx.send(embed=embed)
+
+    @commands.is_owner()
+    @commands.command()
+    async def update_bot(self, ctx):
         """Pulls from a git remote and reloads modified cogs"""
         await ctx.channel.trigger_typing()
         process = await asyncio.create_subprocess_exec(
