@@ -379,9 +379,9 @@ class Admin(commands.Cog):
                 headers=headers, json=json) as x:
             await ctx.send(f'{await x.json()}')
 
-    @flags.add_flag("-b", "--bot")
-    @flags.add_flag("-s", "--site")
-    @flags.add_flag("-a", "--all")
+    @flags.add_flag("-b", "--bot", action='store_true', default=False)
+    @flags.add_flag("-s", "--site", action='store_true', default=False)
+    @flags.add_flag("-a", "--all", action='store_true', default=False)
     @commands.is_owner()
     @commands.command(cls=flags.FlagCommand)
     async def restart(self, ctx, **arguments):
