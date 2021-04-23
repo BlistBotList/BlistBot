@@ -403,9 +403,9 @@ class Admin(commands.Cog):
                 await ctx.send("Restarting site...")
                 os.system("systemctl restart website")
             elif arguments["all"]:
+                await ctx.send("Restarting site and bot...")
                 os.system("systemctl restart website")
                 os.system("systemctl restart blist")
-                await ctx.send("Restarting site and bot...")
             else:
                 return await ctx.send("You need specify --all, --bot or --site.")
         except Exception as err:
