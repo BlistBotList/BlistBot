@@ -379,17 +379,37 @@ class Admin(commands.Cog):
                 headers=headers, json=json) as x:
             await ctx.send(f'{await x.json()}')
 
+    @flags.add_flag("-b", "--bot")
+    @flags.add_flag("-s", "--site")
+    @flags.add_flag("-a", "--all")
     @commands.is_owner()
-    @commands.command()
-    async def restart_bot(self, ctx):
-        await ctx.send("Restarting bot...")
-        os.system("systemctl restart blist")
+    @commands.command(cls=flags.FlagCommand)
+    async def restart(self, ctx, **arguments):
+        """
+        Restarts a specified, available systemd service.
 
-    @commands.is_owner()
-    @commands.command()
-    async def restart_site(self, ctx):
-        await ctx.send("Restarting site...")
-        os.system("systemctl restart website")
+        **Flags**:
+
+        \u2022 **--bot**/-b - For if you want to restart the bot.
+        \u2022 **--site**/-s - For if you want to restart the site.
+        \u2022 **--both**/-b -  For if you want to restart the bot and site.
+        """
+
+        try:
+            if arguments["bot"]:
+                await ctx.send("Restarting bot...")
+                os.system("systemctl restart blist")
+            elif arguments["site"]:
+                await ctx.send("Restarting site...")
+                os.system("systemctl restart website")
+            elif arguments["bot"]:
+                os.system("systemctl restart website")
+                os.system("systemctl restart blist")
+                await ctx.send("Restarting site and bot...")
+            else:
+                return await ctx.send("You need specify --both, --bot or --site.")
+        except Exception as err:
+            await ctx.send(f"Something went wrong...\n{err}")
 
     @commands.is_owner()
     @commands.command()
