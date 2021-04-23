@@ -392,7 +392,7 @@ class Admin(commands.Cog):
 
         \u2022 **--bot**/-b - For if you want to restart the bot.
         \u2022 **--site**/-s - For if you want to restart the site.
-        \u2022 **--both**/-b -  For if you want to restart the bot and site.
+        \u2022 **--all**/-a -  For if you want to restart the bot and site.
         """
 
         try:
@@ -402,12 +402,12 @@ class Admin(commands.Cog):
             elif arguments["site"]:
                 await ctx.send("Restarting site...")
                 os.system("systemctl restart website")
-            elif arguments["bot"]:
+            elif arguments["all"]:
                 os.system("systemctl restart website")
                 os.system("systemctl restart blist")
                 await ctx.send("Restarting site and bot...")
             else:
-                return await ctx.send("You need specify --both, --bot or --site.")
+                return await ctx.send("You need specify --all, --bot or --site.")
         except Exception as err:
             await ctx.send(f"Something went wrong...\n{err}")
 
