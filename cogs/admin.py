@@ -214,6 +214,7 @@ class Admin(commands.Cog):
 
         join_list = "\n".join(success_text)
         await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
+        await self.bot.pool.execute("UPDATE main_site_user SET staff = False WHERE id = $1", member.id)
         await self.bot.get_command("force_update_staff_embed")(ctx)
         await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
 
