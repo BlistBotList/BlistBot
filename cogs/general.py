@@ -17,7 +17,7 @@ class General(commands.Cog):
 
     @commands.command()
     async def rank(self, ctx, *, member: discord.Member = None):
-        """ See you rank! badges are from from Flaticon.com """
+        """ See your rank! Badges are from from Flaticon.com """
         member = member or ctx.author
         unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
         level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
