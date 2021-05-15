@@ -137,6 +137,7 @@ class Mod(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.command()
     async def case(self, ctx, number: int):
+        """Shows information about a punishment"""
         info = await self.bot.mod_pool.fetch("SELECT * FROM action WHERE id = $1", number)
         if not info:
             return await ctx.send(f"Case {number} does not exist!")
@@ -163,6 +164,7 @@ class Mod(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.command()
     async def reason(self, ctx, number: int, *, reason):
+        """Edits the reason of a punishment"""
         info = await self.bot.mod_pool.fetch("SELECT * FROM action WHERE id = $1", number)
         if not info:
             return await ctx.send(f"Case {number} does not exist!")
@@ -203,6 +205,7 @@ class Mod(commands.Cog):
     @commands.command()
     @checks.main_guild_only()
     async def common_prefix(self, ctx, member: discord.Member):
+        """Adds or removes the common prefix role from a bot"""
         if not member.bot:
             return await ctx.send("This command can only be used on bots!")
 
