@@ -17,7 +17,7 @@ class General(commands.Cog):
 
     @commands.command()
     async def rank(self, ctx, *, member: discord.Member = None):
-        """ See you rank! badges are from from Flaticon.com """
+        """ See your rank! Badges are from Flaticon.com """
         member = member or ctx.author
         unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
         level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
@@ -584,6 +584,7 @@ class General(commands.Cog):
 
     @commands.command()
     async def position(self, ctx):
+        """Shows the current approval queue postion of your bots"""
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = False AND denied = False", ctx.author.id)
         if not bots:
             await ctx.send(f"{ctx.author.mention}, you have no bots in the queue!")
@@ -646,6 +647,7 @@ class General(commands.Cog):
     @commands.command()
     @commands.guild_only()
     async def suggest(self, ctx, *, suggestion):
+        """Submits a suggestion to Administrators"""
         ch = self.bot.get_channel(716737367192502312)
         id = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_suggestion")
         embed = discord.Embed(

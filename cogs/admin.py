@@ -359,6 +359,7 @@ class Admin(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def poll(self, ctx, poll, image=None):
+        """Creates a poll embed"""
         embed = discord.Embed(title="**New Poll**:",
                               description=poll, color=discord.Color.blurple())
         if image:
@@ -798,6 +799,7 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
     @commands.has_role(779817680488103956)
     @commands.command()
     async def tweet(self, ctx, *, message):
+        """Sends out a tweet on the official Blist Twitter Account"""
         self.bot.twitter_api.update_status(
             f"{message} \n\n- {ctx.author.name}")
         await ctx.send("Done")
