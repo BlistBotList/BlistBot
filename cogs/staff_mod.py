@@ -88,6 +88,7 @@ class Mod(commands.Cog):
         await member.add_roles(mute_role, reason=reason)
         case_number = await self.do_case(ctx.author, member, reason, "Mute", time=length)
         await self.bot.mod_pool.execute("INSERT INTO mutes VALUES($1, $2, $3, $4, $5)", ctx.author.id, member.id, datetime.datetime.utcnow(), length.dt, case_number)
+        await ctx.send(f"{member} was successfully muted for {length}\nReason: *{reason}*")
 
     @commands.has_permissions(kick_members=True)
     @commands.command()
