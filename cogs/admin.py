@@ -769,7 +769,7 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
                                 color=discord.Color.blurple())
         for server in top_servers:
             embed.add_field(
-                name=server['username'], value=f"Votes: {server['monthly_votes']}", inline=False)
+                name=server['name'], value=f"Votes: {server['monthly_votes']}", inline=False)
         servers = await self.bot.pool.fetch("SELECT * FROM main_site_server")
         for server in servers:
             await self.bot.pool.execute("UPDATE main_site_server SET monthly_votes = 0 WHERE id = $1", server["id"])
