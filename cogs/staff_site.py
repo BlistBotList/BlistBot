@@ -316,6 +316,7 @@ class Staff(commands.Cog):
         await self.bot.pool.execute("DELETE FROM main_site_vote WHERE bot_id=$1", bot_from_db['unique_id'])
         await self.bot.pool.execute("DELETE FROM main_site_review WHERE bot_id=$1", bot_from_db['unique_id'])
         await self.bot.pool.execute("DELETE FROM main_site_auditlogaction WHERE bot_id=$1", bot_from_db['unique_id'])
+        await self.bot.pool.execute("DELETE FROM main_site_announcement WHERE bot_id=$1", bot_from_db['unique_id'])
         await self.bot.pool.execute("DELETE FROM main_site_bot WHERE id=$1", bot_id)
 
         await ctx.send(embed=discord.Embed(
