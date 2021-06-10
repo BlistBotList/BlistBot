@@ -438,13 +438,17 @@ New Message
                 invited_by = await member.guild.audit_logs(limit = 2, action = discord.AuditLogAction.bot_add,
                                                            before = category.created_at).flatten()
                 invited_by = f"{str(invited_by[0].user)} ({invited_by[0].user.id})" if invited_by else "Not Found"
-                await admin_logs.send(
-                    content = f"**Bot**: {str(member)} ({member.id})\n"
-                              f"**Invited by**: {invited_by}\n\n"
-                              f"**Reviewed by**: {reviewed_by}\n\n"
-                              f"**Total Messages**: {len(all_messages)}\n"
-                              f"**Time Took**: {time_took(category.created_at)}",
-                    file = discord.File(file_name, file.name))
+                review_embed = discord.Embed(
+                    title = "Bot reviewed",
+                    color = discord.Color.blurple(),
+                    description = wrap(f"""
+                    **Bot**: {str(member)} ({member.id})
+                    **Reviewed by**: {reviewed_by}\n
+                    **Invited by**: {invited_by}
+                    **Total Messages**: {len(all_messages)}
+                    **Time Taken**: {time_took(category.created_at)}
+                    """))
+                await admin_logs.send(embed=review_embed, file = discord.File(file_name, file.name))
 
                 await category.delete()
                 try:
@@ -515,7 +519,7 @@ New Message
 
     @tasks.loop(minutes = 30)
     async def check_join(self):
-        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True")
+        bots = await self.bot.pool.fetch("SELECT id, username, uses_slash_commands FROM main_site_bot WHERE approved = True")
         channel = self.bot.main_guild.get_channel(716727091818790952)
         for bot in bots:
             if bot['id'] == 765175524594548737:
@@ -527,11 +531,14 @@ New Message
                     description = "The following bot has not joined the Support Server after getting approved...",
                     color = discord.Color.red()
                 )
+                invite_scopes = ("bot",)
+                if bot['uses_slash_commands'] is True:
+                    invite_scopes = ("bot", "applications.commands")
+                invite=str(discord.utils.oauth_url(
+                    bot['id'], guild=self.bot.verification_guild, scopes=invite_scopes)) + "&disable_guild_select=true"
                 embed.add_field(
                     name = bot['username'],
-                    value = str(
-                        discord.utils.oauth_url(bot['id'], guild = self.bot.main_guild)) + "&disable_guild_select=true"
-                )
+                    value = invite)
                 await channel.send(embed = embed)
 
     # Minutes = 60 is better than Hours = 1!! This is for you @A Discord User @Soheab_
@@ -567,7 +574,7 @@ New Message
             return
 
         for x in queued_bots:
-            bot_id = x['id']
+            bot_id: int = x['id']
             if bot_id in self.test_categories.keys():
                 testing_category = self.bot.verification_guild.get_channel(self.test_categories[bot_id])
                 if not testing_category:
@@ -583,16 +590,21 @@ New Message
                     if ovm:  # user overwrites, hold command is used.
                         return
                     else:
+                        invited_by = await bot_member.guild.audit_logs(
+                            limit = 2, action = discord.AuditLogAction.bot_add,
+                            before = category_created_at.flatten())
+                        invited_by = f" (Invited by {invited_by[0].user.mention})" if invited_by else ""
                         for channel in testing_category.text_channels:
                             try:
                                 await channel.send(
-                                    f"Friendly reminder that {bot_member.mention} has been waiting for more than "
-                                    f"{testing_hours} hours without the category being on hold via the `b!hold` "
-                                    "command. Please use that command if you are waiting for a response or any other "
-                                    "reason"
+                                    f"Friendly reminder that {bot_member.mention}{invited_by} has been waiting for "
+                                    f"more than {testing_hours} hours without the category being on hold "
+                                    f"via the `b!hold` command. Please use that command if you are waiting for a "
+                                    "response or mention someone who can take over the review from you."
                                 )
                             except:
                                 pass
+
 
 def setup(bot):
     bot.add_cog(Events(bot))

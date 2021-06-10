@@ -62,8 +62,9 @@ class Staff(commands.Cog):
                     pass
                 testing_channel=discord.utils.get(testing_category.text_channels, name="testing")
                 category_created_at=testing_category.created_at.replace(tzinfo=datetime.timezone.utc)
-                too_long=time_took(dt=category_created_at, only_hours=True,
-                                     now_dt=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
+                too_long=time_took(
+                    dt=category_created_at, only_hours=True,
+                    now_dt=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
                 if int(too_long) >= 6:
                     too_long=f"- {int(too_long)}+ hours in testing ⚠️"
                 else:
@@ -72,15 +73,19 @@ class Staff(commands.Cog):
                 being_tested=f"(being tested in {testing_category.name} | {testing_channel.mention})"
                 listed_bots.append(f"~~{x['username']}~~ {being_tested} {too_long}")
             else:
-                too_long=time_took(dt=x['added'], only_hours=True,
-                                     now_dt=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
+                too_long=time_took(
+                    dt=x['added'], only_hours=True,
+                    now_dt=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc))
                 if int(too_long) >= 2:
                     too_long=f"- {int(too_long)}+ hours in queue ⚠️"
                 else:
                     too_long=""
-                invite=str(
-                    discord.utils.oauth_url(x['id'],
-                                            guild=self.bot.verification_guild)) + "&disable_guild_select=true"
+
+                invite_scopes = ("bot",)
+                if x['uses_slash_commands'] is True:
+                    invite_scopes = ("bot", "applications.commands")
+                invite=str(discord.utils.oauth_url(
+                    x['id'], guild=self.bot.verification_guild, scopes=invite_scopes)) + "&disable_guild_select=true"
                 listed_bots.append(f"{x['username']} [Invite]({invite}) {too_long}")
 
         embed=discord.Embed(
@@ -119,7 +124,8 @@ class Staff(commands.Cog):
             return
 
         bots=await self.bot.pool.fetchrow(
-            "SELECT main_owner, referred_by FROM main_site_bot WHERE approved=False AND denied=False AND id=$1",
+            "SELECT main_owner, referred_by, uses_slash_commands "
+            "FROM main_site_bot WHERE approved=False AND denied=False AND id=$1",
             bot.id)
         if not bots:
             await ctx.send("This bot is not awaiting approval")
@@ -143,8 +149,13 @@ class Staff(commands.Cog):
 
         queued_bots=await self.bot.pool.fetchval(
             "SELECT COUNT(*) FROM main_site_bot WHERE approved=False AND denied=False")
-        invite=str(discord.utils.oauth_url(
-            bot.id, guild=self.bot.main_guild)) + "&disable_guild_select=true"
+
+        invite_scopes = ("bot",)
+        if bots['uses_slash_commands'] is True:
+            invite_scopes = ("bot", "applications.commands")
+        invite = str(discord.utils.oauth_url(
+            bot.id, guild=self.bot.verification_guild, scopes = invite_scopes)) + "&disable_guild_select=true"
+
         embed=discord.Embed(
             title=f"Approved {bot.name}",
             description=f"[Invite!]({invite})\n\nThere are {queued_bots} bot(s) in the queue.",

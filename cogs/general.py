@@ -506,10 +506,14 @@ class General(commands.Cog):
 
         tags = ', '.join([str(x) for x in bots[0]['tags']])
         b = bots[0]
+        invite_scopes = ("bot",)
+        if b['uses_slash_commands'] is True:
+            invite_scopes = ("bot", "applications.commands")
+        generated_invite = discord.utils.oauth_url(bot.id, scopes = invite_scopes)
         github = f"[Click Here]({b['github']})" if b['github'] else None
         website = f"[Click Here]({b['website']})" if b['website'] else None
         support = f"[Click Here](https://discord.gg/{b['support_server']})" if b['support_server'] else None
-        invite = f"[Click Here]({b['invite_url']})" if b['invite_url'] else f"[Click Here]({discord.utils.oauth_url(bot.id)})"
+        invite = f"[Click Here]({b['invite_url']})" if b['invite_url'] else f"[Click Here]({generated_invite})"
         privacy_url = b['privacy_policy_url'] if b['privacy_policy_url'] else None
 
         embed = discord.Embed(
@@ -519,6 +523,7 @@ class General(commands.Cog):
                 >>> Owner: ``{self.bot.main_guild.get_member(b['main_owner'])}``
                 Library: ``{b['library']}``
                 Prefix: ``{b['prefix']}``
+                Uses Slash commands?: ``{'Yes' if b['uses_slash_commands'] else 'No'}``
                 Tags: ``{tags}``
                 Monthly Votes: ``{b['monthly_votes']}``
                 All-Time Votes: ``{b['total_votes']}``
