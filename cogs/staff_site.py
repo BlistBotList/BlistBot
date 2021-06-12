@@ -154,7 +154,7 @@ class Staff(commands.Cog):
         if bots['uses_slash_commands'] is True:
             invite_scopes = ("bot", "applications.commands")
         invite = str(discord.utils.oauth_url(
-            bot.id, guild=self.bot.verification_guild, scopes = invite_scopes)) + "&disable_guild_select=true"
+            bot.id, guild=self.bot.main_guild, scopes = invite_scopes)) + "&disable_guild_select=true"
 
         embed=discord.Embed(
             title=f"Approved {bot.name}",
