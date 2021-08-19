@@ -16,19 +16,23 @@ def bot_log_embed(ctx, bot_and_owner: Tuple[Union[discord.Member, int], Union[di
     def escape_markdown(txt: str):
         return discord.utils.escape_markdown(str(txt))
     bot, bot_owner=bot_and_owner
-    bot_text=f"{escape_markdown(str(bot))} ({bot.id})" \
+    bot_text=f"[{escape_markdown(str(bot))} ({bot.id})](https://blist.xyz/bot/{bot.id})" \
         if isinstance(bot, discord.Member) else escape_markdown(str(bot))
-    bot_owner_text=f"{escape_markdown(str(bot_owner))} ({bot_owner.id})" \
+    bot_owner_text=f"[{escape_markdown(str(bot_owner))} ({bot_owner.id})](https://blist.xyz/user/{bot_owner.id})" \
         if isinstance(bot_owner, discord.Member) else escape_markdown(str(bot_owner))
 
-    command_author=f"{escape_markdown(ctx.author)} | ({ctx.author.id})"
+    command_author=f"[{escape_markdown(ctx.author)} | ({ctx.author.id})](https://blist.xyz/user/{ctx.author.id})"
     embed_stuff_dict={
         "deny": ("Bot denied", discord.Color.red(), f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
                  f"**Reviewer:** {command_author}", str(reason)),
         "delete": ("Bot deleted", discord.Color.red(), f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
                    f"**Author:** {command_author}", str(reason)),
         "approve": ("Bot approved", discord.Color.green(), f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
-                    f"**Reviewer:** {command_author}", None)
+                    f"**Reviewer:** {command_author}", None),
+        "certify": ("Bot certified", discord.Color.green(), f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
+                    f"**Author:** {command_author}", None),
+        "decline": ("Denied Bot certification", discord.Color.red(), f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
+                    f"**Author:** {command_author}", None)
     }
     title, color, description, command_invoker, reason=embed_stuff_dict.get(str(ctx.command.name))
     reason=f"**Reason:** {reason}" if reason is not None else ''

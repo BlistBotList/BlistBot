@@ -10,6 +10,7 @@ import country_converter as coco
 import discord
 from discord.ext import commands, flags
 
+from cogs.staff_site import bot_log_embed
 from utils import checks
 
 
@@ -318,13 +319,18 @@ class Admin(commands.Cog):
         await self.bot.pool.execute(
             "UPDATE main_site_bot SET certified = True, awaiting_certification = False WHERE id = $1", bot.id
         )
+
         embed = discord.Embed(
             description=f"Certified {bot.name}", color=discord.Color.blurple())
         await ctx.send(embed=embed)
 
         owner = ctx.guild.get_member(is_waiting)
-        em = discord.Embed(description=f"``{bot}`` by ``{owner}`` was certified",
-                           color=discord.Color.blurple())
+
+        # Need to use .qualified_name instead of .name but too lazy for now.
+        if ctx.command.name != "certify":
+            ctx.command.name = "certify"
+        # ---
+        em=bot_log_embed(ctx, (bot, owner))
 
         await self.bot.pool.execute("UPDATE main_site_user SET certified_developer = True WHERE id = $1", owner.id)
         await self.bot.get_channel(716446098859884625).send(embed=em)
@@ -351,9 +357,11 @@ class Admin(commands.Cog):
 
         await self.bot.pool.execute("UPDATE main_site_bot SET awaiting_certification = False WHERE id = $1", bot.id)
         await ctx.send(f"Denied certification for {bot.name}")
-        em = discord.Embed(
-            description=f"``{bot}`` by ``{ctx.guild.get_member(is_waiting)}`` was denied for certification for: \n```{reason}```",
-            color=discord.Color.blurple())
+        # Need to use .qualified_name instead of .name but too lazy for now.
+        if ctx.command.name != "decline":
+            ctx.command.name = "decline"
+        # ---
+        em=bot_log_embed(ctx, (bot, ctx.guild.get_member(is_waiting)), reason=reason)
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
     @commands.has_permissions(administrator=True)
