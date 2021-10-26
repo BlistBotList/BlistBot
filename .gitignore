@@ -2,4 +2,8 @@ config.py
 cogs/config.py
 __pycache__
 .vscode
-.idea/
+.idea/*
+venv/*
+.venv
+# venv
+blist-bot/*

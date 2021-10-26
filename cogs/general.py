@@ -10,6 +10,7 @@ import discord
 import datetime
 from discord.ext import commands, flags
 
+
 class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -17,7 +18,7 @@ class General(commands.Cog):
 
     @commands.command()
     async def rank(self, ctx, *, member: discord.Member = None):
-        """ See your rank! Badges are from Flaticon.com """
+        """See your rank! Badges are from Flaticon.com"""
         member = member or ctx.author
         unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
         level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
@@ -25,67 +26,95 @@ class General(commands.Cog):
             return await ctx.send("That is a bot...")
         member_name = "You are" if member.id == ctx.author.id else f"{member.name} is"
         if not level_user:
-            return await ctx.send(f"{member_name.replace('is', 'has', 1).replace('are', 'have', 1)} "
-                                  f"not gained any XP, or it has not been saved yet. ")
-        if level_user['blacklisted']:
+            return await ctx.send(
+                f"{member_name.replace('is', 'has', 1).replace('are', 'have', 1)} "
+                f"not gained any XP, or it has not been saved yet. "
+            )
+        if level_user["blacklisted"]:
             return await ctx.send(f"{member_name} blacklisted from the leveling system. aka won't receive anymore XP.")
 
         full_leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC")
         place = full_leaderboard.index(level_user) + 1
 
         custom = {}
-        if level_user['xp_bar_color'] != "":
-            custom['xp_color'] = str(level_user['xp_bar_color'])
-        if level_user['border_color'] != "":
-            custom['border_color'] = str(level_user['border_color'])
-        if level_user['background_color'] != "":
-            background = str(level_user['background_color'])
+        if level_user["xp_bar_color"] != "":
+            custom["xp_color"] = str(level_user["xp_bar_color"])
+        if level_user["border_color"] != "":
+            custom["border_color"] = str(level_user["border_color"])
+        if level_user["background_color"] != "":
+            background = str(level_user["background_color"])
             if background.startswith("#"):
-                custom['background'] = background
+                custom["background"] = background
             else:
                 try:
-                    custom['background'] = BytesIO(await (await self.bot.session.get(background)).read())
+                    custom["background"] = BytesIO(await (await self.bot.session.get(background)).read())
                 except Exception:
-                    custom['background'] = (44, 44, 44, 255)
+                    custom["background"] = (44, 44, 44, 255)
 
-        avatar_bytes = BytesIO(await member.avatar_url_as(format="png", size=128).read())
+        avatar_bytes = BytesIO(await member.display_avatar.with_size(128).read())
 
         staff_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/FGHODzE.png")).read())
         dev_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/7JtOzav.png")).read())
-        bug_hunter_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/gFPFm1g.png")).read())
-        donator_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/4Is1fSC.png")).read())
-        boosting_badge_black = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/RmK5Twi.png")).read())
+        bug_hunter_badge_black = BytesIO(
+            await (await self.bot.session.get("https://i.adiscorduser.com/gFPFm1g.png")).read()
+        )
+        donator_badge_black = BytesIO(
+            await (await self.bot.session.get("https://i.adiscorduser.com/4Is1fSC.png")).read()
+        )
+        boosting_badge_black = BytesIO(
+            await (await self.bot.session.get("https://i.adiscorduser.com/RmK5Twi.png")).read()
+        )
 
         staff_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/KUMkFE7.png")).read())
         dev_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/2TA4C8g.png")).read())
-        bug_hunter_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/jClxGTJ.png")).read())
-        donator_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/v5bEiYM.png")).read())
-        boosting_badge_white = BytesIO(await (await self.bot.session.get("https://i.adiscorduser.com/RmK5Twi.png")).read())
+        bug_hunter_badge_white = BytesIO(
+            await (await self.bot.session.get("https://i.adiscorduser.com/jClxGTJ.png")).read()
+        )
+        donator_badge_white = BytesIO(
+            await (await self.bot.session.get("https://i.adiscorduser.com/v5bEiYM.png")).read()
+        )
+        boosting_badge_white = BytesIO(
+            await (await self.bot.session.get("https://i.adiscorduser.com/RmK5Twi.png")).read()
+        )
 
         rank_instance = rank_card.Rank(
-            bug_hunter = bool(716722789234638860 in [x.id for x in member.roles]),
-            donator = bool(716724716299091980 in [x.id for x in member.roles]),
-            developer = bool(716684805286133840 in [x.id for x in member.roles]),
-            is_staff = bool([x for x in [x for x in self.bot.staff_roles] if x in [x.id for x in member.roles]]),
-            is_boosting = bool(780121170196037663 in [x.id for x in member.roles]),
-            ctx = ctx,
-            member = member,
+            bug_hunter=bool(716722789234638860 in [x.id for x in member.roles]),
+            donator=bool(716724716299091980 in [x.id for x in member.roles]),
+            developer=bool(716684805286133840 in [x.id for x in member.roles]),
+            is_staff=bool([x for x in [x for x in self.bot.staff_roles] if x in [x.id for x in member.roles]]),
+            is_boosting=bool(780121170196037663 in [x.id for x in member.roles]),
+            ctx=ctx,
+            member=member,
         )
         card = await rank_instance.get_card(
-            xp=level_user['xp'], position=place, level=level_user['level'], avatar_bytes=avatar_bytes, custom=custom,
-            badges_black={'developer': dev_badge_black, 'bug_hunter': bug_hunter_badge_black,
-                          'donator': donator_badge_black, 'staff': staff_badge_black, 'boosting': boosting_badge_black},
-            badges_white={'developer': dev_badge_white, 'bug_hunter': bug_hunter_badge_white,
-                          'donator': donator_badge_white, 'staff': staff_badge_white, 'boosting': boosting_badge_white}
+            xp=level_user["xp"],
+            position=place,
+            level=level_user["level"],
+            avatar_bytes=avatar_bytes,
+            custom=custom,
+            badges_black={
+                "developer": dev_badge_black,
+                "bug_hunter": bug_hunter_badge_black,
+                "donator": donator_badge_black,
+                "staff": staff_badge_black,
+                "boosting": boosting_badge_black,
+            },
+            badges_white={
+                "developer": dev_badge_white,
+                "bug_hunter": bug_hunter_badge_white,
+                "donator": donator_badge_white,
+                "staff": staff_badge_white,
+                "boosting": boosting_badge_white,
+            },
         )
-        img = discord.File(card, 'rank_card.png')
+        img = discord.File(card, "rank_card.png")
         await ctx.send(file=img)
 
     @commands.has_role(716724716299091980)
     @flags.add_flag("-bg", "--background", type=str, default=None)
     @flags.add_flag("-xp", "--xp_bar", type=str, default=None)
     @flags.add_flag("-border", "--border_colour", "--border_color", dest="border_color", type=str, default=None)
-    @commands.command(name="customrank", aliases=['crank', 'customizecard'], cls=flags.FlagCommand)
+    @commands.command(name="customrank", aliases=["crank", "customizecard"], cls=flags.FlagCommand)
     async def custom_rank(self, ctx, **arguments):
         """
         Customize your rank card using the arguments!
@@ -100,31 +129,38 @@ class General(commands.Cog):
 
         **Example**: `b!crank --background "https://i.adiscorduser.com/4ZZdxmR.png" (or "#ffffff") -xp "#666666" --border_color "#123456"`
         """
-        if not arguments['border_color'] and not arguments['background'] and not arguments['xp_bar']:
+        if not arguments["border_color"] and not arguments["background"] and not arguments["xp_bar"]:
             await ctx.send_help(ctx.command)
             return
         unique_id = await announce_file._get_unique_id(ctx, "USER", ctx.author.id)
         level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
-        if not level_user or level_user['blacklisted'] or ctx.author.bot:
-            return await ctx.send(f"{ctx.author.name} you haven't received any XP yet or are blacklisted from doing so.")
+        if not level_user or level_user["blacklisted"] or ctx.author.bot:
+            return await ctx.send(
+                f"{ctx.author.name} you haven't received any XP yet or are blacklisted from doing so."
+            )
 
         success_text = []
         failed_text = []
-        if arguments['background']:
-            background = arguments['background']
+        if arguments["background"]:
+            background = arguments["background"]
             removing = False
             if background.lower() == "remove":
                 removing = True
                 set_background = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BACKGROUND")
             elif background.lower() == "random":
-                set_background = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BACKGROUND",
-                                                                                           str(discord.Color.random()))
+                set_background = await rank_card.Rank(ctx, ctx.author).customize_rank_card(
+                    "BACKGROUND", str(discord.Color.random())
+                )
             else:
                 if not "https://" or "http://" in background:
                     if not re.search("^#(?:[0-9a-fA-F]{3}){1,2}$", str(background)):
-                        return await ctx.send(f"(background) {ctx.author.name}, "
-                                              f"that does not look like a valid image URL or HEX value (#123456)")
-                set_background = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BACKGROUND", str(background))
+                        return await ctx.send(
+                            f"(background) {ctx.author.name}, "
+                            f"that does not look like a valid image URL or HEX value (#123456)"
+                        )
+                set_background = await rank_card.Rank(ctx, ctx.author).customize_rank_card(
+                    "BACKGROUND", str(background)
+                )
             if set_background[0] is True:
                 if removing:
                     success_text.append(f"- Removed your custom background")
@@ -133,21 +169,26 @@ class General(commands.Cog):
                     bg = f"<{bg}>" if bg.startswith("https://") or bg.startswith("http://") else bg
                     success_text.append(f"- Set your Background to: {bg}")
             else:
-                failed_text.append(f"Something went wrong while {'saving' if not removing else 'removing'} "
-                                   f"your background: {set_background[1]}")
+                failed_text.append(
+                    f"Something went wrong while {'saving' if not removing else 'removing'} "
+                    f"your background: {set_background[1]}"
+                )
 
-        if arguments['xp_bar']:
-            xp_bar = arguments['xp_bar']
+        if arguments["xp_bar"]:
+            xp_bar = arguments["xp_bar"]
             removing = False
             if xp_bar.lower() == "remove":
                 removing = True
                 set_xp_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("XP_BAR_COLOUR")
             elif xp_bar.lower() == "random":
-                set_xp_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("XP_BAR_COLOUR",
-                                                                                           str(discord.Color.random()))
+                set_xp_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card(
+                    "XP_BAR_COLOUR", str(discord.Color.random())
+                )
             else:
                 if not re.search("^#(?:[0-9a-fA-F]{3}){1,2}$", str(xp_bar)):
-                    return await ctx.send(f"(xp_bar) {ctx.author.name}, that does not look like a valid HEX value (#123456)")
+                    return await ctx.send(
+                        f"(xp_bar) {ctx.author.name}, that does not look like a valid HEX value (#123456)"
+                    )
                 set_xp_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("XP_BAR_COLOUR", str(xp_bar))
             if set_xp_colour[0] is True:
                 if removing:
@@ -155,30 +196,39 @@ class General(commands.Cog):
                 else:
                     success_text.append(f"- Set your XP bar colour to: {set_xp_colour[1]}")
             else:
-                failed_text.append(f"Something went wrong while {'saving' if not removing else 'removing'} "
-                                   f"your XP bar color: {set_xp_colour[1]}")
+                failed_text.append(
+                    f"Something went wrong while {'saving' if not removing else 'removing'} "
+                    f"your XP bar color: {set_xp_colour[1]}"
+                )
 
-        if arguments['border_color']:
-            border_color = arguments['border_color']
+        if arguments["border_color"]:
+            border_color = arguments["border_color"]
             removing = False
             if border_color.lower() == "remove":
                 removing = True
                 set_border_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BORDER_COLOUR")
             elif border_color.lower() == "random":
-                set_border_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BORDER_COLOUR",
-                                                                                           str(discord.Color.random()))
+                set_border_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card(
+                    "BORDER_COLOUR", str(discord.Color.random())
+                )
             else:
                 if not re.search("^#(?:[0-9a-fA-F]{3}){1,2}$", str(border_color)):
-                    return await ctx.send(f"(border_color) {ctx.author.name}, that does not look like a valid HEX value (#123456)")
-                set_border_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card("BORDER_COLOUR", str(border_color))
+                    return await ctx.send(
+                        f"(border_color) {ctx.author.name}, that does not look like a valid HEX value (#123456)"
+                    )
+                set_border_colour = await rank_card.Rank(ctx, ctx.author).customize_rank_card(
+                    "BORDER_COLOUR", str(border_color)
+                )
             if set_border_colour[0] is True:
                 if removing:
                     success_text.append(f"- Removed your custom border color")
                 else:
                     success_text.append(f"- Set your border color to: {set_border_colour[1]}")
             else:
-                failed_text.append(f"Something went wrong while {'saving' if not removing else 'removing'} "
-                                   f"your border color: {set_border_colour[1]}")
+                failed_text.append(
+                    f"Something went wrong while {'saving' if not removing else 'removing'} "
+                    f"your border color: {set_border_colour[1]}"
+                )
 
         if failed_text:
             join_errors = "\n".join(failed_text)
@@ -189,14 +239,16 @@ class General(commands.Cog):
         await ctx.send(f"**{ctx.author.name}**, Successfully done the following:\n{join_success}")
         return
 
-    @commands.group(aliases=['boa', 'botannounce'], invoke_without_command=True)
+    @commands.group(aliases=["boa", "botannounce"], invoke_without_command=True)
     async def botannouncement(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))
 
-    @flags.add_flag("-pin", "--pinned", action='store_true', default=False)
+    @flags.add_flag("-pin", "--pinned", action="store_true", default=False)
     @flags.add_flag("announcement", nargs="+", type=str)
-    @botannouncement.command(cls=flags.FlagCommand, name='create', aliases=['make'], brief="See [p]help botannouncement create")
+    @botannouncement.command(
+        cls=flags.FlagCommand, name="create", aliases=["make"], brief="See [p]help botannouncement create"
+    )
     async def botannouncement_create(self, ctx, bot: discord.Member, **arguments):
         """
         Announce something for your bot! you have to be the owner or co-owners.
@@ -213,16 +265,17 @@ class General(commands.Cog):
             return await ctx.send("That is not a bot or it's not listed on the site!")
 
         owners_query = await self.bot.pool.fetchrow(
-            "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id)
-        bot_owners = [owners_query['main_owner']]
-        if owners_query['owners']:
-            for x in owners_query['owners'].split(" "):
+            "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id
+        )
+        bot_owners = [owners_query["main_owner"]]
+        if owners_query["owners"]:
+            for x in owners_query["owners"].split(" "):
                 bot_owners.append(int(x))
 
         if ctx.author.id not in bot_owners:
             return await ctx.send(f"{ctx.author.name}, you are not the owner of {bot}!")
 
-        announcement = ' '.join(arguments['announcement'])
+        announcement = " ".join(arguments["announcement"])
         if announcement.startswith("file"):
             if not ctx.message.attachments:
                 return await ctx.send(f"{ctx.author.name}, you didn't attach a .txt file...")
@@ -232,18 +285,18 @@ class General(commands.Cog):
                 return await ctx.send(f"{ctx.author.name}, you didn't attach a valid .txt file...")
 
             read_text_file = text_file.fp.read()
-            if not bool(read_text_file.decode('utf-8')):
+            if not bool(read_text_file.decode("utf-8")):
                 return await ctx.send(f"{ctx.author.name}, that .txt file is empty...")
 
-            announcement = str(read_text_file.decode('utf-8'))
+            announcement = str(read_text_file.decode("utf-8"))
 
         if len(announcement) >= 2000 or len(announcement) < 50:
             return await ctx.send(
                 f"{ctx.author.name}, announcements may not be greater than 2,000 characters, or less than 50."
-                f" **{len(announcement)} currently**")
+                f" **{len(announcement)} currently**"
+            )
 
-        inserted = await self.announcements.insert(
-            ctx, announcement, bot.id, arguments['pinned'])
+        inserted = await self.announcements.insert(ctx, announcement, bot.id, arguments["pinned"])
 
         if isinstance(inserted, str):
             return await ctx.send(f"{ctx.author.name}, something went wrong... {inserted}")
@@ -259,8 +312,10 @@ class General(commands.Cog):
             more_characters = f"{2000 - 1700} [more characters](https://blist.xyz/bot/{bot.id}/announcements)"
             announcement += f"... **{more_characters}...**"
 
-        menu = MainMenu(AnnouncementPage(entries=list([(announcement_object, announcement_content, creator, bot)]),
-                                         per_page=1), clear_reactions_after=True)
+        menu = MainMenu(
+            AnnouncementPage(entries=list([(announcement_object, announcement_content, creator, bot)]), per_page=1),
+            clear_reactions_after=True,
+        )
         bot_site = f"https://blist.xyz/bot/{bot.id}/announcements"
         await ctx.send(f"Successfully announced that for {bot}, see it here: <{bot_site}>")
         await menu.start(ctx)
@@ -268,9 +323,11 @@ class General(commands.Cog):
 
     @flags.add_flag("-i", "--id", type=int, default=None)
     @flags.add_flag("-b", "--bot", type=discord.Member, default=None)
-    @flags.add_flag("-old", "--oldest", action='store_true', default=False)
-    @flags.add_flag("-a", "--all", action='store_true', default=False)
-    @botannouncement.command(cls=flags.FlagCommand, name='view', aliases=['show'], brief="See [p]help botannouncement view")
+    @flags.add_flag("-old", "--oldest", action="store_true", default=False)
+    @flags.add_flag("-a", "--all", action="store_true", default=False)
+    @botannouncement.command(
+        cls=flags.FlagCommand, name="view", aliases=["show"], brief="See [p]help botannouncement view"
+    )
     async def botannouncement_view(self, ctx, **arguments):
         """
         Get announcements for a bot or a specific announcement via the unique id, this can be found on the bottom of the announcement card.
@@ -287,28 +344,29 @@ class General(commands.Cog):
         **--all**/-a - Get all announcements for bot.
         **--oldest**/-old - Sort bot announcements on oldest, works with `-all`. Defaults to newest.
         """
-        if arguments['bot']:
-            bot_arg = arguments['bot']
+        if arguments["bot"]:
+            bot_arg = arguments["bot"]
             check_listed = await announce_file.is_bot_on_site(ctx, bot_arg.id)
             if not check_listed or not bot_arg.bot:
                 return await ctx.send("That is not a bot or it's not listed on the site!")
-            limit = 1 if not arguments['all'] else None
+            limit = 1 if not arguments["all"] else None
             fetched_announcements = await self.announcements.fetch_bot_announcements(
-                ctx, bot_id=bot_arg.id, limit=limit, oldest=arguments['oldest'])
-        elif arguments['id']:
-            fetched_announcements = await self.announcements.from_unique_id(ctx, arguments['id'])
+                ctx, bot_id=bot_arg.id, limit=limit, oldest=arguments["oldest"]
+            )
+        elif arguments["id"]:
+            fetched_announcements = await self.announcements.from_unique_id(ctx, arguments["id"])
             if fetched_announcements:
                 fetched_announcements = [fetched_announcements]
         else:
-            return await ctx.send(f"{ctx.author.name}, please provide either `--bot` or `--id` not nothing. See {ctx.prefix}help {ctx.command.qualified_name}")
+            return await ctx.send(
+                f"{ctx.author.name}, please provide either `--bot` or `--id` not nothing. See {ctx.prefix}help {ctx.command.qualified_name}"
+            )
 
         if isinstance(fetched_announcements, str):
-            return await ctx.send(
-                f"{ctx.author.name}, i couldn't find any announcements.\n{fetched_announcements}")
+            return await ctx.send(f"{ctx.author.name}, i couldn't find any announcements.\n{fetched_announcements}")
 
         if not fetched_announcements:
-            return await ctx.send(
-                f"{ctx.author.name}, i couldn't find any announcements.")
+            return await ctx.send(f"{ctx.author.name}, i couldn't find any announcements.")
 
         all_bot_announcements = []
 
@@ -329,7 +387,9 @@ class General(commands.Cog):
         await menu.start(ctx)
         return
 
-    @botannouncement.command(cls=flags.FlagCommand, name='delete', aliases=['remove'], brief="See [p]help botannouncement delete")
+    @botannouncement.command(
+        cls=flags.FlagCommand, name="delete", aliases=["remove"], brief="See [p]help botannouncement delete"
+    )
     async def botannouncement_delete(self, ctx, bot: discord.Member, announcement_id: int):
         """
         Delete an announcement from your bot page via the unique id, this can be found on the bottom of the announcement card.
@@ -342,10 +402,11 @@ class General(commands.Cog):
             return await ctx.send("That is not a bot or it's not listed on the site!")
 
         owners_query = await self.bot.pool.fetchrow(
-            "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id)
-        bot_owners = [owners_query['main_owner']]
-        if owners_query['owners']:
-            for x in owners_query['owners'].split(" "):
+            "SELECT main_owner, owners FROM main_site_bot WHERE id = $1 AND approved = True", bot.id
+        )
+        bot_owners = [owners_query["main_owner"]]
+        if owners_query["owners"]:
+            for x in owners_query["owners"].split(" "):
                 bot_owners.append(int(x))
 
         if ctx.author.id not in bot_owners:
@@ -357,32 +418,37 @@ class General(commands.Cog):
         else:
             pass
 
-        msg = await ctx.send(f"**{ctx.author.name}**, do you really want delete that announcement "
-                             f"with ID: {announcement_id} for {bot} ? React with ✅ or ❌ in 30 seconds.")
+        msg = await ctx.send(
+            f"**{ctx.author.name}**, do you really want delete that announcement "
+            f"with ID: {announcement_id} for {bot} ? React with ✅ or ❌ in 30 seconds."
+        )
         await msg.add_reaction("\U00002705")
         await msg.add_reaction("\U0000274c")
 
         def check(r, u):
-            return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and str(r.emoji) in ["\U00002705",
-                                                                                                         "\U0000274c"]
+            return (
+                u.id == ctx.author.id
+                and r.message.channel.id == ctx.channel.id
+                and str(r.emoji) in ["\U00002705", "\U0000274c"]
+            )
 
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', check = check, timeout = 30)
+            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=30)
         except asyncio.TimeoutError:
             await msg.remove_reaction("\U00002705", ctx.guild.me)
             await msg.remove_reaction("\U0000274c", ctx.guild.me)
-            await msg.edit(content = f"~~{msg.content}~~ i guess not, cancelled.")
+            await msg.edit(content=f"~~{msg.content}~~ i guess not, cancelled.")
             return
         else:
             if str(reaction.emoji) == "\U00002705":
                 await msg.remove_reaction("\U00002705", ctx.guild.me)
                 await msg.remove_reaction("\U0000274c", ctx.guild.me)
-                await msg.edit(content = f"~~{msg.content}~~ You reacted with ✅:")
+                await msg.edit(content=f"~~{msg.content}~~ You reacted with ✅:")
                 pass
             if str(reaction.emoji) == "\U0000274c":
                 await msg.remove_reaction("\U00002705", ctx.guild.me)
                 await msg.remove_reaction("\U0000274c", ctx.guild.me)
-                await msg.edit(content = f"~~{msg.content}~~ okay, cancelled.")
+                await msg.edit(content=f"~~{msg.content}~~ okay, cancelled.")
                 return
 
         delete_announcement = await the_announcement.delete(ctx, bot.id)
@@ -397,8 +463,10 @@ class General(commands.Cog):
             _bot: announce_file.Bot = await announcement_object.get_bot_object(ctx)
             menu = MainMenu(
                 AnnouncementPage(
-                    entries=list([(announcement_object, announcement_content, creator, _bot)]), per_page=1),
-                clear_reactions_after=True)
+                    entries=list([(announcement_object, announcement_content, creator, _bot)]), per_page=1
+                ),
+                clear_reactions_after=True,
+            )
             await menu.start(ctx)
             return
         return
@@ -407,13 +475,15 @@ class General(commands.Cog):
     async def stats(self, ctx):
         """Shows info on Blist"""
         approved_bots = await self.bot.pool.fetchval(
-            "SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False")
-        certified_bots = await self.bot.pool.fetchval(
-            "SELECT COUNT(*) FROM main_site_bot WHERE certified = True")
+            "SELECT COUNT(*) FROM main_site_bot WHERE approved = True AND denied = False"
+        )
+        certified_bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot WHERE certified = True")
         queued_bots = await self.bot.pool.fetchval(
-            "SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False")
+            "SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = False"
+        )
         denied_bots = await self.bot.pool.fetchval(
-            "SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = True")
+            "SELECT COUNT(*) FROM main_site_bot WHERE approved = False AND denied = True"
+        )
         users = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_user")
         votes = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_vote")
 
@@ -431,26 +501,27 @@ class General(commands.Cog):
                 ``Bot Ping:`` {self.bot.latency * 1000:.2f}ms
                 """
             ),
-            color=discord.Color.blurple()
+            color=discord.Color.blurple(),
         )
-        embed.set_thumbnail(url=str(ctx.guild.icon_url))
+        embed.set_thumbnail(url=str(ctx.guild.icon.url))
         await ctx.send(embed=embed)
 
-    @flags.add_flag("-a", "--all", action='store_true')
-    @commands.command(aliases=["lb"], cls=flags.FlagCommand)
-    async def leaderboard(self, ctx, **args):
+    @commands.command(aliases=["lb"])
+    async def leaderboard(self, ctx, _all: bool = False):
         """
         Sends the top 5 users on the user leaderboard
-        **Args:**
-            **--all**/-a - Flag to output everyone on the leaderboard as a menu.
+        **Argument:**
+            **all** - Flag to output everyone on the leaderboard as a menu. (default: False)
+            Example: `b!leaderboard True`
         """
         leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC")
-        embed = discord.Embed(title="User Leaderboard", color=discord.Color.blurple(),
-                              url="https://blist.xyz/leaderboard/")
-        embed.set_thumbnail(url=str(ctx.guild.icon_url))
+        embed = discord.Embed(
+            title="User Leaderboard", color=discord.Color.blurple(), url="https://blist.xyz/leaderboard/"
+        )
+        embed.set_thumbnail(url=str(ctx.guild.icon.url))
         place = 0
         for_menu = []
-        leaderboard = leaderboard[:5] if not args['all'] else leaderboard
+        leaderboard = leaderboard[:5] if not _all else leaderboard
         for leader in leaderboard:
             place += 1
             user = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE unique_id = $1", leader["user_id"])
@@ -465,14 +536,21 @@ class General(commands.Cog):
             else:
                 trophy = ":medal:"
 
-            if args['all']:
-                for_menu.append((f"{trophy} #{place} - {user['username']}#{user['discriminator']}",
-                                 f"Level: {leader['level']} | XP: {leader['xp']}"))
+            if _all is True:
+                for_menu.append(
+                    (
+                        f"{trophy} #{place} - {user['username']}#{user['discriminator']}",
+                        f"Level: {leader['level']} | XP: {leader['xp']}",
+                    )
+                )
 
-            embed.add_field(name=f"{trophy} #{place} - {user['username']}#{user['discriminator']}",
-                            value=f"Level: {leader['level']} | XP: {leader['xp']}", inline=False)
+            embed.add_field(
+                name=f"{trophy} #{place} - {user['username']}#{user['discriminator']}",
+                value=f"Level: {leader['level']} | XP: {leader['xp']}",
+                inline=False,
+            )
 
-        if args['all']:
+        if _all is True:
             menu = MainMenu(LeaderboardPage(entries=list(for_menu), per_page=5), clear_reactions_after=True)
             await menu.start(ctx)
             return
@@ -482,14 +560,14 @@ class General(commands.Cog):
     @commands.command()
     async def top(self, ctx):
         """Shows leaderboard information"""
-        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved = True ORDER BY total_votes DESC LIMIT 5")
-        embed = discord.Embed(title="Top 5 Voted Bots",
-                              color=discord.Color.blurple())
+        bots = await self.bot.pool.fetch(
+            "SELECT * FROM main_site_bot WHERE approved = True ORDER BY total_votes DESC LIMIT 5"
+        )
+        embed = discord.Embed(title="Top 5 Voted Bots", color=discord.Color.blurple())
         place = 0
         for x in bots:
             place += 1
-            embed.add_field(
-                name=f"**{place}.** ``{x['username']}: {x['total_votes']}``", value="** **", inline=False)
+            embed.add_field(name=f"**{place}.** ``{x['username']}: {x['total_votes']}``", value="** **", inline=False)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["bot"])
@@ -504,17 +582,17 @@ class General(commands.Cog):
             await ctx.send("This bot is not on our list")
             return
 
-        tags = ', '.join([str(x) for x in bots[0]['tags']])
+        tags = ", ".join([str(x) for x in bots[0]["tags"]])
         b = bots[0]
         invite_scopes = ("bot",)
-        if b['uses_slash_commands'] is True:
+        if b["uses_slash_commands"] is True:
             invite_scopes = ("bot", "applications.commands")
-        generated_invite = discord.utils.oauth_url(bot.id, scopes = invite_scopes)
-        github = f"[Click Here]({b['github']})" if b['github'] else None
-        website = f"[Click Here]({b['website']})" if b['website'] else None
-        support = f"[Click Here](https://discord.gg/{b['support_server']})" if b['support_server'] else None
-        invite = f"[Click Here]({b['invite_url']})" if b['invite_url'] else f"[Click Here]({generated_invite})"
-        privacy_url = b['privacy_policy_url'] if b['privacy_policy_url'] else None
+        generated_invite = discord.utils.oauth_url(bot.id, scopes=invite_scopes)
+        github = f"[Click Here]({b['github']})" if b["github"] else None
+        website = f"[Click Here]({b['website']})" if b["website"] else None
+        support = f"[Click Here](https://discord.gg/{b['support_server']})" if b["support_server"] else None
+        invite = f"[Click Here]({b['invite_url']})" if b["invite_url"] else f"[Click Here]({generated_invite})"
+        privacy_url = b["privacy_policy_url"] if b["privacy_policy_url"] else None
 
         embed = discord.Embed(
             title=str(bot),
@@ -532,7 +610,7 @@ class General(commands.Cog):
                 Added: ``{b['added'].strftime('%F')}``
                 """
             ),
-            color=discord.Color.blurple()
+            color=discord.Color.blurple(),
         )
         embed.add_field(
             name="**Links**",
@@ -545,13 +623,12 @@ class General(commands.Cog):
                 Invite: {invite}
                 Blist Link: [Click Here](https://blist.xyz/bot/{bot.id}/)
                 """
-            )
+            ),
         )
-        embed.add_field(name="Short Description",
-                        value=b['short_description'], inline=False)
+        embed.add_field(name="Short Description", value=b["short_description"], inline=False)
         embed.set_image(url=f"https://blist.xyz/api/bot/{bot.id}/widget")
 
-        embed.set_thumbnail(url=bot.avatar_url)
+        embed.set_thumbnail(url=bot.display_avatar.url)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -562,14 +639,16 @@ class General(commands.Cog):
             await ctx.send("This user is a bot!")
             return
 
-        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
+        bots = await self.bot.pool.fetch(
+            "SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id
+        )
         if not bots:
             await ctx.send("This user has no approved bots on our list")
             return
 
         listed_bots = []
         for x in bots:
-            bot = self.bot.main_guild.get_member(x['id'])
+            bot = self.bot.main_guild.get_member(x["id"])
             listed_bots.append(
                 f"""
                 [**{x['username']}**](https://blist.xyz/bot/{bot.id}/) ({bot.mention})
@@ -581,16 +660,17 @@ class General(commands.Cog):
 
         embed = discord.Embed(
             title=f"{member.name}'s bots",
-            description=wrap(''.join(
-                listed_bots)) if listed_bots else 'This user has not bots listed on out site',
-            color=discord.Color.blurple()
+            description=wrap("".join(listed_bots)) if listed_bots else "This user has not bots listed on out site",
+            color=discord.Color.blurple(),
         )
         await ctx.send(embed=embed)
 
     @commands.command()
     async def position(self, ctx):
         """Shows the current approval queue postion of your bots"""
-        bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = False AND denied = False", ctx.author.id)
+        bots = await self.bot.pool.fetch(
+            "SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = False AND denied = False", ctx.author.id
+        )
         if not bots:
             await ctx.send(f"{ctx.author.mention}, you have no bots in the queue!")
             return
@@ -601,7 +681,7 @@ class General(commands.Cog):
             await ctx.send(f"{b['username']} is #{queue.index(b) + 1} in the queue")
 
     @commands.command(aliases=["user", "member", "memberinfo", "ui", "whois"])
-    async def userinfo(self, ctx, *, member: discord.Member=None):
+    async def userinfo(self, ctx, *, member: discord.Member = None):
         """Shows information on a user"""
 
         member = member or ctx.author
@@ -610,10 +690,10 @@ class General(commands.Cog):
             "online": f"{f'<:onlinemobile:821342595392864287>' if member.is_on_mobile() else f'<:online:821342595422224404>'}",
             "idle": f"{f'<:idlemobile:821342595485007903>' if member.is_on_mobile() else f'<:idle:821342595229417506>'}",
             "dnd": f"{f'<:dndmobile:821342595061907457>' if member.is_on_mobile() else f'<:dnd:821342595439263774>'}",
-            "offline": "<:offline:821342595317104652>"
+            "offline": "<:offline:821342595317104652>",
         }
 
-        userstatus = f'{statusdict[str(member.status)]}'
+        userstatus = f"{statusdict[str(member.status)]}"
 
         signedup = await self.bot.pool.fetch("SELECT * FROM main_site_user WHERE id = $1", member.id)
 
@@ -631,22 +711,26 @@ class General(commands.Cog):
                 `Joined This Server:` {member.joined_at.strftime("%c")}
                 `Signed up to Blist:` {'Yes' if signedup else 'No'}
                 """
-            )
+            ),
         )
         unique_id = await announce_file._get_unique_id(ctx, "USER", member.id)
         level_user = await self.bot.pool.fetchrow("SELECT * FROM main_site_leveling WHERE user_id = $1", unique_id)
         if level_user:
-            full_leaderboard = await self.bot.pool.fetch("SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC")
+            full_leaderboard = await self.bot.pool.fetch(
+                "SELECT * FROM main_site_leveling ORDER BY level DESC, xp DESC"
+            )
             place = full_leaderboard.index(level_user) + 1
-            em.add_field(name="Leveling:",
-                         value=wrap(
-                             f""">>> `Place:` {place}
+            em.add_field(
+                name="Leveling:",
+                value=wrap(
+                    f""">>> `Place:` {place}
                              `Level:` {level_user['level']:,d}
                              `XP:` {level_user['xp']:,d}
                              `Blacklisted:` {'Yes' if level_user['blacklisted'] else 'No'}
-                             """)
-                         )
-        em.set_thumbnail(url=member.avatar_url)
+                             """
+                ),
+            )
+        em.set_thumbnail(url=member.display_avatar.url)
         await ctx.send(embed=em)
 
     @commands.command()
@@ -659,13 +743,24 @@ class General(commands.Cog):
             title=f"#{id+1} | Suggestion",
             color=discord.Color.blurple(),
             description=f">>> {suggestion}",
-            timestamp=datetime.datetime.utcnow()
+            timestamp=datetime.datetime.utcnow(),
         )
-        embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=ctx.author, icon_url=ctx.author.display_avatar.url)
         m = await ch.send(embed=embed)
         await m.add_reaction("⬆")
         await m.add_reaction("⬇")
-        await self.bot.pool.execute("INSERT INTO main_site_suggestion VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", ctx.author.id, suggestion, m.id, False, False, False, False, id+1, datetime.datetime.utcnow())
+        await self.bot.pool.execute(
+            "INSERT INTO main_site_suggestion VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+            ctx.author.id,
+            suggestion,
+            m.id,
+            False,
+            False,
+            False,
+            False,
+            id + 1,
+            datetime.datetime.utcnow(),
+        )
         await ctx.send(f"Submitted your suggestion! You will recieve a DM with the outcome!")
 
 

@@ -86,7 +86,7 @@ class Blist(commands.Bot):
 
     async def stop(self):
         await self.pool.close()
-        await super().logout()
+        await super().close()
         await self.session.close()
 
     def run(self):

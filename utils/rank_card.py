@@ -8,13 +8,15 @@ import discord
 from discord.ext.commands import Context
 from discord import Member
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from typing import Coroutine, Any, Awaitable
 
 loop = asyncio.get_event_loop()
 
+
 def async_executor():
-    def outer(func):
+    def outer(func) -> Any:
         @functools.wraps(func)
-        def inner(*args, **kwargs):
+        def inner(*args, **kwargs) -> Awaitable[Any]:
             thing = functools.partial(func, *args, **kwargs)
             return loop.run_in_executor(None, thing)
 
@@ -22,8 +24,9 @@ def async_executor():
 
     return outer
 
+
 def calculate_brightness(image):
-    greyscale_image = image.convert('L')
+    greyscale_image = image.convert("L")
     histogram = greyscale_image.histogram()
     pixels = sum(histogram)
     brightness = scale = len(histogram)
@@ -33,6 +36,7 @@ def calculate_brightness(image):
         brightness += ratio * (-scale + index)
 
     return 1 if brightness == 255 else brightness / scale
+
 
 class Rank:
     def __init__(self, ctx: Context, member: Member, **kwargs) -> None:
@@ -50,32 +54,33 @@ class Rank:
         self.user = member
 
     @async_executor()
-    def get_card(self, xp: int, level: int, position: int, avatar_bytes,
-                 badges_black: dict, badges_white: dict, custom: dict) -> BytesIO:
+    def get_card(
+        self, xp: int, level: int, position: int, avatar_bytes, badges_black: dict, badges_white: dict, custom: dict
+    ) -> Coroutine[Any, Any, BytesIO]:
         avatar = Image.open(avatar_bytes).convert("RGBA")
         needed_xp = 50 + level * 50
 
         border_color = str(self.user.color)
-        if custom.get('border_color', None):
-            border_color = custom['border_color']
-        if custom.get('xp_color', None):
-            xp_bar_color = custom['xp_color']
+        if custom.get("border_color", None):
+            border_color = custom["border_color"]
+        if custom.get("xp_color", None):
+            xp_bar_color = custom["xp_color"]
         else:
             xp_bar_color = "text"
-        if custom.get('background', None):
-            bg = custom['background']
+        if custom.get("background", None):
+            bg = custom["background"]
             if isinstance(bg, BytesIO):  # url
                 im = Image.open(bg).convert("RGBA")
                 im = im.resize((600, 150))
             else:  # rgb
-                im = Image.new('RGBA', (600, 150), bg)
+                im = Image.new("RGBA", (600, 150), bg)
         else:
-            im = Image.new('RGBA', (600, 150), (44, 44, 44, 255))
+            im = Image.new("RGBA", (600, 150), (44, 44, 44, 255))
 
-        text_color = 'black' if calculate_brightness(im) > 0.5 else 'white'
+        text_color = "black" if calculate_brightness(im) > 0.5 else "white"
         xp_bar_color = text_color if xp_bar_color == "text" else xp_bar_color
         # border/outline
-        im = ImageOps.expand(im, border = 5, fill = border_color)
+        im = ImageOps.expand(im, border=5, fill=border_color)
 
         fontsize = 1
         img_fraction = 0.30
@@ -96,7 +101,7 @@ class Rank:
         im_draw.text((311, 85), f"Level: {level}", font=self.xp_level_font, fill=text_color)
 
         im_draw.rectangle((159, 105, 379, 130), fill=(64, 64, 64, 255))
-        im_draw.rectangle((159, 105, 179 + (int(int(xp)/needed_xp * 100)) * 2, 130), fill=xp_bar_color)
+        im_draw.rectangle((159, 105, 179 + (int(int(xp) / needed_xp * 100)) * 2, 130), fill=xp_bar_color)
 
         im.paste(avatar, (15, 15), avatar)
 
@@ -104,37 +109,37 @@ class Rank:
         badge_size = (28, 28)
         if self.is_boosting:
             badge_x_pos += 7
-            badges = badges_black if text_color == 'black' else badges_white
-            donator_badge = Image.open(badges['boosting']).convert("RGBA")
+            badges = badges_black if text_color == "black" else badges_white
+            donator_badge = Image.open(badges["boosting"]).convert("RGBA")
             donator_badge = donator_badge.resize(badge_size)
             im.paste(donator_badge, (badge_x_pos, badge_y_pos), donator_badge)
         if self.is_staff:
             badge_x_pos += 30 if self.is_boosting else 8
-            badges = badges_black if text_color == 'black' else badges_white
-            staff_badge = Image.open(badges['staff']).convert("RGBA")
+            badges = badges_black if text_color == "black" else badges_white
+            staff_badge = Image.open(badges["staff"]).convert("RGBA")
             staff_badge = staff_badge.resize(badge_size)
             im.paste(staff_badge, (badge_x_pos, badge_y_pos), staff_badge)
         if self.developer:
             badge_x_pos += 30 if self.is_staff else 8
-            badges = badges_black if text_color == 'black' else badges_white
-            dev_badge = Image.open(badges['developer']).convert("RGBA")
+            badges = badges_black if text_color == "black" else badges_white
+            dev_badge = Image.open(badges["developer"]).convert("RGBA")
             dev_badge = dev_badge.resize(badge_size)
             im.paste(dev_badge, (badge_x_pos, badge_y_pos), dev_badge)
         if self.donator:
             badge_x_pos += 30 if self.developer else 8
-            badges = badges_black if text_color == 'black' else badges_white
-            donator_badge = Image.open(badges['donator']).convert("RGBA")
+            badges = badges_black if text_color == "black" else badges_white
+            donator_badge = Image.open(badges["donator"]).convert("RGBA")
             donator_badge = donator_badge.resize(badge_size)
             im.paste(donator_badge, (badge_x_pos, badge_y_pos), donator_badge)
         if self.bug_hunter:
             badge_x_pos += 30 if self.donator else 8
-            badges = badges_black if text_color == 'black' else badges_white
-            bug_hunter_badge = Image.open(badges['bug_hunter']).convert("RGBA")
+            badges = badges_black if text_color == "black" else badges_white
+            bug_hunter_badge = Image.open(badges["bug_hunter"]).convert("RGBA")
             bug_hunter_badge = bug_hunter_badge.resize(badge_size)
             im.paste(bug_hunter_badge, (badge_x_pos, badge_y_pos), bug_hunter_badge)
 
         buffer = BytesIO()
-        im.save(buffer, 'png')
+        im.save(buffer, "png")
         buffer.seek(0)
 
         return buffer
@@ -143,7 +148,7 @@ class Rank:
         queries = {
             "XP_BAR_COLOUR": "UPDATE main_site_leveling SET xp_bar_color = $1 WHERE user_id = $2",
             "BORDER_COLOUR": "UPDATE main_site_leveling SET border_color = $1 WHERE user_id = $2",
-            "BACKGROUND": "UPDATE main_site_leveling SET background_color = $1 WHERE user_id = $2"
+            "BACKGROUND": "UPDATE main_site_leveling SET background_color = $1 WHERE user_id = $2",
         }
         try:
             user_id = await _get_unique_id(self.ctx, "USER", self.user.id)
