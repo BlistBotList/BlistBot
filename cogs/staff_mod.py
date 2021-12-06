@@ -93,7 +93,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(kick_members=True)
     @commands.command()
-    async def unmute(self, ctx, member: discord.Member, reason=None):
+    async def unmute(self, ctx, member: discord.Member, *, reason=None):
         if not ctx.author.top_role > member.top_role:
             return await ctx.send(f"You cannot un-mute someone higher than you!")
 
