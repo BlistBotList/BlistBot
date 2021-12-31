@@ -301,7 +301,7 @@ class Staff(commands.Cog):
             "The bot had issues that were not fixed within the timeframe given",
             "Mass DM advertised",
             "Bot DM advertised",
-            "Bot was editied and now violates our rules",
+            "Bot was edited and now violates our rules",
             "Bot sent unwanted spam",
         ]
 
