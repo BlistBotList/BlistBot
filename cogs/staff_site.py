@@ -247,11 +247,7 @@ class Staff(commands.Cog):
 
         await self.bot.mod_pool.execute("UPDATE staff SET denied=denied + 1 WHERE userid=$1", ctx.author.id)
 
-        try:
-            owner=self.bot.main_guild.get_member(bots)
-            await owner.send(f"Your bot `{bot}` was denied!")
-        except (discord.Forbidden, AttributeError):
-            pass
+
 
         await self.bot.pool.execute("UPDATE main_site_bot SET denied=True WHERE id=$1", bot.id)
         embed=discord.Embed(
@@ -261,8 +257,13 @@ class Staff(commands.Cog):
         bot_owner=self.bot.main_guild.get_member(bots)
         bot_owner=bot_owner if bot_owner else int(bots)
         em=bot_log_embed(ctx, (bot, bot_owner), reason=str(reason))
-        await self.bot.get_channel(716446098859884625).send(embed=em)
+        msg = await self.bot.get_channel(716446098859884625).send(embed=em)
 
+        try:
+            owner=self.bot.main_guild.get_member(bots)
+            await owner.send(f"Your bot `{bot}` with ID: {bot.id} was denied for the following reason: {reason}.\nSee more here: {msg.jump_url}")
+        except (discord.Forbidden, AttributeError):
+            pass
         try:
             await bot.kick(reason="Bot Denied")
         except Exception:
