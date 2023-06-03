@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import datetime
+import io
 import json
 import os
 import random
 import re
 import sys
-import io
 from textwrap import dedent as wrap
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
