@@ -549,7 +549,8 @@ New Message
                         for x in messages:
                             contents = self.__parse_message_contents(x)
                             all_messages.append(
-                                f"[#{x.channel.name} | {x.author.name}]:\n{contents}" + "\n-----------\n"
+                                f"[#{x.channel.name} | {x.author.name}]:\n{contents.encode('utf-8')}"
+                                + "\n-----------\n"
                             )
 
                     await channel.delete()
