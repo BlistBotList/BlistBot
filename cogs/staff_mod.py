@@ -1,29 +1,41 @@
+from __future__ import annotations
+
 import asyncio
 import datetime
 import re
 from textwrap import dedent as wrap
+from typing import TYPE_CHECKING
 
 import asyncpg
 import discord
 import humanize
-from discord.ext import commands, flags
+from discord.ext import commands
 
+from bot import Blist
 from utils import checks
+from utils.flags import DMCommandFlags
 from utils.time import FutureTime
+
+if TYPE_CHECKING:
+    from bot import Blist
 
 
 class Mod(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self._task = bot.loop.create_task(self.dispatch_mutes())
+    def __init__(self, bot: Blist):
+        self.bot: Blist = bot
+
+    async def cog_load(self) -> None:
+        self._task = asyncio.create_task(self.dispatch_mutes())
 
     async def dispatch_mutes(self):
         try:
             while not self.bot.is_closed():
                 seven_days = datetime.datetime.utcnow() + datetime.timedelta(days=7)
-                mutes = await self.bot.mod_pool.fetch("SELECT * FROM mutes WHERE expire < $1 ORDER BY expire", seven_days)
+                mutes = await self.bot.mod_pool.fetch(
+                    "SELECT * FROM mutes WHERE expire < $1 ORDER BY expire", seven_days
+                )
                 for mute in mutes:
-                    if mute['expire'] <= datetime.datetime.utcnow():
+                    if mute["expire"] <= datetime.datetime.utcnow():
                         await self.call_mute(mute)
         except asyncio.CancelledError:
             raise
@@ -32,12 +44,17 @@ class Mod(commands.Cog):
             self._task = self.bot.loop.create_task(self.dispatch_mutes())
 
     async def call_mute(self, mute):
-        member = self.bot.main_guild.get_member(mute["userid"])
-        mute_role = self.bot.main_guild.get_role(725899725152190525)
-        if member:
-            await member.remove_roles(mute_role, reason="Unmuted")
-            await self.bot.mod_pool.execute("DELETE FROM mutes WHERE id = $1", mute["id"])
-            await self.do_case(self.bot.main_guild.get_member(mute["modid"]), member, "Automatic Un-mute", "Un-Mute")
+        try:
+            member = self.bot.main_guild.get_member(mute["userid"])
+            mute_role = self.bot.main_guild.get_role(725899725152190525)
+            if member:
+                await member.remove_roles(mute_role, reason="Unmuted")
+                await self.bot.mod_pool.execute("DELETE FROM mutes WHERE id = $1", mute["id"])
+                await self.do_case(
+                    self.bot.main_guild.get_member(mute["modid"]), member, "Automatic Un-mute", "Un-Mute"
+                )
+        except AttributeError:
+            return
 
     async def do_case(self, mod: discord.Member, member: discord.Member, reason, type, time=None):
         last_case_number = await self.bot.mod_pool.fetchval("SELECT COUNT(*) FROM action")
@@ -46,20 +63,29 @@ class Mod(commands.Cog):
         else:
             string = ""
         embed = discord.Embed(
-            title=type.title(), color=discord.Color.blurple(),
+            title=type.title(),
+            color=discord.Color.blurple(),
             description=wrap(
                 f"""
             **__Victim:__** {member} ({member.id})
             **__Reason:__** ``{reason or f'No reason was set. Do b!reason {last_case_number + 1} <reason> to do so.'}``
             {string}
             """
-            )
+            ),
         )
-        embed.set_author(name=str(mod), icon_url=mod.avatar_url)
+        embed.set_author(name=str(mod), icon_url=mod.display_avatar.url)
         embed.set_footer(text=f"Case #{last_case_number + 1}")
         embed.timestamp = datetime.datetime.utcnow()
         message = await self.bot.main_guild.get_channel(716719009499971685).send(embed=embed)
-        await self.bot.mod_pool.execute("INSERT INTO action VALUES($1, $2, $3, $4, $5, $6)", member.id, mod.id, reason or 'None', message.id, type, datetime.datetime.utcnow())
+        await self.bot.mod_pool.execute(
+            "INSERT INTO action VALUES($1, $2, $3, $4, $5, $6)",
+            member.id,
+            mod.id,
+            reason or "None",
+            message.id,
+            type,
+            datetime.datetime.utcnow(),
+        )
         return last_case_number + 1
 
     @commands.has_permissions(ban_members=True)
@@ -87,7 +113,14 @@ class Mod(commands.Cog):
 
         await member.add_roles(mute_role, reason=reason)
         case_number = await self.do_case(ctx.author, member, reason, "Mute", time=length)
-        await self.bot.mod_pool.execute("INSERT INTO mutes VALUES($1, $2, $3, $4, $5)", ctx.author.id, member.id, datetime.datetime.utcnow(), length.dt, case_number)
+        await self.bot.mod_pool.execute(
+            "INSERT INTO mutes VALUES($1, $2, $3, $4, $5)",
+            ctx.author.id,
+            member.id,
+            datetime.datetime.utcnow(),
+            length.dt,
+            case_number,
+        )
         send_time = humanize.naturaldelta(length.dt - datetime.datetime.utcnow())
         await ctx.send(f"**{member}** was successfully muted for {send_time}\nReason: *{reason}*")
 
@@ -147,11 +180,11 @@ class Mod(commands.Cog):
         else:
             info = info[0]
 
-        target = ctx.guild.get_member(info['userid'])
-        mod = ctx.guild.get_member(info['modid'])
+        target = ctx.guild.get_member(info["userid"])
+        mod = ctx.guild.get_member(info["modid"])
 
         embed = discord.Embed(
-            title=info['type'].title(),
+            title=info["type"].title(),
             color=discord.Color.blurple(),
             description=wrap(
                 f"""
@@ -160,7 +193,7 @@ class Mod(commands.Cog):
                 **__Reason:__** ``{info['reason']}``
                 **__Time:__** ``{info['time'].strftime('%c')}``
                 """
-            )
+            ),
         )
         await ctx.send(embed=embed)
 
@@ -177,17 +210,16 @@ class Mod(commands.Cog):
         await ctx.send(f"Set the reason to: `{reason}`")
         await self.bot.mod_pool.execute("UPDATE action SET reason = $1 WHERE id = $2", reason, number)
 
-        target = ctx.guild.get_member(info['userid'])
-        mod = ctx.guild.get_member(info['modid'])
-        if info['type'] == "Mute":
-            mute_info = await self.bot.mod_pool.fetchval("SELECT expire FROM mutes WHERE id = $1", info['id'])
-            time = humanize.naturaldelta(
-                mute_info - datetime.datetime.utcnow())
+        target = ctx.guild.get_member(info["userid"])
+        mod = ctx.guild.get_member(info["modid"])
+        if info["type"] == "Mute":
+            mute_info = await self.bot.mod_pool.fetchval("SELECT expire FROM mutes WHERE id = $1", info["id"])
+            time = humanize.naturaldelta(mute_info - datetime.datetime.utcnow())
             string = f"**__Length:__** ``{time}``"
         else:
             string = ""
         embed = discord.Embed(
-            title=info['type'].title(),
+            title=info["type"].title(),
             color=discord.Color.blurple(),
             description=wrap(
                 f"""
@@ -195,13 +227,13 @@ class Mod(commands.Cog):
                 **__Reason:__** ``{reason}``
                 {string}
                 """
-            )
+            ),
         )
-        embed.set_author(name=mod, icon_url=mod.avatar_url)
+        embed.set_author(name=mod, icon_url=mod.display_avatar.url)
         embed.set_footer(text=f"Case #{number}")
         embed.timestamp = info["time"]
 
-        message = await self.bot.main_guild.get_channel(716719009499971685).fetch_message(info['messageid'])
+        message = await self.bot.main_guild.get_channel(716719009499971685).fetch_message(info["messageid"])
         await message.edit(embed=embed)
 
     @commands.has_permissions(manage_messages=True)
@@ -220,23 +252,20 @@ class Mod(commands.Cog):
             await member.add_roles(role)
             return await ctx.send(f"Added the common prefix role to {member}")
 
-    @flags.add_flag("-t", "--title", type = str, default = 'Official Warning')
-    @flags.add_flag("-f", "--footer", type = str, default = 'blist.xyz')
-    @flags.add_flag("-s", "--signature", type = str, default = None)
-    @flags.add_flag("message", nargs = "+")
-    @commands.has_permissions(manage_messages = True)
-    @commands.command(cls = flags.FlagCommand)
-    async def dm(self, ctx, member: discord.Member, **arguments):
+    @commands.has_permissions(manage_messages=True)
+    @commands.command()
+    async def dm(self, ctx, *, arguments: DMCommandFlags):
         """
         Send a official DM on behalf of Blist.
 
         **Required Arguments:**
-        message | The message you want to send, this must be first.
+        --member/m | The member you want to send the message to.
+        --message/msg | The message you want to send.
 
         Optional **Arguments:**
-        **--title**/-t | Choose a different title. Defaults to 'Official Warning'.
-        **--footer**/-f | Choose a different footer with the blist logo. Default to 'blist.xyz'.
-        **--signature**/-s | Choose a different signature  (endline). Defaults to '[AUTHOR_NAME], [RANK]'.
+        **--title**/t | Choose a different title. Defaults to 'Official Warning'.
+        **--footer**/f | Choose a different footer with the blist logo. Default to 'blist.xyz'.
+        **--signature**/s | Choose a different signature  (endline). Defaults to '[AUTHOR_NAME], [RANK]'.
         ----
         **[AUTHOR]** - This will get replaced with your name with discriminator.
         **[MEMBER]** - This will get replaced with the target's name with discriminator.
@@ -251,6 +280,7 @@ class Mod(commands.Cog):
         **[BOT:bot_id_here]** - This will get replaced with the given bot's name with discriminator. Will ignore if id isn't a bot.
         **[BOT_NAME:bot_id_here]** - This will get replaced with the given bot's name without discriminator. Will ignore if id isn't a bot.
         """
+        member = arguments.member
 
         def parse_arguments(text: str):
             def get_bot(reg):
@@ -285,7 +315,7 @@ class Mod(commands.Cog):
                         pass
 
             search_keys = map(lambda x: re.escape(x), dict_of_arguments.keys())
-            regex = re.compile('|'.join(search_keys))
+            regex = re.compile("|".join(search_keys))
             res = regex.sub(lambda m: dict_of_arguments[m.group()], text)
 
             return res
@@ -293,22 +323,24 @@ class Mod(commands.Cog):
         if member.bot:
             return await ctx.send(f"I can't dm a bot.")
 
-        message = parse_arguments(str(' '.join(arguments['message'])))
-        signature = f"{ctx.author.name}, {ctx.author.top_role.name}" if not arguments['signature'] else parse_arguments(arguments['signature'])
+        message = parse_arguments(str(" ".join(arguments.message)))
+        signature = (
+            f"{ctx.author.name}, {ctx.author.top_role.name}"
+            if not arguments.signature
+            else parse_arguments(arguments.signature)
+        )
 
         embed = discord.Embed(
-            title=arguments['title'],
-            description=f"{message}\n\n{signature}",
-            color=discord.Color.blurple()
+            title=arguments.title, description=f"{message}\n\n{signature}", color=discord.Color.blurple()
         )
-        embed.set_author(name = ctx.author, icon_url = ctx.author.avatar_url)
-        embed.set_footer(text = arguments['footer'], icon_url = self.bot.user.avatar_url)
+        embed.set_author(name=ctx.author, icon_url=ctx.author.display_avatar.url)
+        embed.set_footer(text=arguments.footer, icon_url=self.bot.user.display_avatar.url)
         try:
-            await ctx.send(f'Sent a message to **{member}**.', embed = embed)
-            await member.send(embed = embed)
+            await ctx.send(f"Sent a message to **{member}**.", embed=embed)
+            await member.send(embed=embed)
         except discord.Forbidden:
-            await ctx.send(f'{member.mention} has DMs disabled or has blocked me.')
+            await ctx.send(f"{member.mention} has DMs disabled or has blocked me.")
 
 
-def setup(bot):
-    bot.add_cog(Mod(bot))
+async def setup(bot: Blist):
+    await bot.add_cog(Mod(bot))

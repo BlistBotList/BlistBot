@@ -1,27 +1,34 @@
+from __future__ import annotations
+
 import asyncio
 import datetime
 import importlib
 import os
 import re
 from textwrap import dedent as wrap
+from typing import TYPE_CHECKING
 
-import config
 import country_converter as coco
 import discord
-from discord.ext import commands, flags
+from discord.ext import commands
 
+import config
 from cogs.staff_site import bot_log_embed
 from utils import checks
+from utils.flags import ChangeVoteFlags, RestartFlags
+
+if TYPE_CHECKING:
+    from bot import Blist
 
 
 class Admin(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: Blist) -> None:
+        self.bot: Blist = bot
 
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def reloadutils(self, ctx, name: str):
-        """ Reloads a utils module. """
+        """Reloads a utils module."""
         name_maker = f"utils/{name}.py"
         try:
             module_name = importlib.import_module(f"utils.{name}")
@@ -30,10 +37,11 @@ class Admin(commands.Cog):
             return await ctx.send(f"Couldn't find module named **{name_maker}**")
         except Exception as e:
             return await ctx.send(f"Module **{name_maker}** returned error and was not reloaded...\n{e}")
-        await ctx.send(f"Reloaded module **{name_maker}**", delete_after = 5)
+        await ctx.send(f"Reloaded module **{name_maker}**", delete_after=5)
 
     @commands.has_permissions(administrator=True)
     @commands.command()
+    @commands.max_concurrency(1, commands.BucketType.guild)
     async def hire(self, ctx, member: discord.Member, *, country: str):
         """
         Command to hire someone as staff this will do the following:
@@ -52,11 +60,11 @@ class Admin(commands.Cog):
         staff_bot_role = main_guild.get_role(777575976124547072)
         staff_role = self.bot.main_guild.get_role(716713561233031239)
         web_mod_role = self.bot.main_guild.get_role(716713293330514041)
-        user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
-        verification_guild_channel = self.bot.verification_guild.get_channel(
-            734527843098165269)
-        staff_chat_channel = self.bot.main_guild.get_channel(
-            716717923359784980)
+        user_bots = await self.bot.pool.fetch(
+            "SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id
+        )
+        verification_guild_channel = self.bot.verification_guild.get_channel(734527843098165269)
+        staff_chat_channel = self.bot.main_guild.get_channel(716717923359784980)
 
         if staff_role in member.roles or member.bot:
             return await ctx.send("That is a bot or already a staff member.")
@@ -69,26 +77,24 @@ class Admin(commands.Cog):
                 await member.add_roles(role)
                 success_text.append(f"✅ **Added staff role:** {role.name}")
             else:
-                success_text.append(
-                    f"❌ **{member} already has the:** {role.name} staff role.")
+                success_text.append(f"❌ **{member} already has the:** {role.name} staff role.")
 
         if user_bots:
             for x in user_bots:
-                bot = self.bot.main_guild.get_member(x['id'])
+                bot = self.bot.main_guild.get_member(x["id"])
                 if staff_bot_role not in bot.roles:
                     await bot.add_roles(staff_bot_role)
-                    success_text.append(
-                        f"✅ **Added staff bot role to:** {bot} ({bot.id}).")
+                    success_text.append(f"✅ **Added staff bot role to:** {bot} ({bot.id}).")
                 else:
-                    success_text.append(
-                        f"❌ **{member}'s bot:** {bot} ({bot.id}) already has the staff bot role.")
+                    success_text.append(f"❌ **{member}'s bot:** {bot} ({bot.id}) already has the staff bot role.")
         else:
-            success_text.append(
-                f"❌ **{member} doesn't have any bots listed on the site.**")
+            success_text.append(f"❌ **{member} doesn't have any bots listed on the site.**")
 
         if member not in verification_guild.members:
-            if member.status.value in ['online', 'idle', 'dnd']:
-                generated_invite = await verification_guild_channel.create_invite(reason="new staff member", max_age=1800, max_uses=1)
+            if member.status.value in ["online", "idle", "dnd"]:
+                generated_invite = await verification_guild_channel.create_invite(
+                    reason="new staff member", max_age=1800, max_uses=1
+                )
                 try:
                     await member.send(
                         discord.utils.escape_markdown(
@@ -96,34 +102,40 @@ class Admin(commands.Cog):
                             f" See more in {staff_chat_channel.mention}\n\nSincerely,\n{ctx.author.name}, on behalf of Blist"
                         )
                     )
-                    success_text.append(f"✅ **Sent {member} an invite to the verification server.** "
-                                        f"The invite is valid for 30 minutes and can only be used once.")
+                    success_text.append(
+                        f"✅ **Sent {member} an invite to the verification server.** "
+                        f"The invite is valid for 30 minutes and can only be used once."
+                    )
                 except Exception:
-                    success_text.append(f"❌ **Couldn't DM {member} a invite to the verification server. DM's closed?** "
-                                        f"**Here is the invite i generated for them:** <{generated_invite.url}>, "
-                                        f"it's valid for 30 minutes and can only be used once.")
+                    success_text.append(
+                        f"❌ **Couldn't DM {member} a invite to the verification server. DM's closed?** "
+                        f"**Here is the invite i generated for them:** <{generated_invite.url}>, "
+                        f"it's valid for 30 minutes and can only be used once."
+                    )
             else:
-                success_text.append(f"❌ **{member} is not online, "
-                                    f"therefore i didn't send them a invite to the verification server.**")
+                success_text.append(
+                    f"❌ **{member} is not online, "
+                    f"therefore i didn't send them a invite to the verification server.**"
+                )
         else:
-            success_text.append(
-                f"❌ **{member} is already in the verification server...**")
+            success_text.append(f"❌ **{member} is already in the verification server...**")
 
         # set country flag from forum ---------------
-        iso2_country = coco.convert(names=country, to='ISO2')
+        iso2_country = coco.convert(names=country, to="ISO2")
         if iso2_country != "not found":
-
             member_in_db = await self.bot.mod_pool.fetch("SELECT * FROM staff WHERE userid = $1", member.id)
             if not member_in_db:
-                success_text.append(
-                    f"❌ **Couldn't set {member}'s country flag because:** they aren't in the database.")
+                success_text.append(f"❌ **Couldn't set {member}'s country flag because:** they aren't in the database.")
             else:
-                await self.bot.mod_pool.execute("UPDATE staff SET country_code = $1 WHERE userid = $2", iso2_country, member.id)
-                success_text.append(
-                    f"✅ **Set {member}'s country to:** {iso2_country}.")
+                await self.bot.mod_pool.execute(
+                    "UPDATE staff SET country_code = $1 WHERE userid = $2", iso2_country, member.id
+                )
+                success_text.append(f"✅ **Set {member}'s country to:** {iso2_country}.")
         else:
-            success_text.append(f"❌ **Couldn't set {member}'s country flag because:** "
-                                f"{country} is not a valid country or something else happened.")
+            success_text.append(
+                f"❌ **Couldn't set {member}'s country flag because:** "
+                f"{country} is not a valid country or something else happened."
+            )
 
         join_list = "\n".join(success_text)
         await self.bot.pool.execute("UPDATE main_site_user SET staff = True WHERE id = $1", member.id)
@@ -133,6 +145,7 @@ class Admin(commands.Cog):
 
     @commands.has_permissions(administrator=True)
     @commands.command()
+    @commands.max_concurrency(1, commands.BucketType.guild)
     async def fire(self, ctx, member: discord.Member):
         """
         Fire someone with confirmation from Blist.
@@ -141,28 +154,41 @@ class Admin(commands.Cog):
         main_guild = self.bot.main_guild
         staff_bot_role = main_guild.get_role(777575976124547072)
         staff_role = self.bot.main_guild.get_role(716713561233031239)
-        user_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id)
+        user_bots = await self.bot.pool.fetch(
+            "SELECT * FROM main_site_bot WHERE main_owner = $1 AND approved = True", member.id
+        )
 
         if staff_role not in member.roles or member.bot:
             return await ctx.send("That is a bot or not a staff member.")
         if member.id == ctx.author.id:
             atc = str(self.bot.main_guild.get_member(679118121943957504))
-            adu = str(self.bot.main_guild.get_member(712737377524777001)
-                      ) if ctx.author.id != 712737377524777001 else atc
-            return await ctx.send(f"**{ctx.author}**, I can't let you do that. Please contact {adu} if you want to resign from your staff position at Blist. ")
+            adu = (
+                str(self.bot.main_guild.get_member(712737377524777001)) if ctx.author.id != 712737377524777001 else atc
+            )
+            return await ctx.send(
+                f"**{ctx.author}**, I can't let you do that. Please contact {adu} if you want to resign from your staff position at Blist. "
+            )
         if member.top_role >= ctx.author.top_role:
-            return await ctx.send(f"**{ctx.author}**, I won't let you fire someone higher than you or with the same rank.")
+            return await ctx.send(
+                f"**{ctx.author}**, I won't let you fire someone higher than you or with the same rank."
+            )
 
-        msg = await ctx.send(f"**{ctx.author.name}**, do you really want to fire {member}? "
-                             f"React with ✅ or ❌ in 30 seconds. **This action will remove __all__ staff privileges from {member}!**")
+        msg = await ctx.send(
+            f"**{ctx.author.name}**, do you really want to fire {member}? "
+            f"React with ✅ or ❌ in 30 seconds. **This action will remove __all__ staff privileges from {member}!**"
+        )
         await msg.add_reaction("\U00002705")
         await msg.add_reaction("\U0000274c")
 
         def check(r, u):
-            return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and str(r.emoji) in ["\U00002705", "\U0000274c"]
+            return (
+                u.id == ctx.author.id
+                and r.message.channel.id == ctx.channel.id
+                and str(r.emoji) in ["\U00002705", "\U0000274c"]
+            )
 
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30)
+            reaction, user = await self.bot.wait_for("reaction_add", check=check, timeout=30)
         except asyncio.TimeoutError:
             await msg.remove_reaction("\U00002705", ctx.guild.me)
             await msg.remove_reaction("\U0000274c", ctx.guild.me)
@@ -193,25 +219,20 @@ class Admin(commands.Cog):
 
         if user_bots:
             for x in user_bots:
-                bot = self.bot.main_guild.get_member(x['id'])
+                bot = self.bot.main_guild.get_member(x["id"])
                 if staff_bot_role in bot.roles:
                     await bot.remove_roles(staff_bot_role)
-                    success_text.append(
-                        f"✅ **Removed staff bot role from:** {bot} ({bot.id}).")
+                    success_text.append(f"✅ **Removed staff bot role from:** {bot} ({bot.id}).")
                 else:
-                    success_text.append(
-                        f"❌ **{member}'s bot:** {bot} ({bot.id}) **didn't have the staff bot role.**")
+                    success_text.append(f"❌ **{member}'s bot:** {bot} ({bot.id}) **didn't have the staff bot role.**")
         else:
-            success_text.append(
-                f"❌ **{member} didn't have any bots listed on the site.**")
+            success_text.append(f"❌ **{member} didn't have any bots listed on the site.**")
 
         if member in verification_guild.members:
             await self.bot.verification_guild.get_member(member.id).kick()
-            success_text.append(
-                f"✅ **Kicked {member} from the verification server.**")
+            success_text.append(f"✅ **Kicked {member} from the verification server.**")
         else:
-            success_text.append(
-                f"❌ **{member} wasn't in the verification server...**")
+            success_text.append(f"❌ **{member} wasn't in the verification server...**")
 
         join_list = "\n".join(success_text)
         await self.bot.mod_pool.execute("DELETE FROM staff WHERE userid = $1", member.id)
@@ -222,20 +243,24 @@ class Admin(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def rr(self, ctx):
-        embed = discord.Embed(color=discord.Color.blurple(),
-                              title="Assignable Roles", inline=False)
-        embed.add_field(name="> <a:updating:780103995879325696>",
-                        value="Get updates from our site", inline=False)
+        embed = discord.Embed(color=discord.Color.blurple(), title="Assignable Roles", inline=False)
+        embed.add_field(name="> <a:updating:780103995879325696>", value="Get updates from our site", inline=False)
+        embed.add_field(name="> :underage:", value="Allows access to NSFW channels. 18+ ONLY", inline=False)
         embed.add_field(
-            name="> :underage:", value="Allows access to NSFW channels. 18+ ONLY", inline=False)
-        embed.add_field(name="> <a:giveaway:780103641519358013>",
-                        value="Be notified when we host giveaways", inline=False)
-        embed.add_field(name="> <a:check_animated:780103746432139274>",
-                        value="Get pinged when we host polls for our site", inline=False)
-        embed.add_field(name="> <:announcementchannel:780103872668237835>",
-                        value="Get pinged when we have announcements", inline=False)
-        #embed.add_field(name="> <a:Loading:784923587785916487>",
-                       # value="Get pinged when we have new leaks", inline=False)
+            name="> <a:giveaway:780103641519358013>", value="Be notified when we host giveaways", inline=False
+        )
+        embed.add_field(
+            name="> <a:check_animated:780103746432139274>",
+            value="Get pinged when we host polls for our site",
+            inline=False,
+        )
+        embed.add_field(
+            name="> <:announcementchannel:780103872668237835>",
+            value="Get pinged when we have announcements",
+            inline=False,
+        )
+        # embed.add_field(name="> <a:Loading:784923587785916487>",
+        # value="Get pinged when we have new leaks", inline=False)
         ch = self.bot.main_guild.get_channel(716733254308462702)
         msg = ch.get_partial_message(780106851961667614)
         await msg.edit(embed=embed)
@@ -253,7 +278,7 @@ class Admin(commands.Cog):
         if member.bot:
             return await ctx.send("Shut Up")
 
-        iso2 = coco.convert(names=country, to='ISO2')
+        iso2 = coco.convert(names=country, to="ISO2")
         if iso2 == "not found":
             return await ctx.send("This is not a valid country")
 
@@ -270,8 +295,7 @@ class Admin(commands.Cog):
         if member.bot:
             return await ctx.send("Shut Up")
 
-        ranks = ["Senior Administrator", "Administrator",
-                 "Senior Website Moderator", "Website Moderator"]
+        ranks = ["Senior Administrator", "Administrator", "Senior Website Moderator", "Website Moderator"]
         if rank not in ranks:
             return await ctx.send(f"{rank} is not a valid rank")
 
@@ -310,7 +334,7 @@ class Admin(commands.Cog):
 
         is_waiting = await self.bot.pool.fetchval(
             "SELECT main_owner FROM main_site_bot WHERE certified = False AND awaiting_certification = True AND id = $1",
-            bot.id
+            bot.id,
         )
         if not is_waiting:
             await ctx.send("This bot is not awaiting certification")
@@ -320,8 +344,7 @@ class Admin(commands.Cog):
             "UPDATE main_site_bot SET certified = True, awaiting_certification = False WHERE id = $1", bot.id
         )
 
-        embed = discord.Embed(
-            description=f"Certified {bot.name}", color=discord.Color.blurple())
+        embed = discord.Embed(description=f"Certified {bot.name}", color=discord.Color.blurple())
         await ctx.send(embed=embed)
 
         owner = ctx.guild.get_member(is_waiting)
@@ -330,7 +353,7 @@ class Admin(commands.Cog):
         if ctx.command.name != "certify":
             ctx.command.name = "certify"
         # ---
-        em=bot_log_embed(ctx, (bot, owner))
+        em = bot_log_embed(ctx, (bot, owner))
 
         await self.bot.pool.execute("UPDATE main_site_user SET certified_developer = True WHERE id = $1", owner.id)
         await self.bot.get_channel(716446098859884625).send(embed=em)
@@ -344,13 +367,13 @@ class Admin(commands.Cog):
     @certify.command()
     async def decline(self, ctx, bot: discord.Member, *, reason):
         if not bot.bot:
-            embed = discord.Embed(
-                description=f"❌ That is not a bot.", color=discord.Colour.red())
+            embed = discord.Embed(description=f"❌ That is not a bot.", color=discord.Colour.red())
             await ctx.send(embed=embed)
             return
 
         is_waiting = await self.bot.pool.fetchval(
-            "SELECT main_owner FROM main_site_bot WHERE awaiting_certification = True AND id = $1", bot.id)
+            "SELECT main_owner FROM main_site_bot WHERE awaiting_certification = True AND id = $1", bot.id
+        )
         if not is_waiting:
             await ctx.send("That bot is not awaiting certification.")
             return
@@ -361,15 +384,14 @@ class Admin(commands.Cog):
         if ctx.command.name != "decline":
             ctx.command.name = "decline"
         # ---
-        em=bot_log_embed(ctx, (bot, ctx.guild.get_member(is_waiting)), reason=reason)
+        em = bot_log_embed(ctx, (bot, ctx.guild.get_member(is_waiting)), reason=reason)
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
     @commands.has_permissions(administrator=True)
     @commands.command()
     async def poll(self, ctx, poll, image=None):
         """Creates a poll embed"""
-        embed = discord.Embed(title="**New Poll**:",
-                              description=poll, color=discord.Color.blurple())
+        embed = discord.Embed(title="**New Poll**:", description=poll, color=discord.Color.blurple())
         if image:
             embed.set_image(url=image)
         await ctx.message.delete()
@@ -383,41 +405,47 @@ class Admin(commands.Cog):
         json = {"purge_everything": True}
         headers = {
             "X-Auth-Key": config.cloudflare_token,
-            "X-Auth-Email": config.cloudflare_email, "Content-Type": "application/json"}
+            "X-Auth-Email": config.cloudflare_email,
+            "Content-Type": "application/json",
+        }
         async with self.bot.session.post(
-                url="https://api.cloudflare.com/client/v4/zones/47697d23bd0d042fd63573cc9030177d/purge_cache/",
-                headers=headers, json=json) as x:
-            await ctx.send(f'{await x.json()}')
+            url="https://api.cloudflare.com/client/v4/zones/47697d23bd0d042fd63573cc9030177d/purge_cache/",
+            headers=headers,
+            json=json,
+        ) as x:
+            await ctx.send(f"{await x.json()}")
 
-    @flags.add_flag("-b", "--bot", action='store_true', default=False)
-    @flags.add_flag("-s", "--site", action='store_true', default=False)
-    @flags.add_flag("-a", "--all", action='store_true', default=False)
     @commands.is_owner()
-    @commands.command(cls=flags.FlagCommand)
-    async def restart(self, ctx, **arguments):
+    @commands.command()
+    async def restart(self, ctx, *, to_restart: RestartFlags):
         """
         Restarts a specified, available systemd service.
 
         **Flags**:
 
-        \u2022 **--bot**/-b - For if you want to restart the bot.
-        \u2022 **--site**/-s - For if you want to restart the site.
-        \u2022 **--all**/-a -  For if you want to restart the bot and site.
+        \u2022 **--bot**/-b True - For if you want to restart the bot.
+        \u2022 **--site**/-s True - For if you want to restart the site.
+        Use both if you want to restart the bot and site.
         """
 
+        bot = to_restart.bot
+        site = to_restart.site
+        if not bot and not site:
+            return await ctx.send("You need specify either `--bot True` or `--site True`.")
+
+        SITE_COMMAND = "systemctl restart site"
+        BOT_COMMAND = "systemctl restart blist"
         try:
-            if arguments["bot"]:
-                await ctx.send("Restarting bot...")
-                os.system("systemctl restart blist")
-            elif arguments["site"]:
-                await ctx.send("Restarting site...")
-                os.system("systemctl restart site")
-            elif arguments["all"]:
+            if bot and site:
                 await ctx.send("Restarting site and bot...")
-                os.system("systemctl restart site")
-                os.system("systemctl restart blist")
-            else:
-                return await ctx.send("You need specify --all, --bot or --site.")
+                os.system(SITE_COMMAND)
+                os.system(BOT_COMMAND)
+            elif bot:
+                await ctx.send("Restarting bot...")
+                os.system(BOT_COMMAND)
+            elif site:
+                await ctx.send("Restarting site...")
+                os.system(SITE_COMMAND)
         except Exception as err:
             await ctx.send(f"Something went wrong...\n{err}")
 
@@ -428,9 +456,7 @@ class Admin(commands.Cog):
         await ctx.channel.trigger_typing()
         cmd = "cd /home/blist/DjangoBlist && git pull"
         process = await asyncio.create_subprocess_shell(
-            cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
 
         try:
@@ -441,8 +467,7 @@ class Admin(commands.Cog):
 
         reg = r"\S+(\.py)"
         reg = re.compile(reg)
-        found = [match.group()[:-3].replace("/", ".")
-                 for match in reg.finditer(com)]
+        found = [match.group()[:-3].replace("/", ".") for match in reg.finditer(com)]
 
         if found:
             updated = []
@@ -450,24 +475,25 @@ class Admin(commands.Cog):
                 try:
                     updated.append(file)
                 except Exception as e:
-                    embed = discord.Embed(title=f"There was an issue pulling from GitHub",
-                                          description=f"\n```{e}```\n", color=discord.Color.red())
+                    embed = discord.Embed(
+                        title=f"There was an issue pulling from GitHub",
+                        description=f"\n```{e}```\n",
+                        color=discord.Color.red(),
+                    )
                     await ctx.send(embed=embed)
                     return
 
             if not updated:
-                embed = discord.Embed(
-                    title=f"No files were updated.", color=discord.Color.red())
+                embed = discord.Embed(title=f"No files were updated.", color=discord.Color.red())
                 await ctx.send(embed=embed)
             else:
                 embed = discord.Embed(
-                    title=f"Updated Files: " +
-                    ", ".join([f"`{text}`" for text in updated]),
-                    color=discord.Color.blurple())
+                    title=f"Updated Files: " + ", ".join([f"`{text}`" for text in updated]),
+                    color=discord.Color.blurple(),
+                )
                 await ctx.send(embed=embed)
         else:
-            embed = discord.Embed(
-                title=f"No files were updated.", color=discord.Color.red())
+            embed = discord.Embed(title=f"No files were updated.", color=discord.Color.red())
             await ctx.send(embed=embed)
 
     @commands.is_owner()
@@ -476,9 +502,7 @@ class Admin(commands.Cog):
         """Pulls from a git remote and reloads modified cogs"""
         await ctx.channel.trigger_typing()
         process = await asyncio.create_subprocess_exec(
-            "git", "pull",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            "git", "pull", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
 
         try:
@@ -489,8 +513,7 @@ class Admin(commands.Cog):
 
         reg = r"\S+(\.py)"
         reg = re.compile(reg)
-        found = [match.group()[:-3].replace("/", ".")
-                 for match in reg.finditer(com)]
+        found = [match.group()[:-3].replace("/", ".") for match in reg.finditer(com)]
 
         if found:
             updated = []
@@ -501,24 +524,25 @@ class Admin(commands.Cog):
                 except (commands.ExtensionNotLoaded, commands.ExtensionNotFound):
                     continue
                 except Exception as e:
-                    embed = discord.Embed(title=f"There was an issue pulling from GitHub",
-                                          description=f"\n```{e}```\n", color=discord.Color.red())
+                    embed = discord.Embed(
+                        title=f"There was an issue pulling from GitHub",
+                        description=f"\n```{e}```\n",
+                        color=discord.Color.red(),
+                    )
                     await ctx.send(embed=embed)
                     return
 
             if not updated:
-                embed = discord.Embed(
-                    title=f"No cogs were updated.", color=discord.Color.red())
+                embed = discord.Embed(title=f"No cogs were updated.", color=discord.Color.red())
                 await ctx.send(embed=embed)
             else:
                 embed = discord.Embed(
-                    title=f"Updated cogs: " +
-                    ", ".join([f"`{text}`" for text in updated]),
-                    color=discord.Color.blurple())
+                    title=f"Updated cogs: " + ", ".join([f"`{text}`" for text in updated]),
+                    color=discord.Color.blurple(),
+                )
                 await ctx.send(embed=embed)
         else:
-            embed = discord.Embed(
-                title=f"No cogs were updated.", color=discord.Color.red())
+            embed = discord.Embed(title=f"No cogs were updated.", color=discord.Color.red())
             await ctx.send(embed=embed)
 
     @commands.has_permissions(administrator=True)
@@ -533,7 +557,7 @@ class Admin(commands.Cog):
             if user["blacklisted"] is True:
                 await self.bot.pool.execute("UPDATE main_site_user SET blacklisted = False WHERE id = $1", userid)
                 await ctx.send(f"Un-Blacklisted {userid}")
-                #json = {"cascade": "none"}
+                # json = {"cascade": "none"}
                 # async with self.bot.session.delete(
                 #    url="https://api.cloudflare.com/client/v4/zones/47697d23bd0d042fd63573cc9030177d/firewall/access_rules/rules",
                 #    headers=headers, json=json) as x:
@@ -550,31 +574,35 @@ class Admin(commands.Cog):
         except KeyError:
             return await ctx.send("This user is not in the Database!")
 
-
     @commands.has_role(716713266683969626)
     @commands.command()
     async def xpblacklist(self, ctx, user: discord.Member):
         db_user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE id = $1", user.id)
         try:
             db_user = db_user[0]
-            leveling_user = await self.bot.pool.fetch(f"SELECT * FROM main_site_leveling WHERE user_id = $1", db_user["unique_id"])
+            leveling_user = await self.bot.pool.fetch(
+                f"SELECT * FROM main_site_leveling WHERE user_id = $1", db_user["unique_id"]
+            )
             try:
                 leveling_user = leveling_user[0]
                 if leveling_user["blacklisted"]:
-                    await self.bot.pool.execute("UPDATE main_site_leveling SET blacklisted = False WHERE user_id = $1", db_user["unique_id"])
+                    await self.bot.pool.execute(
+                        "UPDATE main_site_leveling SET blacklisted = False WHERE user_id = $1", db_user["unique_id"]
+                    )
                     await ctx.send(f"Un-Blacklisted {user} from using leveling!")
                 else:
-                    await self.bot.pool.execute("UPDATE main_site_leveling SET blacklisted = True WHERE user_id = $1", db_user["unique_id"])
+                    await self.bot.pool.execute(
+                        "UPDATE main_site_leveling SET blacklisted = True WHERE user_id = $1", db_user["unique_id"]
+                    )
                     await ctx.send(f"Blacklisted {user} from using leveling!")
             except KeyError:
                 return await ctx.send("This user is not in the Leveling Database!")
         except KeyError:
             return await ctx.send("This user is not in the Database!")
 
-
     @checks.main_guild_only()
     @commands.has_permissions(administrator=True)
-    @commands.command(aliases=['forcestaffembed', 'staffembed', 'staff_embed'])
+    @commands.command(aliases=["forcestaffembed", "staffembed", "staff_embed"])
     async def force_update_staff_embed(self, ctx):
         event_cog = self.bot.get_cog("Events")
         await event_cog.update_staff_embed(self.bot.main_guild)
@@ -596,7 +624,7 @@ class Admin(commands.Cog):
             "Posting invites when it is relevant to the conversation (such as asking "
             "for a bot support server, Minecraft server) is completely fine. However, "
             "advertising your server (or any advertising in general) is not okay.",
-            "Don't break Discord ToS"
+            "Don't break Discord ToS",
         ]
         bot_rules_list = [
             "NSFW Commands must be restricted to NSFW only channels.",
@@ -612,11 +640,10 @@ class Admin(commands.Cog):
             "Bots cannot have NSFW avatars.",
             "Must have a clean description, not junk filled.",
             "Bot owner must be in/remain in server for the bot to be listed",
-            "Bot must have an error handler and display the correct error messages, missing permissions etc"
+            "Bot must have an error handler and display the correct error messages, missing permissions etc",
         ]
 
-        assignable_roles_channel = ctx.guild.get_channel(
-            716733254308462702).mention
+        assignable_roles_channel = ctx.guild.get_channel(716733254308462702).mention
         server_roles_dict = {
             716722789234638860: "This is for people that report bugs to help improve the site. Gained by reporting bugs, no specific amount.",  # Bug Hunter
             # Community Contributor
@@ -651,25 +678,22 @@ class Admin(commands.Cog):
             764686546179325972: "This is for bots with a common prefix.",  # Common Prefix
             # Premium
             716724716299091980: "This is for if you have premium on the site. You can get it by donating 5$ or more [here](https://www.paypal.com/paypalme/trashcoder/5)",
-            779817680488103956: "This is for our Social Media Manager, they manage our Official Social accounts like twitter."  # Social Media Access
+            779817680488103956: "This is for our Social Media Manager, they manage our Official Social accounts like twitter.",  # Social Media Access
         }
 
         main_embed = discord.Embed(color=discord.Color.blurple())
-        main_embed.set_author(name="Blist.xyz", icon_url=ctx.bot.user.avatar_url_as(
-            format="png"), url="https://blist.xyz/")
-        main_embed.set_thumbnail(
-            url=ctx.guild.icon_url_as(static_format="png"))
+        main_embed.set_author(name="Blist.xyz", icon_url=ctx.bot.user.display_avatar.url, url="https://blist.xyz/")
+        if ctx.guild.icon:
+            main_embed.set_thumbnail(url=ctx.guild.icon.url)
         main_embed.add_field(
             name="**Blist Server Rules**",
-            value="\n".join(
-                [f"**{num}.** {rule}" for num, rule in enumerate(server_rules_list, start=1)]),
-            inline=False
+            value="\n".join([f"**{num}.** {rule}" for num, rule in enumerate(server_rules_list, start=1)]),
+            inline=False,
         )
         main_embed.add_field(
             name="**Blist Bot Rules/Requirements**",
-            value="\n".join([f"**{num}.** {rule}" for num,
-                             rule in enumerate(bot_rules_list, start=1)]),
-            inline=False
+            value="\n".join([f"**{num}.** {rule}" for num, rule in enumerate(bot_rules_list, start=1)]),
+            inline=False,
         )
         main_embed.add_field(
             name="**Links**",
@@ -683,27 +707,26 @@ class Admin(commands.Cog):
                 [Certification Info](https://blist.xyz/certification/)
                 """
             ),
-            inline=False
+            inline=False,
         )
 
         server_roles_list = []
         server_roles_embeds = []
         roles_paginator = commands.Paginator(prefix="", suffix="", max_size=2048)
         guild_role_ids = [x.id for x in ctx.guild.roles]
-        ordered_server_roles_list = sorted(server_roles_dict.keys(
-        ), key=guild_role_ids.index, reverse=True)  # put in order as in server.
+        ordered_server_roles_list = sorted(
+            server_roles_dict.keys(), key=guild_role_ids.index, reverse=True
+        )  # put in order as in server.
         for role_id in ordered_server_roles_list:
             server_roles_list.append(f"{ctx.guild.get_role(role_id).mention}: {server_roles_dict[role_id]}")
 
         join_dict = "\n".join(server_roles_list)
-        server_roles_content = [join_dict[i:i + 2000]
-                                for i in range(0, len(join_dict), 2000)]
+        server_roles_content = [join_dict[i : i + 2000] for i in range(0, len(join_dict), 2000)]
         for page in server_roles_content:
             roles_paginator.add_line(page)
 
         for page_content in roles_paginator.pages:
-            server_roles_embeds.append(discord.Embed(
-                description=page_content, color=discord.Color.blurple()))
+            server_roles_embeds.append(discord.Embed(description=page_content, color=discord.Color.blurple()))
 
         server_roles_embed1 = server_roles_embeds[0]
         server_roles_embed1.title = "Blist Server Roles"
@@ -712,7 +735,8 @@ class Admin(commands.Cog):
         server_bot_link = "https://discord.com/oauth2/authorize?client_id=791415200175751171&scope=bot"
         permanent_invite = "https://discord.com/invite/4Xk9FZP"
         faq_embed = discord.Embed(
-            title="FAQ's", color=discord.Color.blurple(),
+            title="FAQ's",
+            color=discord.Color.blurple(),
             description=f"""
 **How did I get here?**
 When logging in on the website, you grant us the ability to join guilds for you. Whenever you go to add a bot, you get 
@@ -736,7 +760,8 @@ publish. Tada, your server is now on our list.
 
 **Does this server have a permanent invite I can use?**
 Yes, [we do]({permanent_invite} '{permanent_invite}')!
-""")
+""",
+        )
 
         channel = ctx.guild.get_channel(716717317320605736)
         all_info = channel.get_partial_message(723643619315023873)
@@ -762,22 +787,22 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
     @commands.command()
     async def votesreset(self, ctx, *, message=None):
         top_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot ORDER BY monthly_votes DESC LIMIT 5")
-        embed = discord.Embed(title=f"{datetime.datetime.utcnow().strftime('%B')} top 5 voted bots!",
-                              color=discord.Color.blurple())
+        embed = discord.Embed(
+            title=f"{datetime.datetime.utcnow().strftime('%B')} top 5 voted bots!", color=discord.Color.blurple()
+        )
         for bot in top_bots:
-            embed.add_field(
-                name=bot['username'], value=f"Votes: {bot['monthly_votes']}", inline=False)
+            embed.add_field(name=bot["username"], value=f"Votes: {bot['monthly_votes']}", inline=False)
         await ctx.send(embed=embed)
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot")
         for bot in bots:
             await self.bot.pool.execute("UPDATE main_site_bot SET monthly_votes = 0 WHERE id = $1", bot["id"])
 
         top_servers = await self.bot.pool.fetch("SELECT * FROM main_site_server ORDER BY monthly_votes DESC LIMIT 5")
-        embed = discord.Embed(title=f"{datetime.datetime.utcnow().strftime('%B')} top 5 voted servers!",
-                                color=discord.Color.blurple())
+        embed = discord.Embed(
+            title=f"{datetime.datetime.utcnow().strftime('%B')} top 5 voted servers!", color=discord.Color.blurple()
+        )
         for server in top_servers:
-            embed.add_field(
-                name=server['name'], value=f"Votes: {server['monthly_votes']}", inline=False)
+            embed.add_field(name=server["name"], value=f"Votes: {server['monthly_votes']}", inline=False)
         servers = await self.bot.pool.fetch("SELECT * FROM main_site_server")
         for server in servers:
             await self.bot.pool.execute("UPDATE main_site_server SET monthly_votes = 0 WHERE id = $1", server["id"])
@@ -792,15 +817,22 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         users = await self.bot.pool.fetch("SELECT * FROM main_site_user")
 
         for bot in bots:
-            bot_object = ctx.guild.get_member(bot['id'])
+            bot_object = ctx.guild.get_member(bot["id"])
             if bot_object:
-                await self.bot.pool.execute("UPDATE main_site_bot SET avatar_url = $1 WHERE id = $2", str(bot_object.avatar_url), bot_object.id)
+                await self.bot.pool.execute(
+                    "UPDATE main_site_bot SET avatar_url = $1 WHERE id = $2",
+                    str(bot_object.display_avatar.url),
+                    bot_object.id,
+                )
 
         for user in users:
-            user_object = ctx.guild.get_member(user['id'])
+            user_object = ctx.guild.get_member(user["id"])
             if user_object:
-                await self.bot.pool.execute("UPDATE main_site_user SET avatar_url = $1 WHERE id = $2", str(user_object.avatar_url), user_object.id)
-
+                await self.bot.pool.execute(
+                    "UPDATE main_site_user SET avatar_url = $1 WHERE id = $2",
+                    str(user_object.display_avatar.url),
+                    user_object.id,
+                )
 
         await ctx.send("Done")
 
@@ -808,92 +840,71 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
     @commands.command()
     async def tweet(self, ctx, *, message):
         """Sends out a tweet on the official Blist Twitter Account"""
-        self.bot.twitter_api.update_status(
-            f"{message} \n\n- {ctx.author.name}")
+        self.bot.twitter_api.update_status(f"{message} \n\n- {ctx.author.name}")
         await ctx.send("Done")
 
-    @flags.add_flag("-t", "--total", action='store_true', default=False)
-    @flags.add_flag("-m", "--monthly", action='store_true', default=False)
-    @flags.add_flag("-b", "--both", action='store_true', default=True)
-    @flags.add_flag("-l", "--list", type=str, default='bot')
     @commands.has_role(716713266683969626)
-    @commands.command(aliases=["changevote"], cls=flags.FlagCommand)
-    async def changevotes(self, ctx, server_bot_id: int, remove_or_add: str, the_number: int, **arguments):
+    @commands.command(aliases=["changevote"])
+    async def changevotes(self, ctx, *, flags: ChangeVoteFlags):
         """
-        Change a bot or server's vote counts. You can choose from `--monthly`, `--total` or `--both`.
-
-        **Arguments**:
-
-        \u2022 server_bot_id - Can be a server id or bot id that is on the list.
-            Make sure to use `--list "server"` if its a server id. Defaults to bot.
-        \u2022 remove_or_add - Choose from add, + or remove, -.
-        \u2022 the_number - Amount of votes to add or remove.
+        Change a bot or server's vote counts. You can choose from `--monthly`, `--total`.
 
         **Flags**:
 
-        \u2022 **--monthly**/-m - For if you want to remove `the_number` from bot or server's monthly votes. Defaults to False.
-        \u2022 **--total**/-t - For if you want to remove `the_number` from bot or server's total votes. Defaults to False.
-        \u2022 **--both**/-b - For if you want to remove `the_number` from bot or server's total and monthly votes. Defaults to True.
+        \u2022 **--object**/-o - The bot or server object. Can be the bot/server name or ID.
+        \u2022 **--listing**/-l [bot|server=bot] - The listing type. Can be either bot or server. Defaults to bot.
+
+        \u2022 **--add**/-a [True|False=False] - Whether to add `amount`. Defaults to False.
+        \u2022 **--remove**/-r [True|False=False] - Whether to remove `amount`. Defaults to False.
+
+        \u2022 **--monthly**/-m [True|False=False] - Whether to add/remove the amount from the monthly votes. Defaults to False.
+        \u2022 **--total**/-t [True|False=False] - Whether to add/remove the amount from the total votes. Defaults to False.
+        Can use both at the same time. Defaults to True.
 
         - This will take the current monthly or total votes or both and + or - to them.
         - There is no confirmation.
         - This can only be used with the Senior Administrator role.
         """
-        list_type = arguments['list']
-        VALID_LIST_TYPES = ['bot', 'server']
-        VALID_WHAT = ["add", "remove", "+", "-"]
-        if remove_or_add not in VALID_WHAT:
-            return await ctx.send(f"remove_or_add can only be the following: {', '.join(VALID_WHAT)}")
+        list_type = flags.listing
+        obj_id = flags.object.id
+        amount = flags.amount
 
-        if list_type not in VALID_LIST_TYPES:
-            return await ctx.send("--list_type can only be either bot or server. Defaults to bot.")
+        if not flags.add and not flags.remove:
+            return await ctx.send("You must specify whether to add or remove the votes.")
+        elif flags.add and flags.remove:
+            return await ctx.send("You cannot add and remove at the same time.")
 
-        what_dict = {
-            "add": "+",
-            "+": "+",
-            "remove": "-",
-            "-": "-"
-        }
+        remove_add = "+" if flags.add else "-"
+        both_or_monthly_or_total = "both" if flags.both else "monthly" if flags.monthly else "total"
+
         query = {
             "both": "UPDATE main_site_{table} SET total_votes = total_votes {remove_add} {the_count}, "
-                    "monthly_votes = monthly_votes {remove_add} {the_count} WHERE id = {the_id}",
+            "monthly_votes = monthly_votes {remove_add} {the_count} WHERE id = {the_id}",
             "monthly": "UPDATE main_site_{table} SET monthly_votes = monthly_votes {remove_add} {the_count} WHERE id = {the_id}",
             "total": "UPDATE main_site_{table} SET total_votes = total_votes {remove_add} {the_count} WHERE id = {the_id}",
         }
 
         try:
-            if arguments['monthly']:
-                the_query = query["monthly"].format(
-                    table = str(list_type).lower(),
-                    remove_add = what_dict[str(remove_or_add)],
-                    the_count = int(the_number),
-                    the_id = int(server_bot_id)
-                )
-                await self.bot.pool.execute(the_query)
-                return await ctx.send(f"{what_dict[str(remove_or_add)]} {the_number} to monthly_votes for {server_bot_id}")
-
-            elif arguments['total']:
-                the_query = query["total"].format(
-                    table = str(list_type).lower(),
-                    remove_add = what_dict[str(remove_or_add)],
-                    the_count = int(the_number),
-                    the_id = int(server_bot_id)
-                )
-                await self.bot.pool.execute(the_query)
-                return await ctx.send(f"{what_dict[str(remove_or_add)]} {the_number} to total_votes for {server_bot_id}")
-
-            elif arguments['both']:
+            if both_or_monthly_or_total == "both":
                 the_query = query["both"].format(
-                    table = str(list_type).lower(),
-                    remove_add = what_dict[str(remove_or_add)],
-                    the_count = int(the_number),
-                    the_id = int(server_bot_id)
+                    table=str(list_type).lower(), remove_add=remove_add, the_count=int(amount), the_id=int(obj_id)
                 )
                 await self.bot.pool.execute(the_query)
-                return await ctx.send(f"{what_dict[str(remove_or_add)]} {the_number} to monthly_votes and total_votes for {server_bot_id}")
+                return await ctx.send(f"{remove_add} {amount} to monthly_votes and total_votes for {obj_id}")
+            elif both_or_monthly_or_total == "monthly":
+                the_query = query["monthly"].format(
+                    table=str(list_type).lower(), remove_add=remove_add, the_count=int(amount), the_id=int(obj_id)
+                )
+                await self.bot.pool.execute(the_query)
+                return await ctx.send(f"{remove_add} {amount} to monthly_votes for {obj_id}")
 
             else:
-                return await ctx.send("You need specify --both, --monthly or --total.")
+                the_query = query["total"].format(
+                    table=str(list_type).lower(), remove_add=remove_add, the_count=int(amount), the_id=int(obj_id)
+                )
+                await self.bot.pool.execute(the_query)
+                return await ctx.send(f"{remove_add} {amount} to total_votes for {obj_id}")
+
         except Exception as err:
             await ctx.send(f"Something went wrong...\n{err}")
 
@@ -907,15 +918,15 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
     @suggestion.command()
     async def consider(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
-        user = self.bot.get_user(fetch['userid'])
+        user = self.bot.get_user(fetch["userid"])
         ch = self.bot.get_channel(716737367192502312)
-        m = await ch.fetch_message(fetch['message'])
+        m = await ch.fetch_message(fetch["message"])
         embed = discord.Embed(
             title=f"#{fetch['id']} Suggestion | Considered",
             color=discord.Color.gold(),
-            description=f"{fetch['suggestion']}\n\n>>> {reason or 'No reason provided'}"
+            description=f"{fetch['suggestion']}\n\n>>> {reason or 'No reason provided'}",
         )
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await self.bot.pool.execute("UPDATE main_site_suggestion SET considered = True WHERE id = $1", suggestion)
         await ctx.message.delete()
         await m.edit(embed=embed)
@@ -923,9 +934,9 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
             em = discord.Embed(
                 title="Suggestion Considered!",
                 description=f"{fetch['suggestion']}\n\n**Considered by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
-                color=discord.Color.gold()
+                color=discord.Color.gold(),
             )
-            em.set_thumbnail(url=self.bot.user.avatar_url)
+            em.set_thumbnail(url=self.bot.user.display_avatar.url)
             await user.send(embed=em)
         except discord.Forbidden:
             pass
@@ -934,15 +945,15 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
     @suggestion.command()
     async def approve(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
-        user = self.bot.get_user(fetch['userid'])
+        user = self.bot.get_user(fetch["userid"])
         ch = self.bot.get_channel(716737367192502312)
-        m = await ch.fetch_message(fetch['message'])
+        m = await ch.fetch_message(fetch["message"])
         embed = discord.Embed(
             title=f"#{fetch['id']} Suggestion | Approved",
             color=discord.Color.green(),
-            description=f"{fetch['suggestion']}\n\n**Approved by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
+            description=f"{fetch['suggestion']}\n\n**Approved by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
         )
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await self.bot.pool.execute("UPDATE main_site_suggestion SET approved = True WHERE id = $1", suggestion)
         await ctx.message.delete()
         await m.edit(embed=embed)
@@ -950,9 +961,9 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
             em = discord.Embed(
                 title="Suggestion Approved!",
                 description=f"{fetch['suggestion']}\n\n**Approved by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
-                color=discord.Color.green()
+                color=discord.Color.green(),
             )
-            em.set_thumbnail(url=self.bot.user.avatar_url)
+            em.set_thumbnail(url=self.bot.user.display_avatar.url)
             await user.send(embed=em)
         except Exception:
             pass
@@ -961,15 +972,15 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
     @suggestion.command()
     async def implemented(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
-        user = self.bot.get_user(fetch['userid'])
+        user = self.bot.get_user(fetch["userid"])
         ch = self.bot.get_channel(716737367192502312)
-        m = await ch.fetch_message(fetch['message'])
+        m = await ch.fetch_message(fetch["message"])
         embed = discord.Embed(
             title=f"#{fetch['id']} Suggestion | Implemented",
             color=discord.Color.blue(),
-            description=f"{fetch['suggestion']}\n\n**Implemented by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
+            description=f"{fetch['suggestion']}\n\n**Implemented by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
         )
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await self.bot.pool.execute("UPDATE main_site_suggestion SET implemented = True WHERE id = $1", suggestion)
         await ctx.message.delete()
         await m.edit(embed=embed)
@@ -977,26 +988,26 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
             em = discord.Embed(
                 title="Suggestion Implemented!",
                 description=f"{fetch['suggestion']}\n\n**Implemented by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
-                color=discord.Color.blue()
+                color=discord.Color.blue(),
             )
-            em.set_thumbnail(url=self.bot.user.avatar_url)
+            em.set_thumbnail(url=self.bot.user.display_avatar.url)
             await user.send(embed=em)
         except Exception:
             pass
-    
+
     @commands.has_permissions(administrator=True)
     @suggestion.command()
     async def deny(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
-        user = self.bot.get_user(fetch['userid'])
+        user = self.bot.get_user(fetch["userid"])
         ch = self.bot.get_channel(716737367192502312)
-        m = await ch.fetch_message(fetch['message'])
+        m = await ch.fetch_message(fetch["message"])
         embed = discord.Embed(
             title=f"#{fetch['id']} Suggestion | Denied",
             color=discord.Color.red(),
-            description=f"{fetch['suggestion']}\n\n**Denied by {ctx.author}:**\n>>> {reason or 'No reason provided'}"
+            description=f"{fetch['suggestion']}\n\n**Denied by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
         )
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await self.bot.pool.execute("UPDATE main_site_suggestion SET denied = True WHERE id = $1", suggestion)
         await ctx.message.delete()
         await m.edit(embed=embed)
@@ -1004,16 +1015,16 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
             em = discord.Embed(
                 title="Suggestion Denied!",
                 description=f"{fetch['suggestion']}\n\n**Denied by {ctx.author}:**\n>>> {reason or 'No reason provided'}",
-                color=discord.Color.red()
+                color=discord.Color.red(),
             )
-            em.set_thumbnail(url=self.bot.user.avatar_url)
+            em.set_thumbnail(url=self.bot.user.display_avatar.url)
             await user.send(embed=em)
         except Exception:
             pass
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def strike(self, ctx, staffmember: discord.Member, strikes:int, *, reason):
+    async def strike(self, ctx, staffmember: discord.Member, strikes: int, *, reason):
         fetch = await self.bot.mod_pool.fetchrow("SELECT * FROM staff WHERE userid = $1", staffmember.id)
 
         if not fetch:
@@ -1025,27 +1036,36 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         if staffmember == ctx.author:
             return await ctx.send("You can't strike yourself")
 
-
-        await self.bot.mod_pool.execute("UPDATE staff SET strikes = strikes + $2 WHERE userid = $1", staffmember.id, strikes)
+        await self.bot.mod_pool.execute(
+            "UPDATE staff SET strikes = strikes + $2 WHERE userid = $1", staffmember.id, strikes
+        )
         await ctx.send(f"Awarded {strikes} {'strikes' if strikes != 1 else 'strike'} **{staffmember}**")
         adminlog = ctx.guild.get_channel(797186257061937152)
         e = discord.Embed(
             title="Staff Member Striked",
             color=discord.Color.blurple(),
-            description=wrap(f"""
+            description=wrap(
+                f"""
             **Staff Member:** {ctx.author.mention} 
             **Offender:** {staffmember.mention}
             **Reason:** `{reason}`
             **Number of strikes:** `{strikes}`
-            """), timestamp=datetime.datetime.utcnow())
+            """
+            ),
+            timestamp=datetime.datetime.utcnow(),
+        )
         await adminlog.send(embed=e)
-        e = discord.Embed(title="Strike Received", description=f"**Reason:** `{reason}`\n**Strikes Awarded:** `{strikes}`", color=discord.Color.blurple())
+        e = discord.Embed(
+            title="Strike Received",
+            description=f"**Reason:** `{reason}`\n**Strikes Awarded:** `{strikes}`",
+            color=discord.Color.blurple(),
+        )
         e.set_footer(text="blist.xyz", icon_url=ctx.guild.icon_url)
         await staffmember.send(embed=e)
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def removestrike(self, ctx, staffmember: discord.Member, strikes:int, *, reason):
+    async def removestrike(self, ctx, staffmember: discord.Member, strikes: int, *, reason):
         fetch = await self.bot.mod_pool.fetchrow("SELECT * FROM staff WHERE userid = $1", staffmember.id)
 
         if not fetch:
@@ -1057,21 +1077,26 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         if staffmember == ctx.author:
             return await ctx.send("You can't remove a strike from yourself")
 
-        await self.bot.mod_pool.execute("UPDATE staff SET strikes = strikes - $2 WHERE userid = $1", staffmember.id, strikes)
+        await self.bot.mod_pool.execute(
+            "UPDATE staff SET strikes = strikes - $2 WHERE userid = $1", staffmember.id, strikes
+        )
         await ctx.send(f"Removed {strikes} {'strikes' if strikes != 1 else 'strike'} from **{staffmember}**")
         adminlog = ctx.guild.get_channel(797186257061937152)
         e = discord.Embed(
             title="Staff Member Removed Strikes",
             color=discord.Color.blurple(),
-            description=wrap(f"""
+            description=wrap(
+                f"""
             **Staff Member:** {ctx.author.mention} 
             **Offender:** {staffmember.mention}
             **Reason:** `{reason}`
             **Number of strikes:** `{strikes}`
-            """), timestamp=datetime.datetime.utcnow())
+            """
+            ),
+            timestamp=datetime.datetime.utcnow(),
+        )
         await adminlog.send(embed=e)
 
 
-
-def setup(bot):
-    bot.add_cog(Admin(bot))
+async def setup(bot: Blist):
+    await bot.add_cog(Admin(bot))

@@ -3,3 +3,5 @@ cogs/config.py
 __pycache__
 .vscode
 .idea/
+.venv/
+venv/

@@ -1,11 +1,13 @@
 import datetime
 
+import discord
 import parsedatetime as pdt
 from discord.ext import commands
 
 
-def time_took(dt: datetime.datetime, now_dt: datetime.datetime = None, only_hours = False):
+def time_took(dt: datetime.datetime, now_dt: datetime.datetime = None, only_hours=False):
     now = now_dt or datetime.datetime.utcnow()
+    now.replace(tzinfo=datetime.timezone.utc)
     delta = now - dt
     hours, remainder = divmod(int(delta.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -13,11 +15,12 @@ def time_took(dt: datetime.datetime, now_dt: datetime.datetime = None, only_hour
     if only_hours:
         return hours
     if days:
-        fmt = '{d} days, {h} hours, {m} minutes, and {s} seconds'
+        fmt = "{d} days, {h} hours, {m} minutes, and {s} seconds"
     else:
-        fmt = '{h} hours, {m} minutes, and {s} seconds'
+        fmt = "{h} hours, {m} minutes, and {s} seconds"
 
-    return fmt.format(d = days, h = hours, m = minutes, s = seconds)
+    return fmt.format(d=days, h=hours, m=minutes, s=seconds)
+
 
 class HumanTime:
     calendar = pdt.Calendar(version=pdt.VERSION_CONTEXT_STYLE)
@@ -26,13 +29,11 @@ class HumanTime:
         now = now or datetime.datetime.utcnow()
         dt, status = self.calendar.parseDT(argument, sourceTime=now)
         if not status.hasDateOrTime:
-            raise commands.BadArgument(
-                'invalid time provided, try e.g. "tomorrow" or "3 days"')
+            raise commands.BadArgument('invalid time provided, try e.g. "tomorrow" or "3 days"')
 
         if not status.hasTime:
             # replace it with the current time
-            dt = dt.replace(hour=now.hour, minute=now.minute,
-                            second=now.second, microsecond=now.microsecond)
+            dt = dt.replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=now.microsecond)
 
         self.dt = dt
         self._past = dt < now
@@ -58,4 +59,4 @@ class FutureTime(Time):
         super().__init__(argument, now=now)
 
         if self._past:
-            raise commands.BadArgument('this time is in the past')
+            raise commands.BadArgument("this time is in the past")
