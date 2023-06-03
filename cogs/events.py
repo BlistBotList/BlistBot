@@ -524,7 +524,6 @@ New Message
         bot: discord.Member, limit: int = 10, **kwargs: Any
     ) -> Optional[Union[discord.Member, discord.User, discord.Object]]:
         async for entry in bot.guild.audit_logs(limit=limit, action=discord.AuditLogAction.bot_add, **kwargs):
-            print("audit entry", entry, entry.target, entry.user, entry.user_id, bot.id)
             if entry.target and str(entry.target.id) == str(bot.id):
                 return entry.user or discord.Object(entry.user_id) if entry.user_id else None
         return None
