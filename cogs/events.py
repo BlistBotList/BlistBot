@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import datetime
+import json
 import os
 import random
 import re
 import sys
+import io
 from textwrap import dedent as wrap
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
@@ -511,9 +513,9 @@ New Message
         for attachment in message.attachments:
             fields["attachments"].append(attachment.url)
         for embed in message.embeds:
-            fields["embeds"].append(embed.to_dict())
+            fields["embeds"].append(json.dumps(embed.to_dict()))
         for component in message.components:
-            fields["components"].append(component.to_dict())
+            fields["components"].append(json.dumps(component.to_dict()))
 
         return "\n".join(f"{key.upper()}: {str(value)}" for key, value in fields.items())
 
@@ -522,6 +524,7 @@ New Message
         bot: discord.Member, limit: int = 10, **kwargs: Any
     ) -> Optional[Union[discord.Member, discord.User, discord.Object]]:
         async for entry in bot.guild.audit_logs(limit=limit, action=discord.AuditLogAction.bot_add, **kwargs):
+            print("audit entry", entry, entry.target, entry.user, entry.user_id, bot.id)
             if entry.target and str(entry.target.id) == str(bot.id):
                 return entry.user or discord.Object(entry.user_id) if entry.user_id else None
         return None
@@ -534,12 +537,10 @@ New Message
             get_category_id = self.test_categories.get(member.id, second_try)
             admin_logs = self.bot.main_guild.get_channel(797186257061937152)
             if get_category_id:
-                file_name = f'{member.name.replace(" ", "_")}.txt'
-                file = open(file_name, "w")
                 all_messages = []
-                category = member.guild.get_channel(get_category_id)
+                category: discord.CategoryChannel = member.guild.get_channel(get_category_id)  # type: ignore
                 reviewed_by = None
-                for channel in category.channels:
+                for channel in list(category.text_channels) + list(category.voice_channels):
                     if channel.type != discord.ChannelType.voice:
                         messages = [msg async for msg in channel.history(limit=None, after=channel.created_at)]
                         reviewed_by = discord.utils.find(
@@ -548,17 +549,13 @@ New Message
                         )
                         for x in messages:
                             contents = self.__parse_message_contents(x)
-                            all_messages.append(
-                                f"[#{x.channel.name} | {x.author.name}]:\n{contents.encode('utf-8')}"
-                                + "\n-----------\n"
-                            )
+                            all_messages.append(f"[#{x.channel.name} | {x.author.name}]:\n{contents}")
 
                     await channel.delete()
 
-                file.writelines(all_messages)
-                file.close()
+                file_name = f'{member.name.replace(" ", "_")}.txt'
+                file = io.StringIO("\n---------\n".join(all_messages))
                 reviewed_by = f"{str(reviewed_by.author)} ({reviewed_by.id})" if reviewed_by else "Not Found"
-                # this might not be that accurate.
                 invited_by = await self.__fetch_bot_inviter_from_auditlogs(member)
                 invited_by = f"{str(invited_by)} ({invited_by.id})" if invited_by else "Not Found"
                 review_embed = discord.Embed(
@@ -574,18 +571,13 @@ New Message
                     """
                     ),
                 )
-                await admin_logs.send(embed=review_embed, file=discord.File(file_name, file.name))
+                await admin_logs.send(embed=review_embed, file=discord.File(file, file_name))  # type: ignore
 
                 await category.delete()
                 try:
                     del self.test_categories[member.id]
                 except KeyError:
                     pass
-                if os.path.exists(file_name):
-                    try:
-                        os.remove(file_name)
-                    except Exception:
-                        pass
 
         muted = await self.bot.mod_pool.fetchval("SELECT userid FROM mutes WHERE userid = $1", member.id)
         if muted:
@@ -668,7 +660,8 @@ New Message
 
         emb = discord.Embed(
             title="Bot(s) Not Found!",
-            description="The following bot(s) have not been found in the Support Server after getting approved...",
+            description="The following bot(s) have not joined the Support Server after getting approved...",
+            color=discord.Color.red(),
         )
         emb.set_footer(text="Please add them to the server using the invite!")
         total = 0
