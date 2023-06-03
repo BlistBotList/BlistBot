@@ -7,7 +7,7 @@ from discord.ext import commands
 
 def time_took(dt: datetime.datetime, now_dt: datetime.datetime = None, only_hours=False):
     now = now_dt or datetime.datetime.utcnow()
-    now.replace(tzinfo=datetime.timezone.utc)
+    now = now.replace(tzinfo=datetime.timezone.utc)
     delta = now - dt
     hours, remainder = divmod(int(delta.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
