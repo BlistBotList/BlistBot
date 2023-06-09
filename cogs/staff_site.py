@@ -137,8 +137,10 @@ class Staff(commands.Cog):
                 invite_scopes = ("bot",)
                 if x["uses_slash_commands"] is True:
                     invite_scopes = ("bot", "applications.commands")
-                invite = str(
-                    discord.utils.oauth_url(x["id"], guild=self.bot.verification_guild, scopes=invite_scopes),
+                invite = discord.utils.oauth_url(
+                    x["id"],
+                    guild=self.bot.verification_guild,
+                    scopes=invite_scopes,
                     disable_guild_select=True,
                 )
                 listed_bots.append(f"{x['username']} [Invite]({invite}) {too_long}")
