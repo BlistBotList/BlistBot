@@ -11,6 +11,7 @@ import googletrans
 from discord.ext import commands
 
 from utils import checks
+from utils.constants import ADMIN_ROLE_ID, MAIN_GUILD_ID, VERIFICATION_GUILD_ID
 from utils.flags import TranslateFlags
 from utils.time import time_took
 
@@ -74,6 +75,13 @@ def bot_log_embed(
             f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
             f"**Author:** {command_author}",
             None,
+        "revoke": {
+            "Revoked bot certification",
+            discord.Color.red(),
+            f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
+            f"**Author:** {command_author}",
+            str(reason)
+        }
         ),
     }
     title, color, description, command_invoker, reason = embed_stuff_dict.get(str(ctx.command.name))
@@ -87,7 +95,10 @@ class Staff(commands.Cog):
         self.bot: Blist = bot
         self.translator = googletrans.Translator()
 
-    @commands.has_permissions(kick_members=True)
+    async def cog_check(self, ctx: commands.Context["Blist"]) -> bool:
+        return await checks.staff_only().predicate(ctx)
+
+    @commands.check_any(checks.guild_only(VERIFICATION_GUILD_ID), checks.staff_only(ADMIN_ROLE_ID))
     @commands.group(invoke_without_command=True, aliases=["q"])
     async def queue(self, ctx):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE approved=False AND denied=False")
@@ -148,7 +159,8 @@ class Staff(commands.Cog):
         embed.description = "\n".join(listed_bots) if listed_bots else "All Clear"
         await ctx.send(embed=embed)
 
-    @checks.main_guild_only()
+    @checks.guild_only(MAIN_GUILD_ID)
+    @checks.staff_only(ADMIN_ROLE_ID)
     @queue.command(aliases=["c"])
     async def certification(self, ctx):
         bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot WHERE awaiting_certification=True")
@@ -167,8 +179,7 @@ class Staff(commands.Cog):
         )
         await ctx.send(embed=embed)
 
-    @checks.verification_guild_only()
-    @commands.has_permissions(kick_members=True)
+    @checks.guild_only(VERIFICATION_GUILD_ID)
     @commands.command(aliases=["accept"])
     async def approve(self, ctx, *, bot: discord.Member):
         if not bot.bot:
@@ -238,7 +249,7 @@ class Staff(commands.Cog):
         bots = await self.bot.pool.fetchval("SELECT COUNT(*) FROM main_site_bot")
         await self.bot.change_presence(activity=discord.Game(name=f"Watching {bots} bots"))
 
-    @commands.has_permissions(kick_members=True)
+    @checks.guild_only(VERIFICATION_GUILD_ID)
     @commands.command()
     async def deny(self, ctx, bot: Union[discord.Member, discord.User]):
         if not bot.bot:
@@ -317,8 +328,7 @@ class Staff(commands.Cog):
         except Exception:
             await ctx.send("Couldn't kick bot")
 
-    @checks.main_guild_only()
-    @commands.has_permissions(kick_members=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @commands.command()
     async def delete(self, ctx, bot: Union[discord.Member, int]):
         if isinstance(bot, discord.Member):
@@ -419,13 +429,11 @@ class Staff(commands.Cog):
         if isinstance(bot_member, discord.Member):
             await bot_member.kick(reason="Bot Deleted")
 
-    @commands.has_permissions(kick_members=True)
     @commands.command()
     async def say(self, ctx, *, msg: commands.clean_content):
         """Make blist repeat what you said"""
         await ctx.send(msg)
 
-    @commands.has_permissions(kick_members=True)
     @commands.command(hidden=True, aliases=["t"])
     async def translate(self, ctx, *, arguments: TranslateFlags):
         """
@@ -476,8 +484,7 @@ class Staff(commands.Cog):
         embed.set_author(name=member, icon_url=str(member.display_avatar.url))
         await ctx.send(embed=embed)
 
-    @commands.has_permissions(kick_members=True)
-    @checks.verification_guild_only()
+    @checks.guild_only(VERIFICATION_GUILD_ID)
     @commands.command(aliases=["lock"])
     async def hold(self, ctx, message: typing.Optional[discord.Message] = None, *, reason: str):
         """Waiting on a bot owner to fix their bot? Use this!
@@ -506,8 +513,7 @@ class Staff(commands.Cog):
         await ctx.message.delete()
         await msg.pin()
 
-    @commands.has_permissions(kick_members=True)
-    @checks.verification_guild_only()
+    @checks.guild_only(VERIFICATION_GUILD_ID)
     @commands.command(aliases=["unlock"])
     async def unhold(self, ctx):
         """Unhold the channel to start reviewing a bot again."""

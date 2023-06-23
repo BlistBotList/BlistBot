@@ -13,6 +13,7 @@ from discord.ext import commands
 
 from bot import Blist
 from utils import checks
+from utils.constants import MAIN_GUILD_ID
 from utils.flags import DMCommandFlags
 from utils.time import FutureTime
 
@@ -238,7 +239,7 @@ class Mod(commands.Cog):
 
     @commands.has_permissions(manage_messages=True)
     @commands.command()
-    @checks.main_guild_only()
+    @checks.guild_only(MAIN_GUILD_ID)
     async def common_prefix(self, ctx, member: discord.Member):
         """Adds or removes the common prefix role from a bot"""
         if not member.bot:

@@ -15,6 +15,7 @@ from discord.ext import commands
 import config
 from cogs.staff_site import bot_log_embed
 from utils import checks
+from utils.constants import ADMIN_ROLE_ID, MAIN_GUILD_ID, CERTIFIED_ROLES
 from utils.flags import ChangeVoteFlags, RestartFlags
 
 if TYPE_CHECKING:
@@ -25,7 +26,9 @@ class Admin(commands.Cog):
     def __init__(self, bot: Blist) -> None:
         self.bot: Blist = bot
 
-    @commands.has_permissions(administrator=True)
+    async def cog_check(self, ctx: commands.Context) -> bool:
+        return await commands.check_any(commands.is_owner(), checks.staff_only(ADMIN_ROLE_ID)).predicate(ctx)
+
     @commands.command()
     async def reloadutils(self, ctx, name: str):
         """Reloads a utils module."""
@@ -39,7 +42,6 @@ class Admin(commands.Cog):
             return await ctx.send(f"Module **{name_maker}** returned error and was not reloaded...\n{e}")
         await ctx.send(f"Reloaded module **{name_maker}**", delete_after=5)
 
-    @commands.has_permissions(administrator=True)
     @commands.command()
     @commands.max_concurrency(1, commands.BucketType.guild)
     async def hire(self, ctx, member: discord.Member, *, country: str):
@@ -143,7 +145,6 @@ class Admin(commands.Cog):
         await self.bot.get_command("force_update_staff_embed")(ctx)
         await ctx.send(f"Successfully hired {member} ({member.id}).\n\n{join_list}")
 
-    @commands.has_permissions(administrator=True)
     @commands.command()
     @commands.max_concurrency(1, commands.BucketType.guild)
     async def fire(self, ctx, member: discord.Member):
@@ -240,7 +241,6 @@ class Admin(commands.Cog):
         await self.bot.get_command("force_update_staff_embed")(ctx)
         await ctx.send(f"Successfully fired {member} ({member.id}).\n\n{join_list}")
 
-    @commands.has_permissions(administrator=True)
     @commands.command()
     async def rr(self, ctx):
         embed = discord.Embed(color=discord.Color.blurple(), title="Assignable Roles", inline=False)
@@ -272,7 +272,6 @@ class Admin(commands.Cog):
         await msg.add_reaction(self.bot.get_emoji(784923587785916487))
         await ctx.send("Done")
 
-    @commands.has_permissions(administrator=True)
     @commands.command()
     async def set_country(self, ctx, member: discord.Member, *, country):
         if member.bot:
@@ -289,7 +288,6 @@ class Admin(commands.Cog):
         await self.bot.mod_pool.execute("UPDATE staff SET country_code = $1 WHERE userid = $2", iso2, member.id)
         await ctx.send("Done")
 
-    @commands.has_permissions(administrator=True)
     @commands.command()
     async def set_rank(self, ctx, member: discord.Member, *, rank):
         if member.bot:
@@ -306,7 +304,6 @@ class Admin(commands.Cog):
         await self.bot.mod_pool.execute("UPDATE staff SET rank = $1 WHERE userid = $2", rank, member.id)
         await ctx.send("Done")
 
-    @commands.has_permissions(administrator=True)
     @commands.command()
     async def add(self, ctx, member: discord.Member, level):
         levels = ["bug_hunter", "developer", "administrator", "staff"]
@@ -315,7 +312,6 @@ class Admin(commands.Cog):
         await self.bot.pool.execute(f"UPDATE main_site_user SET {level} = True WHERE id = $1", member.id)
         await ctx.send(f"Added {member} as {level}")
 
-    @commands.has_permissions(administrator=True)
     @commands.command()
     async def remove(self, ctx, member: discord.Member, level: str):
         levels = ["bug_hunter", "developer", "administrator", "staff"]
@@ -324,8 +320,7 @@ class Admin(commands.Cog):
         await self.bot.pool.execute(f"UPDATE main_site_user SET {level} = False WHERE id = $1", member.id)
         await ctx.send(f"Removed {member} from {level}")
 
-    @checks.main_guild_only()
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @commands.group(invoke_without_command=True)
     async def certify(self, ctx, *, bot: discord.Member):
         if not bot.bot:
@@ -357,15 +352,14 @@ class Admin(commands.Cog):
 
         await self.bot.pool.execute("UPDATE main_site_user SET certified_developer = True WHERE id = $1", owner.id)
         await self.bot.get_channel(716446098859884625).send(embed=em)
-        certified_role = ctx.guild.get_role(716684142766456832)
-        certified_dev_role = ctx.guild.get_role(716724317207003206)
+        certified_role = ctx.guild.get_role(CERTIFIED_ROLES["bot"])
+        certified_dev_role = ctx.guild.get_role(CERTIFIED_ROLES["developer"])
         await owner.add_roles(certified_dev_role)
         await bot.add_roles(certified_role)
 
-    @checks.main_guild_only()
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @certify.command()
-    async def decline(self, ctx, bot: discord.Member, *, reason):
+    async def decline(self, ctx, bot: discord.Member, *, reason: str):
         if not bot.bot:
             embed = discord.Embed(description=f"❌ That is not a bot.", color=discord.Colour.red())
             await ctx.send(embed=embed)
@@ -387,7 +381,37 @@ class Admin(commands.Cog):
         em = bot_log_embed(ctx, (bot, ctx.guild.get_member(is_waiting)), reason=reason)
         await self.bot.get_channel(716446098859884625).send(embed=em)
 
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
+    @certify.command()
+    async def revoke(self, ctx, bot: discord.Member, *, reason: str):
+        """Revoke certification from a bot"""
+        if not bot.bot:
+            embed = discord.Embed(description=f"❌ That is not a bot.", color=discord.Colour.red())
+            await ctx.send(embed=embed)
+            return
+
+        is_certified = await self.bot.pool.fetchval(
+            "SELECT main_owner FROM main_site_bot WHERE certified = True AND id = $1", bot.id
+        )
+        if not is_certified:
+            await ctx.send("That bot is not certified.")
+            return
+
+        await self.bot.pool.execute("UPDATE main_site_bot SET certified = False WHERE id = $1", bot.id)
+        await ctx.send(f"Revoked certification for {bot.name}")
+        # Need to use .qualified_name instead of .name but too lazy for now.
+        if ctx.command.name != "revoke":
+            ctx.command.name = "revoke"
+        # ---
+        owner = ctx.guild.get_member(int(is_certified))
+        if owner:
+            await owner.remove_roles(ctx.guild.get_role(CERTIFIED_ROLES["developer"]))
+
+        await bot.remove_roles(ctx.guild.get_role(CERTIFIED_ROLES["bot"]))
+        em = bot_log_embed(ctx, (bot, owner), reason=reason)
+        await self.bot.get_channel(716446098859884625).send(embed=em)
+
+    @checks.guild_only(MAIN_GUILD_ID)
     @commands.command()
     async def poll(self, ctx, poll, image=None):
         """Creates a poll embed"""
@@ -545,7 +569,6 @@ class Admin(commands.Cog):
             embed = discord.Embed(title=f"No cogs were updated.", color=discord.Color.red())
             await ctx.send(embed=embed)
 
-    @commands.has_permissions(administrator=True)
     @commands.command()
     async def blacklist(self, ctx, userid: int, *, reason=None):
         user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE id = $1", userid)
@@ -574,7 +597,6 @@ class Admin(commands.Cog):
         except KeyError:
             return await ctx.send("This user is not in the Database!")
 
-    @commands.has_role(716713266683969626)
     @commands.command()
     async def xpblacklist(self, ctx, user: discord.Member):
         db_user = await self.bot.pool.fetch(f"SELECT * FROM main_site_user WHERE id = $1", user.id)
@@ -600,16 +622,13 @@ class Admin(commands.Cog):
         except KeyError:
             return await ctx.send("This user is not in the Database!")
 
-    @checks.main_guild_only()
-    @commands.has_permissions(administrator=True)
     @commands.command(aliases=["forcestaffembed", "staffembed", "staff_embed"])
     async def force_update_staff_embed(self, ctx):
         event_cog = self.bot.get_cog("Events")
         await event_cog.update_staff_embed(self.bot.main_guild)
         await ctx.send(f"Updated the staff embed!")
 
-    @checks.main_guild_only()
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @commands.command()
     async def rulesninfo(self, ctx):
         server_rules_list = [
@@ -782,8 +801,7 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
 
         await ctx.send(f"Updated all embeds in {channel.mention}")
 
-    @checks.main_guild_only()
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @commands.command()
     async def votesreset(self, ctx, *, message=None):
         top_bots = await self.bot.pool.fetch("SELECT * FROM main_site_bot ORDER BY monthly_votes DESC LIMIT 5")
@@ -809,7 +827,7 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         await ctx.send(content=message or "", embed=embed)
         await ctx.send("Monthly votes reset!")
 
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @commands.command()
     async def avatars(self, ctx):
         await ctx.send("Doing Avatars")
@@ -843,7 +861,7 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         self.bot.twitter_api.update_status(f"{message} \n\n- {ctx.author.name}")
         await ctx.send("Done")
 
-    @commands.has_role(716713266683969626)
+    @checks.staff_only(716713266683969626)
     @commands.command(aliases=["changevote"])
     async def changevotes(self, ctx, *, flags: ChangeVoteFlags):
         """
@@ -908,13 +926,13 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         except Exception as err:
             await ctx.send(f"Something went wrong...\n{err}")
 
+    @checks.guild_only(MAIN_GUILD_ID)
     @commands.group(invoke_without_command=True)
-    @commands.has_guild_permissions(administrator=True)
     async def suggestion(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @suggestion.command()
     async def consider(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
@@ -941,7 +959,7 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         except discord.Forbidden:
             pass
 
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @suggestion.command()
     async def approve(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
@@ -968,7 +986,7 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         except Exception:
             pass
 
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @suggestion.command()
     async def implemented(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
@@ -995,7 +1013,7 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
         except Exception:
             pass
 
-    @commands.has_permissions(administrator=True)
+    @checks.guild_only(MAIN_GUILD_ID)
     @suggestion.command()
     async def deny(self, ctx, suggestion: int, *, reason=None):
         fetch = await self.bot.pool.fetchrow("SELECT * FROM main_site_suggestion WHERE id = $1", suggestion)
@@ -1023,7 +1041,6 @@ Yes, [we do]({permanent_invite} '{permanent_invite}')!
             pass
 
     @commands.command()
-    @commands.has_permissions(administrator=True)
     async def strike(self, ctx, staffmember: discord.Member, strikes: int, *, reason):
         fetch = await self.bot.mod_pool.fetchrow("SELECT * FROM staff WHERE userid = $1", staffmember.id)
 

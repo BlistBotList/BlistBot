@@ -15,8 +15,9 @@ import pytz
 from discord.ext import commands, tasks
 
 import config
-from utils.checks import WrongGuild
+from utils.checks import NotStaff, RankTooLow, WrongGuild
 from utils.time import time_took
+from utils.constants import CERTIFIED_ROLES
 
 utc = pytz.UTC
 
@@ -129,6 +130,8 @@ class Events(commands.Cog):
             commands.TooManyFlags,
             commands.MissingRequiredFlag,
             WrongGuild,
+            RankTooLow,
+            NotStaff,
         )
 
         errors = {
@@ -143,6 +146,10 @@ class Events(commands.Cog):
 
         if isinstance(error, ignored):
             return
+
+        if isinstance(error, commands.CheckAnyFailure):
+            for e in error.errors:
+                return await self.on_command_error(ctx, e)
 
         if isinstance(error, send_embed):
             if isinstance(error, commands.MissingRequiredArgument):
@@ -437,6 +444,15 @@ New Message
                     "UPDATE main_site_server SET premium = False WHERE id = $1",
                     server["id"],
                 )
+
+        certified_bot_role = self.bot.main_guild.get_role(CERTIFIED_ROLES["bot"])
+        certified_dev_role = self.bot.main_guild.get_role(CERTIFIED_ROLES["developer"])
+        if certified_bot_role in before.roles and certified_bot_role not in after.roles:
+            await self.bot.pool.execute("UPDATE main_site_bot SET certified = False WHERE id = $1", before.id)
+            owner_id = await self.bot.pool.fetchval("SELECT main_owner FROM main_site_bot WHERE id = $1", before.id)
+            owner = self.bot.main_guild.get_member(owner_id)
+            if owner:
+                await owner.remove_roles(certified_dev_role)
 
         bug_hunter = self.bot.main_guild.get_role(716722789234638860)
         if bug_hunter not in before.roles and bug_hunter in after.roles:

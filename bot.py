@@ -11,6 +11,7 @@ import tweepy
 from discord.ext import commands
 
 import config
+from utils.constants import MAIN_GUILD_ID, STAFF_ROLES, VERIFICATION_GUILD_ID
 from utils.help import CustomHelpCommand
 
 extensions = [f"cogs.{f[:-3]}" for f in os.listdir("cogs") if f.endswith(".py") and not f.startswith("_")] + ["jishaku"]
@@ -27,9 +28,6 @@ async def get_prefix(bot, message):
 
 
 class Blist(commands.Bot):
-    MAIN_GUILD_ID: int = 716445624517656727
-    VERIFICATION_GUILD_ID: int = 734527161289015337
-
     def __init__(self):
         super().__init__(
             command_prefix=get_prefix,
@@ -47,21 +45,15 @@ class Blist(commands.Bot):
                 presences=True,
             ),
         )
-        self.staff_roles = {
-            716713561233031239,
-            716713293330514041,
-            716713498360545352,
-            716713238955556965,
-            716713266683969626,
-        }
+        self.staff_roles = STAFF_ROLES
 
     @property
     def main_guild(self) -> Union[discord.Guild, discord.Object]:
-        return self.get_guild(self.MAIN_GUILD_ID) or discord.Object(self.MAIN_GUILD_ID)
+        return self.get_guild(MAIN_GUILD_ID) or discord.Object(MAIN_GUILD_ID)
 
     @property
     def verification_guild(self) -> Union[discord.Guild, discord.Object]:
-        return self.get_guild(self.VERIFICATION_GUILD_ID) or discord.Object(self.VERIFICATION_GUILD_ID)
+        return self.get_guild(VERIFICATION_GUILD_ID) or discord.Object(VERIFICATION_GUILD_ID)
 
     async def on_ready(self) -> None:
         print(PRINT_LINE, f"{self.user} is ready", PRINT_LINE, sep="\n")
