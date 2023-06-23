@@ -75,13 +75,13 @@ def bot_log_embed(
             f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
             f"**Author:** {command_author}",
             None,
-        "revoke": {
+        ),
+        "revoke": (
             "Revoked bot certification",
             discord.Color.red(),
             f"**Bot:** {bot_text}\n**Owner:** {bot_owner_text}",
             f"**Author:** {command_author}",
-            str(reason)
-        }
+            str(reason),
         ),
     }
     title, color, description, command_invoker, reason = embed_stuff_dict.get(str(ctx.command.name))
