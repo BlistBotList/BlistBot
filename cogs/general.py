@@ -502,7 +502,7 @@ class General(commands.Cog):
             ),
             color=discord.Color.blurple(),
         )
-        embed.set_thumbnail(url=str(ctx.guild.icon_url))
+        embed.set_thumbnail(url=str(ctx.guild.icon.url))
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["lb"])
